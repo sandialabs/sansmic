@@ -1,9 +1,9 @@
 [project]
 name = "sansmic"
-version = "1.0.0rc0"
 description = "Sandia solution mining modeling software"
 readme = "README.md"
 requires-python = ">=3.9"
+version = "1.0.0b0"
 license = { file = "LICENSE" }
 authors = [
     { name = "SANSMIC authors" },
@@ -43,3 +43,9 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel]
 before-all = "uname -a"
 skip = ["cp313-*", "pp*"]
+
+[tool.setuptools.package-data]
+"sansmic" = ["src/python/sansmic/*.pyd"]
+
+[tool.setuptools.package-dir]
+sansmic = "src/python/sansmic"
