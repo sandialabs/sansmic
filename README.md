@@ -4,8 +4,8 @@
 ## sansmic
 
 sansmic (or SANSMIC) is research software developed to simulate the 
-leaching of salt caverns. Its primary use has been modeling the leaching
-for the caverns at the 
+leaching of salt caverns.
+Its primary use has been modeling the leaching for the caverns at the 
 [U.S. Strategic Petroleum Reserve](https://www.energy.gov/ceser/strategic-petroleum-reserve)
 (SPR). sansmic differs from other leaching software as it implements a 
 simultaneous leach+fill simulation which was used in the 1980s during the
@@ -56,7 +56,8 @@ See [LICENSE.md](LICENSE.md) and [COPYRIGHT.md](COPYRIGHT.md).
 
 The version of sansmic provided here is a rewrite of a program of the 
 same name that was in turn a modification of code that was written in the 
-early 1980s by J. Russo to meet specific SPR needs.
+early 1980s by J. Russo at [Sandia National Laboratories](https://www.sandia.gov) 
+to meet specific SPR needs.
 That code was at least partially based on the [Solution Mining Research 
 Institute (SMRI)](https://www.solutionmining.org/) code SALT77,
 written by A. Saberian and A.L. Podio[^1].
