@@ -1,6 +1,5 @@
 ![Lines of code](https://sloc.xyz/github/sandialabs/sansmic/?category=code)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-[![GitHub contributors](https://img.shields.io/github/contributors/sandialabs/sansmic.svg)](https://github.com/sandialabs/sansmic/graphs/contributors)
 
 ## sansmic
 
@@ -47,16 +46,6 @@ For more detailed usage and API information, please see
 [our documentation][docs].
 
 [docs]: https://dbhart.github.io/
-
-% ### Contributing
-
-% If you're interested in contributing to the development of sansmic,
-% please see
-% [contributing guidelines](CONTRIBUTING.md) for how to get started.
-
-% [Contributors][contributors] include:
-%
-% [contributors]: https://github.com/sandialabs/sansmic/graphs/contributors
 
 ### License & Copyright
 
