@@ -15,15 +15,15 @@ here = path.abspath(path.dirname(__file__))
 # with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 #     long_description = f.read()
 
-ext_modules = [
-    Pybind11Extension(
-        "sansmic.libsansmic",
-        sources=sorted(glob("src/ext_modules/libsansmic/*.cpp")),
-        cxx_std=17,
-        # Example: passing in the version to the compiled code
-        define_macros=[("VERSION_INFO", __version__),],
-    ),
-]
+# ext_modules = [
+#     Pybind11Extension(
+#         "sansmic.libsansmic",
+#         sources=sorted(glob("src/ext_modules/libsansmic/*.cpp")),
+#         cxx_std=17,
+#         # Example: passing in the version to the compiled code
+#         define_macros=[("VERSION_INFO", __version__),],
+#     ),
+# ]
 
 setup(
     name="sansmic",  # Required
@@ -34,6 +34,6 @@ setup(
     packages=[
         "sansmic",
     ],  # Required
-    ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
+    # ext_modules=ext_modules,
+    # cmdclass={"build_ext": build_ext},
 )

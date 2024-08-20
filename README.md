@@ -6,8 +6,8 @@
 SANSMIC (or sansmic) is research software developed to simulate the 
 leaching of salt caverns.
 Its primary use has been modeling the leaching for the caverns at the 
-[U.S. Strategic Petroleum Reserve][SPR]
-(SPR). SANSMIC differs from other leaching software as it implements a 
+U.S. Strategic Petroleum Reserve (SPR). 
+SANSMIC differs from other leaching software as it implements a 
 simultaneous leach+fill simulation which was used in the 1980s during the
 construction and original fill of the SPR Bryan Mound site. The primary 
 use for SANSMIC is for modeling liquid petroleum product storage caverns
@@ -60,24 +60,3 @@ For more detailed usage and API information, please see
 ### License & Copyright
 See [LICENSE.md](LICENSE.md) and [COPYRIGHT.md](COPYRIGHT.md).
 
-
-### Credits
-The version of **sansmic** provided here is a rewrite of a FORTRAN
-program[^5] of the same name that was a significant modification
-from the original **SANSMIC** program that was written from
-approximately 1980 to 1983 by J. Russo[^4] to meet specific needs
-during the SPR's development by the U.S. DOE. *That* code was
-at-least-partially based on the **SALT** code written by A. Saberian[^1]
-and A. Saberian and A. L. Podio[^2] [^3]. SALT became the [SMRI][SMRI]
-software **SALGAS**, the current version of which is available from
-[SMRI](https://www.solutionmining.org/software).
-
-
-[^1]: Saberian, A. (1974). "Numerical Simulation of Development of Solution Mined Salt Cavities". Solution Mining Research Institute. [SMRI:74-0002](https://www.solutionmining.org/historical-research-projects)
-[^2]: Saberian, A., & Podio, A.L. (1976). "A numerical model for development of solution mined cavities". Solution Mining Research Institute. [SMRI:76-0004](https://www.solutionmining.org/historical-research-projects)
-[^3]: Saberian, A., & Podio, A.L. (1977). "Computer model for describing the development of solution-mined cavities". *In Situ* 1(1). [OSTI:7278331](https://www.osti.gov/biblio/7278331)
-[^4]: Russo, J. (1983). "User's manual for the salt solution mining code, SANSMIC". Sandia National Laboratories. [OSTI:5680228](https://www.osti.gov/biblio/5680228)
-[^5]: Weber, P.D., Rudeen, D.K., & Lord, D.L. (2014). "SANSMIC Validation". Sandia National Laboratories. [doi:10.2172/1150848](https://doi.org/10.2172/1150848)
-
-[SMRI]: https://www.solutionmining.org/
-[SPR]: https://www.energy.gov/ceser/strategic-petroleum-reserve

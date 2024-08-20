@@ -22,10 +22,27 @@ import pandas as pd
 
 logger = logging.getLogger("sansmic")
 
+has_ext = False
 try:
     from . import libsansmic as _ext
+    has_ext = True
 except ImportError:
     logger.critical('The C++ library is not installed. Conversions will work, but the main program will not run.')
+    has_ext = False
+    class _ext:
+        class _CModel: pass
+        class _CStage: pass
+        class _CResults: pass
+        class _CGeometryFormat(IntEnum):
+            blah = 1
+        class _CRunMode(IntEnum):
+            blah = 1
+        CStage = _CStage
+        CModel = _CModel
+        CGeometryFormat = _CGeometryFormat
+        CRunMode = _CRunMode
+        CResults = _CResults
+
 
 class SansmicConfigError(TypeError):
     """Specific error for missing configuration data."""
@@ -99,7 +116,6 @@ class GeometryFormat(IntEnum):
     RADIUS_TABLE = 2
     LAYER_CAKE = 5
     """The geometry is provided in a 'layer-cake' style LAS file"""
-
 
 class SimulationMode(IntEnum):
     """The simulation mode determines which options are active for injection."""
@@ -1229,3 +1245,10 @@ class _OutputData(_OutDataBlock):
         self.V_injTot = None
         self.V_fillTot = None
         self.sg_cavAve = None
+
+
+if not has_ext:
+    _ext.CGeometryFormat = GeometryFormat
+    _ext.CRunMode = SimulationMode
+    _ext.CModel = Scenario
+    _ext.CStage = StageDefinition
