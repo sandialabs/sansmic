@@ -4,17 +4,17 @@ description = "Sandia solution mining modeling software"
 readme = "README.md"
 requires-python = ">=3.9"
 version = "1.0.0b1"
-license = { file = "LICENSE" }
 authors = [
-    { name = "SANSMIC authors" },
+    { name = "National Technology & Engineering Solutions of Sandia, LLC (NTESS)" },
+    { name = "SANSMIC Authors (see AUTHORS.md)"},
 ]
 maintainers = [
-    { name = "David Hart", email = "dbhart+sansmic@sandia.gov" }
+    { name = "David Hart", email = "david.hart@sandia.gov" }
 ]
 dependencies = ["numpy", "pandas", "pyyaml"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: BSD-3-Clause",
     'Intended Audience :: End Users/Desktop',
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
@@ -33,9 +33,6 @@ Repository = "https://github.com/sandialabs/sansmic.git"
 [project.scripts]
 sansmic = "sansmic.app:main"
 sansmic-convert = "sansmic.app:convert"
-
-#[project.gui-scripts]
-# name = "module:func"
 
 [build-system]
 requires = ["setuptools", "pybind11"]

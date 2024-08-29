@@ -13,9 +13,9 @@ is the table of water properties by weight-percent NaCl, temperature,
 and density. See :cite:t:`kaufman60sodium` and :cite:t:`lide2000crc`.
 """
 
-from numpy import double, array
+from numpy import array
 
-densal = double(2.16)  # density of rock salt
+rho_NaCl_s = float(2.16)  # density of rock salt
 """
 Density of salt in the surrounding rock.
 """
@@ -29,7 +29,7 @@ a = array(
         3.8789476581,
         -0.7533873462,
     ],
-    dtype=double,
+    dtype=float,
 )
 """
 Coefficients used for wall recession rate equation (SAND2015-XXXX Ch 4).
@@ -42,13 +42,13 @@ c = array(
         0.67459890538,
         0.32350531044,
     ],
-    dtype=double,
+    dtype=float,
 )
 """
 Coefficients used for converting between weight percent and specific gravity (SAND2015 Ch2.3).
 """
 
-sg = array(
+sg_matrix = array(
     [
         [
             0.99987,
@@ -230,60 +230,65 @@ sg = array(
             1.1626,
             1.1492,
         ],
-        [1.2093, 1.2044, 1.1999, 1.1978, 1.1957, 1.1914, 1.1872, 1.183, 1.1745, 1.166],
     ],
-    dtype=double,
+    dtype=float,
 )
 """
 Specific gravity data for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
 """
 
-wtpct = array(
+wt_pct_vec = array(
     [
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-        [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-        [4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
-        [6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0],
-        [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0],
-        [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
-        [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0],
-        [14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0],
-        [16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0],
-        [18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0],
-        [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0],
-        [22.0, 22.0, 22.0, 22.0, 22.0, 22.0, 22.0, 22.0, 22.0, 22.0],
-        [24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0],
-        [26.0, 26.0, 26.0, 26.0, 26.0, 26.0, 26.0, 26.0, 26.0, 26.0],
-        [26.34, 26.35, 26.43, 26.48, 26.56, 26.71, 26.89, 27.09, 27.53, 28.12],
+        [0.0],
+        [1.0],
+        [2.0],
+        [4.0],
+        [6.0],
+        [8.0],
+        [10.0],
+        [12.0],
+        [14.0],
+        [16.0],
+        [18.0],
+        [20.0],
+        [22.0],
+        [24.0],
+        [26.0],
     ],
-    dtype=double,
+    dtype=float,
 )
 """
 Weight-percent salt content data for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
 """
 
-temp_C = array(
-    [
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-        [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
-    ],
-    dtype=double,
+T_degC_vec = array(
+    [[0, 10, 20, 25, 30, 40, 50, 60, 80, 100]],
+    dtype=float,
 )
 """
 Temperature (in degrees Celsius) data for sg vs wt\% for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
+"""
+
+wt_pct_max = array(
+    [26.34, 26.35, 26.43, 26.48, 26.56, 26.71, 26.89, 27.09, 27.53, 28.12],
+    dtype=float,
+)
+"""
+Weight-percent salt content data for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
+"""
+
+T_degC_max = array(
+    [0, 10, 20, 25, 30, 40, 50, 60, 80, 100],
+    dtype=float,
+)
+"""
+Temperature (in degrees Celsius) data for sg vs wt\% for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
+"""
+
+sg_max = array(
+    [1.2093, 1.2044, 1.1999, 1.1978, 1.1957, 1.1914, 1.1872, 1.183, 1.1745, 1.166],
+    dtype=float,
+)
+"""
+Specific gravity data for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
 """

@@ -179,7 +179,7 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             logger.debug("  leachtype     = {}".format(mode))
             logger.debug("  iprint        = {}".format(print_interval))
             logger.debug("  repeat        = {}".format(subsequent))
-            logger.debug("  resetgeo      = {}".format(iResetGeo))
+            logger.debug("  resetgeo[depr]= {}".format(iResetGeo))
             logger.debug("  iWait         = {}".format(rest_duration))
             logger.debug("  nco           = {}".format(num_coallescing))
             logger.debug("  idata         = {}".format(geometry_format))
@@ -235,7 +235,7 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             fill_rate, tDelay, coallescing_well_separation = fin.readline().strip().split()
             logger.debug(" Record 8: Oil fill rates")
             logger.debug("  qfil          = {}".format(fill_rate))
-            logger.debug("  tdlay         = {}".format(tDelay))
+            logger.debug("  tdlay  [depr.]= {}".format(tDelay))
             logger.debug("  sep           = {}".format(coallescing_well_separation))
             if float(tDelay) != 0:
                 logger.warning("The TDLAY option should not be used. Ignoring.")
@@ -288,7 +288,7 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 logger.debug(" Record 10: Miscellaneous")
                 logger.debug("  zdis          = {}".format(dissolution_factor))
                 logger.debug("  zfin          = {}".format(insoluble_fraction))
-                logger.debug("  refdep        = {}".format(refdep))
+                logger.debug("  refdep [depr.]= {}".format(refdep))
                 logger.debug("  depth         = {}".format(depth))
                 if refdep != depth:
                     logger.warning("The REFDEP is no longer used, only DEPTH. Ignoring REFDEP.")
@@ -351,14 +351,12 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
 
 def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
     """Write a new-style SANSMIC scenario file (preferred extension is .toml)"""
-    sdict = scenario.to_dict()
+    sdict = scenario.to_dict(redundant)
     keys = [k for k in sdict.keys()]
     for k in keys:
-        if not redundant and k == "dissolution_factor" and sdict[k] == 1.0:
+        if not redundant and k == "coallescing-wells" and sdict[k] == 1:
             sdict[k] = None
-        if not redundant and k == "coallescing_wells" and sdict[k] == 1:
-            sdict[k] = None
-            sdict["well_separation"] = None
+            sdict["well-separation"] = None
         if sdict[k] is None:
             if redundant:
                 sdict[k] = ""
@@ -368,18 +366,18 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
             sdict[k] = sdict[k].name.lower().replace("_", "-")
     for ct, s in enumerate(sdict["stages"]):
         if not redundant and scenario.stages[ct].stop_condition == StopCondition.DURATION:
-            del s["stop_condition"]
-            del s["stop_value"]
+            del s["stop-condition"]
+            del s["stop-value"]
         if scenario.stages[ct].set_initial_conditions is False:
-            s["set_cavern_sg"] = None
-            s["set_interface_level"] = None
-            s["set_initial_conditions"] = None
+            s["set-cavern-sg"] = None
+            s["set-interface-level"] = None
+            s["set-initial-conditions"] = None
         elif scenario.stages[ct].set_initial_conditions is None:
-            s["set_cavern_sg"] = None
-            if not s["set_interface_level"] and redundant:
-                s["set_interface_level"] = 0
-        if s.get("simulation_mode", None) == SimulationMode.WITHDRAWAL:
-            s["product_injection_rate"] = None
+            s["set-cavern-sg"] = None
+            if not s["set-interface-level"] and redundant:
+                s["set-interface-level"] = 0
+        if s.get("simulation-mode", None) == SimulationMode.WITHDRAWAL:
+            s["product-injection-rate"] = None
         keys = [k for k in s.keys()]
         for k in keys:
             if not redundant and k in scenario.defaults and scenario.defaults.get(k, None) == s[k]:
@@ -392,8 +390,8 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
                     del s[k]
             elif isinstance(s[k], IntEnum):
                 s[k] = s[k].name.lower().replace("_", "-")
-        if not redundant and ct == 0 and "set_initial_conditions" in s:
-            del s["set_initial_conditions"]
+        if not redundant and ct == 0 and "set-initial-conditions" in s:
+            del s["set-initial-conditions"]
     name, ext = os.path.splitext(filename)
     if not ext:
         filename = filename + ".toml"
@@ -401,11 +399,11 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
     with open(filename, "w") as fout:
         if ext.lower() == ".toml":
             for k, v in sdict.items():
-                if k in ["stages", "defaults"]:
+                if k in ["stages", "defaults", "advanced"]:
                     continue
-                elif k == "geometry_data" and isinstance(v, dict):
+                elif k == "geometry-data" and isinstance(v, dict):
                     for k2, v2 in v.items():
-                        fout.write("geometry_data.{} = {}\n".format(k2, v2))
+                        fout.write("geometry-data.{} = {}\n".format(k2, v2))
                     continue
                 if isinstance(v, bool):
                     v = str(v).lower()
@@ -415,10 +413,27 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
                     v = repr(v.name.lower().replace("_", "-"))
                 fout.write("{} = {}\n".format(k, v))
 
+            if "advanced" in sdict:
+                fout.write("\n[advanced]\n")
+                for k, v in sdict["advanced"].items():
+                    if isinstance(v, bool):
+                        v = str(v).lower()
+                    elif isinstance(v, str):
+                        v = repr(v)
+                    elif isinstance(v, IntEnum):
+                        v = repr(v.name.lower().replace("_", "-"))
+                    fout.write("{} = {}\n".format(k, v))
+
             if len(sdict["defaults"]) > 0:
                 fout.write("\n[defaults]\n")
-                for k2, v2 in sdict["defaults"].items():
-                    fout.write("{} = {}\n".format(k2, v2))
+                for k, v in sdict["defaults"].items():
+                    if isinstance(v, bool):
+                        v = str(v).lower()
+                    elif isinstance(v, str):
+                        v = repr(v)
+                    elif isinstance(v, IntEnum):
+                        v = repr(v.name.lower().replace("_", "-"))
+                    fout.write("{} = {}\n".format(k, v))
 
             for s in sdict["stages"]:
                 fout.write("\n[[stages]]\n")

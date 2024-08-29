@@ -8,11 +8,12 @@
 
 """The core python classes for SANSMIC."""
 
+import logging
 import warnings
+from copy import deepcopy
 from dataclasses import InitVar, asdict, dataclass, field
 from enum import IntEnum
 from fractions import Fraction
-import logging
 from math import nan
 from types import NoneType
 from typing import Any, Dict, List, Union
@@ -25,23 +26,49 @@ logger = logging.getLogger("sansmic")
 has_ext = False
 try:
     from . import libsansmic as _ext
+
     has_ext = True
+
+
 except ImportError:
-    logger.critical('The C++ library is not installed. Conversions will work, but the main program will not run.')
+    logger.critical(
+        "The C++ library is not installed. Conversions will work, but the main program will not run."
+    )
     has_ext = False
+
     class _ext:
-        class _CModel: pass
-        class _CStage: pass
-        class _CResults: pass
+        class _CModel:
+            pass
+
+        class _CStage:
+            pass
+
+        class _CResults:
+            pass
+
         class _CGeometryFormat(IntEnum):
             blah = 1
+
         class _CRunMode(IntEnum):
             blah = 1
+
         CStage = _CStage
         CModel = _CModel
         CGeometryFormat = _CGeometryFormat
         CRunMode = _CRunMode
         CResults = _CResults
+
+
+def _rename_with_underscore(orig: dict, new: dict):
+    for k, v in orig.items():
+        k = k.lower().replace("-", "_")
+        new[k] = v
+
+
+def _rename_with_dash(orig: dict, new: dict):
+    for k, v in orig.items():
+        k = k.lower().replace("_", "-")
+        new[k] = v
 
 
 class SansmicConfigError(TypeError):
@@ -117,6 +144,7 @@ class GeometryFormat(IntEnum):
     LAYER_CAKE = 5
     """The geometry is provided in a 'layer-cake' style LAS file"""
 
+
 class SimulationMode(IntEnum):
     """The simulation mode determines which options are active for injection."""
 
@@ -141,6 +169,81 @@ class RateScheduleType(IntEnum):
     """Injection occurs at a constant rate of volume :class:`Units` per day."""
     DATAFILE = 2
     """Injection rate is specified in :class:`Units` per hour in a file."""
+
+
+@dataclass
+class AdvancedOptions:
+    absolute_error: float = None  #  1.0e-2
+    relative_error: float = None  #  1.0e-4
+    jet_model_version: int = None  #  1
+    plume_model_version: int = None  #  1
+    temperature_model_version: int = None  #  0
+    dissolution_factor: float = None  # 1.0
+    max_brine_sg: float = None  #  1.2019
+    solid_density: float = None  #  2.16
+    entrainment_coeff: float = None  #  0.09
+    molecular_diffusion: float = None  #  5.03e-5
+    eddy_coefficient: float = None  #  1.142e5
+    diffusion_beta: float = None  #  0.147
+
+    def __post_init__(self):
+        pass
+
+    @classmethod
+    def from_dict(cls, opts: dict) -> "AdvancedOptions":
+        """Create a new object from a dictionary of options.
+
+        This method differs from the __init__ constructor by automatically
+        converting non-underscore characters - e.g., ``-`` or ``.`` or `` ``
+        to underscores and changing keys to lower-case prior to creating
+        the object.
+
+        See also: :meth:`~StageDefinition.to_dict`
+
+        Parameters
+        ----------
+        opts : dict
+            The initialization values
+
+        Returns
+        -------
+        StageDefinition
+            the new stage
+        """
+        new_opts = dict()
+        _rename_with_underscore(opts, new_opts)
+        return cls(**new_opts)
+
+    def to_dict(self, keep_empty: bool = False):
+        """Convert the object's data to a dictionary of options.
+
+        This method differs from the :meth:`~dataclasses.asdict`
+        method by automatically converting underscore characters to
+        hyphens for a more readable dictionary. Specifically used
+        when creating TOML, JSON and YAML files.
+
+        See also: :meth:`~StageDefinition.from_dict`
+
+        Parameters
+        ----------
+        keep_empty : bool
+            Keep values set to None and set them to ``""``
+
+        Returns
+        -------
+        dict
+            the options dictionary
+        """
+        ret = dict()
+        _rename_with_dash(asdict(self), ret)
+        keys = list(ret.keys())
+        for k in keys:
+            if ret[k] is None:
+                if keep_empty:
+                    ret[k] = ""
+                else:
+                    del ret[k]
+        return ret
 
 
 @dataclass
@@ -176,59 +279,60 @@ class StageDefinition:
     brine_production_depth: float = None
     """The depth below surface/:term:`ZDP` where the end of the production string/casing/tubing is positioned."""
     brine_injection_rate: Union[float, str] = 0
-    """The meaning of this field is based on the type of data that is provided (a value of 0 means off).
+    """The meaning of this field is based on the type of data that is provided (a value of 0 means off)."""
+    # """
+    # float : constant rate
+    #     Injection occurs at a constant rate for the duration of the
+    #     :attr:`injection_duration`.
 
-    float : constant rate
-        Injection occurs at a constant rate for the duration of the
-        :attr:`injection_duration`.
-    
-    str : file path
-        Injection rates should be read from a file. The file can be any type that can
-        be read into a pd DataFrame. An 'index' column is optional, but if not provided, then all data is assumed to be pre-sorted. In addition to the 
-        'index' column, files may contain exactly one set of the following columns:
-        
-        ['rate', 'duration']
-            This style gives a list of rates and how long they should continue for.
-            Durations are provided in decimal hours. If the sum of durations is greater than :attr:`injection_duration`, an error will be raised. If the 
-            sum of durations is less than :attr:`injection_duration`, the remaining
-            time will be assumed to be no-flow.
-        
-        ['time', 'rate']
-            This style gives a list of new rate values that start at the given time 
-            after the start of the stage. The 'time' values must be increasing and
-            never duplicate. Times are in decimal hours since the start of the stage.
-            The last rate will be used up until the end of the 
-            :attr:`injection_duration`. If a time is given that is after the 
-            :attr:`injection_duration`, then an error will be raised.
+    # str : file path
+    #     Injection rates should be read from a file. The file can be any type that can
+    #     be read into a pd DataFrame. An 'index' column is optional, but if not provided,
+    #     then all data is assumed to be pre-sorted. In addition to the
+    #     'index' column, files may contain exactly one set of the following columns:
 
-        ['hourly']
-            This style specifies a new rate for each hour of the stage. There must be
-            a value specified for each hour of the :attr`injection_duration`, or an 
-            error will be raised.
+    #     ['rate', 'duration']
+    #         This style gives a list of rates and how long they should continue for.
+    #         Durations are provided in decimal hours. If the sum of durations is greater
+    #         than :attr:`injection_duration`, an error will be raised. If the
+    #         sum of durations is less than :attr:`injection_duration`, the remaining
+    #         time will be assumed to be no-flow.
 
-        The optional column ['sg'] can be provided to change the injection water/brine
-        specific gravity; however, if provided, it must contain a value for every row.
+    #     ['time', 'rate']
+    #         This style gives a list of new rate values that start at the given time
+    #         after the start of the stage. The 'time' values must be increasing and
+    #         never duplicate. Times are in decimal hours since the start of the stage.
+    #         The last rate will be used up until the end of the
+    #         :attr:`injection_duration`. If a time is given that is after the
+    #         :attr:`injection_duration`, then an error will be raised.
 
-        
-        If 'duration' and 'time' occur in the same file, an error will be raised.
-        If 'time', 'rate', or 'duration' occur in the same file as 'hourly', then
-        an error will be raised. 
-        
-        Columns with names other than those described above will be ignored.
+    #     ['hourly']
+    #         This style specifies a new rate for each hour of the stage. There must be
+    #         a value specified for each hour of the :attr`injection_duration`, or an
+    #         error will be raised.
 
-        .. attention::
+    #     The optional column ['sg'] can be provided to change the injection water/brine
+    #     specific gravity; however, if provided, it must contain a value for every row.
 
-            In all cases, a no-flow, leaching-only period will occur for
-            :attr:`rest_duration` hours **after** all injection data
-            is processed -- this means that if an injection file finishes with 0s
-            that there will be an additional :attr:`rest_duration` hours added to the 
-            end of the stage.
+    #     If 'duration' and 'time' occur in the same file, an error will be raised.
+    #     If 'time', 'rate', or 'duration' occur in the same file as 'hourly', then
+    #     an error will be raised.
 
-        .. warning::
+    #     Columns with names other than those described above will be ignored.
 
-            The same file cnnot be used for both brine injection and product
-            injection data.
-    """
+    #     .. attention::
+
+    #         In all cases, a no-flow, leaching-only period will occur for
+    #         :attr:`rest_duration` hours **after** all injection data
+    #         is processed -- this means that if an injection file finishes with 0s
+    #         that there will be an additional :attr:`rest_duration` hours added to the
+    #         end of the stage.
+
+    #     .. warning::
+
+    #         The same file cnnot be used for both brine injection and product
+    #         injection data.
+    # """
 
     set_initial_conditions: bool = None
     """Unlink initial cavern brine gravity and interface level from previous stage. 
@@ -309,6 +413,62 @@ class StageDefinition:
             self.set_cavern_sg = None
             self.set_interface_level = None
         super().__setattr__(name, value)
+
+    @classmethod
+    def from_dict(cls, opts: dict) -> "StageDefinition":
+        """Create a new object from a dictionary of options.
+
+        This method differs from the __init__ constructor by automatically
+        converting non-underscore characters - e.g., ``-`` or ``.`` or `` ``
+        to underscores and changing keys to lower-case prior to creating
+        the object.
+
+        See also: :meth:`~StageDefinition.to_dict`
+
+        Parameters
+        ----------
+        opts : dict
+            The initialization values
+
+        Returns
+        -------
+        StageDefinition
+            the new stage
+        """
+        new_opts = dict()
+        _rename_with_underscore(opts, new_opts)
+        return cls(**new_opts)
+
+    def to_dict(self, keep_empty: bool = False):
+        """Convert the object's data to a dictionary of options.
+
+        This method differs from the :meth:`~dataclasses.asdict`
+        method by automatically converting underscore characters to
+        hyphens for a more readable dictionary. Specifically used
+        when creating TOML, JSON and YAML files.
+
+        See also: :meth:`~StageDefinition.from_dict`
+
+        Parameters
+        ----------
+        keep_empty : bool
+            Keep values set to None and set them to ``""``
+
+        Returns
+        -------
+        dict
+            the options dictionary
+        """
+        ret = dict()
+        _rename_with_dash(asdict(self), ret)
+        keys = list(ret.keys())
+        for k in keys:
+            if ret[k] is None:
+                if keep_empty:
+                    ret[k] = ""
+                else:
+                    del ret[k]
+        return ret
 
     def validate(self):
         """Validate that all required options have been selected.
@@ -457,11 +617,6 @@ class StageDefinition:
                 )
             )
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the stage definition to a dictionary"""
-        ret = asdict(self)
-        return ret
-
     def _to_cstage(self) -> _ext.CStage:
         """Create a CStage object for the C++ interface."""
         self.validate()
@@ -470,7 +625,6 @@ class StageDefinition:
         stage.mode = _ext.CRunMode(int(self.simulation_mode))
         stage.print_interval = self.save_frequency
         stage.subsequent = 0 if self.set_initial_conditions else 1
-        stage.iResetGeo = 0
         stage.rest_duration = self.rest_duration
         stage.stop_value = (
             int(self.stop_condition) * abs(self.stop_value) if self.stop_condition else 0
@@ -508,7 +662,6 @@ class StageDefinition:
         stage.fill_rate = (
             self.product_injection_rate if self.product_injection_rate is not None else 0.0
         )
-        stage.tDelay = 0.0
         return stage
 
 
@@ -518,6 +671,8 @@ class Scenario:
 
     title: str = None
     """General title for the scenario."""
+    comments: str = """"""
+    """Comments about the scenario"""
     num_cells: int = None
     """Number of cells to use in the model."""
     geometry_data: Union[List[float], List[List[float]], str] = None
@@ -533,28 +688,25 @@ class Scenario:
     insolubles_ratio: float = 0.04
     """The volume ratio of insoluble material within the salt."""
     dissolution_factor: float = 1.0
-    """**Danger** modify the dissolution factor by a certain amount; leave this as 1.0."""
+    """**warning** modify the dissolution factor by a certain amount; leave this as 1.0."""
     coallescing_wells: int = 1
-    """Number of coallescing wells for cavern development modeling; leave as 1 for completed caverns."""
+    """**warning** number of coallescing wells for cavern development modeling; leave as 1 for completed caverns."""
     well_separation: float = 0.0
-    """The separation distance between wells for cavern development modeling."""
+    """**warning** the separation distance between wells for cavern development modeling."""
     units: Units = Units.FT_IN_BBL
     """The units used in describing the scenario."""
-    stages: List[StageDefinition] = field(default_factory=list)
-    """The activity stages to simulate."""
-
     defaults: Dict[str, Union[int, float]] = field(default_factory=dict)
     """Default values for a subset of stage attributes, see :attr:`StageDefinition.valid_default_keys`."""
-
-    def __post_init__(self):
-        converted_stages = list()
-        for stage in self.stages:
-            if isinstance(stage, dict):
-                stage = StageDefinition(**stage, defaults=self.defaults)
-            converted_stages.append(stage)
-        self.stages = converted_stages
+    advanced: AdvancedOptions = field(default_factory=AdvancedOptions)
+    """Advanced and/or uncommonly used options"""
+    stages: List[StageDefinition] = field(default=None)
+    """The activity stages to simulate."""
 
     def __setattr__(self, name, value):
+        """The setattr method is overloaded. IntEnum parameters are 
+        automatically converted from strings or integers and stages and
+        advanced options are converted to the appropriate classes if a 
+        dictionary is passed."""
         if isinstance(value, str) and value.strip() == "":
             value = None
         if name == "geometry_format" and not isinstance(value, GeometryFormat):
@@ -573,60 +725,94 @@ class Scenario:
                 value = Units[value.upper().replace(" ", "_").replace("-", "_")]
             else:
                 SansmicConfigError("Units cannot be of type {}".format(type(value)))
+        elif name == "advanced" and value is not None and not isinstance(value, AdvancedOptions):
+            if isinstance(value, dict):
+                value = AdvancedOptions.from_dict(value)
+            else:
+                raise TypeError("advanced cannot be a {}".format(type(value)))
+        # elif name == "stages" and (not isinstance(value, list) or value is None):
+        #     raise TypeError("stages cannot be a {}".format(type(value)))
+        elif name == "stages":
+            if not hasattr(self, "stages") or value is None:
+                value = list()
+            elif not hasattr(self, name) or self.stages is None:
+                converted_stages = list()
+                for stage in value:
+                    if isinstance(stage, dict):
+                        stage = StageDefinition(**stage, defaults=self.defaults)
+                    converted_stages.append(stage)
+                value = converted_stages
+            else:
+                TypeError("stages cannot set directly - please use add_stages")
         super().__setattr__(name, value)
 
-    def _to_cmodel(self, prefix="temp"):
-        """Create a C++ model object; in general, this should only be called internally."""
-        cmodel = _ext.CModel(prefix)
-        for stage_num, stage in enumerate(self.stages):
-            if stage_num == 0:
-                stage.set_initial_conditions = True
-            cstage = stage._to_cstage()
-            cstage.num_cells = self.num_cells
-            cstage.geometry_format = _ext.CGeometryFormat(int(self.geometry_format))
-            cstage.num_coallescing = self.coallescing_wells
-            cstage.cavern_height = self.cavern_height
-            cstage.ullage_standoff = self.ullage_standoff
-            cstage.coallescing_well_separation = self.well_separation
-            cstage.dissolution_factor = self.dissolution_factor
-            cstage.insoluble_fraction = self.insolubles_ratio
-            cstage.refDep = self.floor_depth
-            cstage.depth = self.floor_depth
-            if stage_num == 0:
-                # Add the geometry data
-                if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
-                    self.geometry_data, str
-                ):
-                    radii = list()
-                    with open(self.geometry_data, "r") as fin:
-                        for line in fin.readlines():
-                            if len(line.strip()) > 0:
-                                radii.append(float(line.strip()))
-                    cstage.radius_vector = radii
-                elif isinstance(self.geometry_data, dict):
-                    if "radii" in self.geometry_data:
-                        tmp = self.geometry_data["radii"].copy()
-                        tmp.insert(0, 0)
-                        cstage.radius_vector = tmp
-                        cstage.nData = len(self.geometry_data["radii"])
-                    if "depths" in self.geometry_data:
-                        tmp = self.geometry_data["depths"]
-                        tmp.insert(0, 0)
-                        cstage.depth_vector = tmp
-                        cstage.nData = len(self.geometry_data["depths"])
-                    if "volumes" in self.geometry_data:
-                        tmp = self.geometry_data["volumes"]
-                        tmp.insert(0, 0)
-                        cstage.volume_vector = tmp
-                        cstage.nData = len(self.geometry_data["volumes"])
-            # add the stage to the c++ model
-            cmodel.add_stage(cstage)
-        return cmodel
+    @classmethod
+    def from_dict(cls, opts: dict) -> "Scenario":
+        """Create a new object from a dictionary of options.
+
+        This method differs from the __init__ constructor by automatically
+        converting non-underscore characters - e.g., ``-`` or ``.`` or `` ``
+        to underscores and changing keys to lower-case prior to creating
+        the object.
+
+        See also: :meth:`~StageDefinition.to_dict`
+
+        Parameters
+        ----------
+        opts : dict
+            The initialization values
+
+        Returns
+        -------
+        StageDefinition
+            the new stage
+        """
+        new_opts = dict()
+        _rename_with_underscore(opts, new_opts)
+        return cls(**new_opts)
+
+    def to_dict(self, keep_empty: bool = False):
+        """Convert the object's data to a dictionary of options.
+
+        This method differs from the :meth:`~dataclasses.asdict`
+        method by automatically converting underscore characters to
+        hyphens for a more readable dictionary. Specifically used
+        when creating TOML, JSON and YAML files.
+
+        See also: :meth:`~StageDefinition.from_dict`
+
+        Parameters
+        ----------
+        keep_empty : bool
+            Keep values set to None and set them to ``""``
+
+        Returns
+        -------
+        dict
+            the options dictionary
+        """
+        ret = dict()
+        _rename_with_dash(asdict(self), ret)
+        ret["advanced"] = self.advanced.to_dict(keep_empty)
+        if len(ret["advanced"]) == 0:
+            del ret["advanced"]
+        del ret["stages"]
+        ret["stages"] = list()
+        for stage in self.stages:
+            ret["stages"].append(stage.to_dict(keep_empty))
+        keys = list(ret.keys())
+        for k in keys:
+            if ret[k] is None:
+                if keep_empty:
+                    ret[k] = ""
+                else:
+                    del ret[k]
+        return ret
 
     def new_stage(self, pos: int = None, **kwargs) -> StageDefinition:
-        """Add a new stage to the scenario in the optionally specified `pos` position
-        based on keyword arguments. Passes :attr:`Scenario.defaults` unless a separate
-        `defaults` dictionary is passed as one of the keyword arguments.
+        """Add a new stage in the optionally-specified `pos` position, and create it
+        based on keyword arguments. Passes existing :attr:`~Scenario.defaults` 
+        unless a separate `defaults` dictionary is passed as one of the keyword arguments.
 
         Parameters
         ----------
@@ -634,13 +820,13 @@ class Scenario:
             The position in the stages list to insert the stage,
             by default None which will append to the end.
         kwargs : keyword arguments
-            Any valid keyword argument for a StageDefinition object can be passed.
+            Any valid keyword argument for a :class:`StageDefinition` object
 
         Returns
         -------
         StageDefinition
-            new stage created from the keyword arguments which has already been
-            inserted into the proper location
+            new stage created from the keyword arguments. It will have been
+            added into the stage list in the proper position.
         """
         defaults = kwargs.pop("defaults", self.defaults)
         stage = StageDefinition(defaults=defaults, **kwargs)
@@ -650,54 +836,116 @@ class Scenario:
             self.stages.insert(pos, stage)
         return stage
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the scenario definition to a dictionary"""
-        ret = asdict(self)
-        return ret
-
-    def new_simulation(self, prefix="temp") -> "Simulator":
+    def new_simulation(self, prefix="temp", verbosity=0) -> "Simulator":
         """Create a new :class:`Simulator` object.
 
         Parameters
         ----------
         prefix : str
-            The prefix to use when creating output files.
+            The prefix to use when creating output files, by default temp.
+        verbosity : int
+            A verbosity level to pass to the C++ model, by default 0.
         """
-        return Simulator(self, prefix)
+        return Simulator(self, prefix, verbosity)
+
+    def _to_cmodel(self, prefix="temp"):
+        """Create a C++ model object; in general, this should only be called internally."""
+        cmodel = _ext.CModel(prefix)
+        cmodel._set_dissolution_factor(self.dissolution_factor)
+        cmodel._set_fraction_insol(self.insolubles_ratio)
+        cmodel._set_num_cells(self.num_cells)
+        cmodel._set_cavern_height(self.cavern_height)
+        cmodel._set_floor_depth(self.floor_depth)
+        cmodel._geometry_format = _ext.CGeometryFormat(int(self.geometry_format))
+        if self.advanced.absolute_error is not None:
+            cmodel._set_solver_abserr(self.advanced.absolute_error)
+        if self.advanced.diffusion_beta is not None:
+            cmodel._set_diffusion_beta(self.advanced.diffusion_beta)
+        if self.advanced.dissolution_factor is not None:
+            cmodel._set_dissolution_factor(self.advanced.dissolution_factor)
+        if self.advanced.eddy_coefficient is not None:
+            cmodel._set_diffusion_D_0(self.advanced.eddy_coefficient)
+        if self.advanced.entrainment_coeff is not None:
+            cmodel._set_entrainment_alpha(self.advanced.entrainment_coeff)
+        if self.advanced.jet_model_version is not None:
+            cmodel._set_jet_model_version(self.advanced.jet_model_version)
+        # if self.advanced.max_brine_sg is not None:
+        #     cmodel._salt.set_saturated_sg(self.advanced.max_brine_sg)
+        if self.advanced.molecular_diffusion is not None:
+            cmodel._set_diffusion_D_mol(self.advanced.molecular_diffusion)
+        if self.advanced.plume_model_version is not None:
+            cmodel._set_plume_model_version(self.advanced.plume_model_version)
+        if self.advanced.relative_error is not None:
+            cmodel._set_solver_relerr(self.advanced.relative_error)
+        # if self.advanced.solid_density is not None:
+        #     cmodel._salt.set_solid_density(self.advanced.solid_density)
+        if self.advanced.temperature_model_version is not None:
+            cmodel._set_temperature_model_version(self.advanced.temperature_model_version)
+        if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
+            self.geometry_data, str
+        ):
+            radii = list()
+            with open(self.geometry_data, "r") as fin:
+                for line in fin.readlines():
+                    if len(line.strip()) > 0:
+                        radii.append(float(line.strip()))
+            cmodel._radius_vector = radii
+        elif isinstance(self.geometry_data, dict):
+            if "radii" in self.geometry_data:
+                tmp = self.geometry_data["radii"].copy()
+                tmp.insert(0, 0)
+                cmodel._radius_vector = tmp
+            if "depths" in self.geometry_data:
+                tmp = self.geometry_data["depths"]
+                tmp.insert(0, 0)
+                cmodel._depth_vector = tmp
+            if "volumes" in self.geometry_data:
+                tmp = self.geometry_data["volumes"]
+                tmp.insert(0, 0)
+                cmodel._volume_vector = tmp
+        for stage_num, stage in enumerate(self.stages):
+            if stage_num == 0:
+                stage.set_initial_conditions = True
+            cstage = stage._to_cstage()
+            cstage.num_coallescing = self.coallescing_wells
+            cstage.ullage_standoff = self.ullage_standoff
+            cstage.coallescing_well_separation = self.well_separation
+            cmodel.add_stage(cstage)
+        return cmodel
 
 
-class StageIterator:
-    """Iterator over each stage within an open simulation.
+# class SimByStageIterator:
+#     """Iterator over each stage within an open simulation.
 
-    Examples
-    --------
-    >>> stages: StageIterator = sim.stages()
-    >>> for stage in stages:
-    ...     pass
-    >>> res = sim.get_results()
-    """
+#     Examples
+#     --------
+#     >>> stages: StageIterator = sim.stages()
+#     >>> for stage in stages:
+#     ...     pass
+#     >>> res = sim.get_results()
+#     """
 
-    def __init__(self, sim: "Simulator"):
-        self._sim = sim
-        self.__model_stages = self._sim.num_stages
-        self.__current_stage = 0
+#     def __init__(self, sim: "Simulator"):
+#         self._sim = sim
+#         self.__model_stages = self._sim.num_stages
+#         self.__current_stage = 0
 
-    def __iter__(self):
-        self.__model_stages = self._sim.num_stages
-        self.__current_stage = 0
-        return self
+#     def __iter__(self):
+#         self.__model_stages = self._sim.num_stages
+#         self.__current_stage = 0
+#         return self
 
-    def __next__(self):
-        self._sim._has_run = True
-        if self.__current_stage < self.__model_stages:
-            self._sim._run_stage(self.__current_stage)
-            self.__current_stage = self.__current_stage + 1
-            return self.__current_stage
-        else:
-            raise StopIteration
+#     def __next__(self):
+#         self._sim._has_run = True
+#         if self.__current_stage < self.__model_stages:
+#             self._sim._run_stage()
+#             self.__current_stage = self.__current_stage + 1
+#             return self.__current_stage
+#         else:
+#             raise StopIteration
 
 
-class StepIterator:
+class StepwiseIterator:
     """Iterator over each step within an open simulation.
 
     Examples
@@ -724,17 +972,12 @@ class StepIterator:
     def __next__(self):
         self._sim._has_run = True
         if self.__current_stage < self.__model_stages:
-            cs = self._sim._run_step(self.__current_stage)
-            self.__current_stage = cs
+            stage_done = self._sim._run_step()
+            self.__current_stage = self.__current_stage + stage_done
             self.__current_step = self.__current_step + 1
-            return self.__current_step
+            return self.__current_stage, self.__current_step
         else:
             raise StopIteration
-
-    @property
-    def stage(self) -> int:
-        """The current stage number."""
-        return self.__current_stage
 
 
 class Simulator:
@@ -744,8 +987,8 @@ class Simulator:
     ----------
     scenario : Scenario
         The scenario to run
-    prefix : str
-        The output file prefix to use
+    prefix : str, optional
+        The output file prefix to use, by default "temp"
 
 
     Examples
@@ -756,26 +999,70 @@ class Simulator:
 
     """
 
-    def __init__(self, scenario: Union[Scenario, _ext.CModel], prefix="temp"):
+    def __init__(self, scenario: Union[Scenario, _ext.CModel], prefix="temp", verbosity=0):
         self._scenario = None
         self._prefix = prefix
         self._cmodel = None
         if isinstance(scenario, Scenario):
             self._scenario = scenario
         else:
-            raise TypeError("Invalid scenario type")
+            raise TypeError("Invalid scenario")
         self._has_run = False
         self._is_open = False
         self._is_initialized = False
         self._is_finalized = False
+        self.__stepwise = None
+        self.__results = None
 
     def __enter__(self):
+        """The simulator context manager entry point.
+
+        Examples
+        --------
+        The simulator can be created using context manager style "with-as"
+        statements to automatically close the C++ model when the run is completed.
+        This can be accomplished by directly creating the simulator object
+        from the class or by using the :meth:`~Scenario.new_simulation` method.
+
+        .. code:: python
+            :caption: Creating a simulator object directly
+
+            results = None
+            with sansmic.Simulator(scenario, prefix='run13') as sim:
+                sim.run()
+                results = sim.get_results()
+
+        or
+
+        .. code:: python
+            :caption: Creating a simulator object using the scenario
+
+            results = None
+            with scenario.new_simulation('run14') as sim:
+                sim.run()
+                results = sim.get_results()
+
+        .. note::
+
+            Remember to get the results before you exit the context.
+
+        """
         self.open(self._prefix)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
-        pass
+
+    @property
+    def steps(self) -> StepwiseIterator:
+        """Get a generator that will run each step of each stage in turn."""
+        if not self._is_open or self._cmodel is None:
+            raise RuntimeError("The simulation is not open")
+        if self.__stepwise is not None:
+            raise RuntimeError("The simulation is already running")
+        self._initialize()
+        self.__stepwise = StepwiseIterator(self)
+        return self.__stepwise
 
     def __del__(self):
         if self._is_open or self._cmodel is not None:
@@ -836,14 +1123,14 @@ class Simulator:
         self._has_run = False
         self._is_finalized = False
 
-    def _run_stage(self, stage_num: int):
+    def _run_stage(self):
         """Run the specified stage, all steps."""
-        stage_num = self._cmodel.run_stage(stage_num)
+        stage_num = self._cmodel.run_next_stage()
         return stage_num
 
-    def _run_step(self, stage_num: int):
+    def _run_step(self):
         """Run the next timestep in the specified stage."""
-        step_num = self._cmodel.run_step(stage_num)
+        step_num = self._cmodel.run_next_step()
         return step_num
 
     def _finalize(self):
@@ -871,43 +1158,41 @@ class Simulator:
             self._prefix = prefix
         if self._cmodel is None and self._scenario is not None:
             self._cmodel = self._scenario._to_cmodel(prefix)
+        self.__results = None
         self._is_open = True
 
     def close(self):
         """Close and garbage collect the C++ model object."""
         if not self._is_finalized and self._is_initialized:
             self._finalize()
-        self._cmodel.close_outfiles()
+        data = self._cmodel._get_results()
+        self.__results = Results(data)
+        self.__stepwise = None
         del self._cmodel
         self._cmodel = None
         self._is_open = False
         self._is_finalized = False
         self._is_initialized = False
 
-    def run(self):
+    def run_sim(self):
         """Run the complete simulation; requires the Simulator to have been opened first."""
         if self._cmodel is None:
             raise RuntimeError("The simulation is not open")
+        if self.__stepwise is not None:
+            raise RuntimeError("The simulation is already running in stepwise mode")
         self._is_finalized = False
         self._is_initialized = True
-        self._cmodel.run()
+        self._cmodel.run_sim()
         self._has_run = True
         self._is_initialized = True
         self._is_finalized = True
 
-    def stages(self) -> StageIterator:
-        """Get a generator that will run each stage in turn."""
-        if not self._is_open or self._cmodel is None:
-            raise RuntimeError("The simulation is not open")
-        self._initialize()
-        return StageIterator(self)
-
-    def steps(self) -> StepIterator:
-        """Get a generator that will run each step of each stage in turn."""
-        if not self._is_open or self._cmodel is None:
-            raise RuntimeError("The simulation is not open")
-        self._initialize()
-        return StepIterator(self)
+    # def stages(self) -> SimByStageIterator:
+    #     """Get a generator that will run each stage in turn."""
+    #     if not self._is_open or self._cmodel is None:
+    #         raise RuntimeError("The simulation is not open")
+    #     self._initialize()
+    #     return SimByStageIterator(self)
 
     def get_current_state(self) -> "Results":
         """Get the current state of the model as a single-timestep results object."""
@@ -917,17 +1202,13 @@ class Simulator:
         results = Results(data)
         return results
 
-    def get_results(self) -> "Results":
-        """Get the results for an entire simulation."""
-        if self._cmodel is None:
-            raise RuntimeError(
-                "The simulation is already closed; results must be retrieved prior to closing the simulation"
-            )
-        if not self._has_run:
-            raise RuntimeError("No results exist - the simulation has not been run/stages/steps.")
-        data = self._cmodel._get_results()
-        results = Results(data)
-        return results
+    @property
+    def results(self) -> "Results":
+        """The results for an entire simulation."""
+        if not self._has_run and self.__results is None:
+            logger.critical("Simulation incomplete - use get_current_state to get partial results")
+            return None
+        return self.__results
 
 
 class Results:
@@ -943,244 +1224,72 @@ class Results:
 
     def __init__(self, data: _ext.CResults) -> None:
         self._data = data
-        self._t_index = np.arange(1, len(self._data.t) + 1)
-        self._n_index = np.arange(1, len(self._data.r[0]) + 1)
+        self.z = pd.Series(data.z_0, name="depth")
+        self.h = pd.Series(data.h_0, name="height")
+        self.r_0 = pd.Series(data.r_0, name="radius")
+        self.t = pd.Series(data.t, name="time")
+        self.step = pd.Series(data.step, name="step")
+        self.summary = pd.DataFrame.from_dict(
+            {
+                "t_h": self.t,
+                "t_d": self.t / 24.0,
+                "step": data.step,
+                "stage": data.stage,
+                "phase": data.phase,
+                "i_inj": data.injCell,
+                "i_prod": data.prodCell,
+                "i_plume": data.plumCell,
+                "i_obi": data.obiCell,
+                "err_ode": data.err,
+                "z_inj": data.z_inj,
+                "z_prod": data.z_prod,
+                "z_plume": data.z_plm,
+                "z_obi": data.z_obi,
+                "z_insol": data.z_insol,
+                "h_insol": data.h_insol,
+                "l_jet": data.l_jet,
+                "u_jet": data.u_jet,
+                "r_jet": data.r_jet,
+                "V_inj": data.V_injTot,
+                "V_fill": data.V_fillTot,
+                "V_cav": data.V_cavTot,
+                "V_insol": data.V_insolTot,
+                "V_vented": data.V_insolVent,
+                "Q_out": data.Q_out,
+                "sg_out": data.sg_out,
+                "sg_ave": data.sg_cavAve,
+                "dt_h": data.dt,
+            },
+        )
+        # self.summary.set_index(self.t, inplace=True, drop=True)
+        self.r = pd.DataFrame(data.r, columns=self.z).T.sort_index(ascending=True)
+        self.dr = pd.DataFrame(data.dr_0, columns=self.z).T.sort_index(ascending=True)
+        self.sg = pd.DataFrame(data.sg, columns=self.z).T.sort_index(ascending=True)
+        self.theta = pd.DataFrame(data.theta, columns=self.z).T.sort_index(ascending=True)
+        self.Q_inj = pd.DataFrame(data.Q_inj, columns=self.z).T.sort_index(ascending=True)
+        self.V = pd.DataFrame(data.V, columns=self.z).T.sort_index(ascending=True)
+        self.f_dis = pd.DataFrame(data.f_dis, columns=self.z).T.sort_index(ascending=True)
+        self.f_flag = pd.DataFrame(data.f_flag, columns=self.z, dtype=int).T.sort_index(
+            ascending=True
+        )
+        self.xincl = pd.DataFrame(data.xincl, columns=self.z).T.sort_index(ascending=True)
+        self.amd = pd.DataFrame(data.amd, columns=self.z).T.sort_index(ascending=True)
+        self.D_coeff = pd.DataFrame(data.D_coeff, columns=self.z).T.sort_index(ascending=True)
+        self.dC_dz = pd.DataFrame(data.dC_dz, columns=self.z).T.sort_index(ascending=True)
+        self.C_old = pd.DataFrame(data.C_old, columns=self.z).T.sort_index(ascending=True)
+        self.C_new = pd.DataFrame(data.C_new, columns=self.z).T.sort_index(ascending=True)
+        self.dC_dt = pd.DataFrame(data.dC, columns=self.z).T.sort_index(ascending=True)
+        self.dr_dt = pd.DataFrame(data.dr, columns=self.z).T.sort_index(ascending=True)
+        self.C_plm = pd.DataFrame(data.C_plm, columns=self.z).T.sort_index(ascending=True)
+        self.u_plm = pd.DataFrame(data.u_plm, columns=self.z).T.sort_index(ascending=True)
+        self.r_plm = pd.DataFrame(data.r_plm, columns=self.z).T.sort_index(ascending=True)
 
     def __repr__(self):
         return "<Results: from {:.3g} to {:.3g} d ({:d} stages)>".format(
-            self._data.t[0] / 24.0,
-            self._data.t[-1] / 24.0,
-            max(self._data.stage) - min(self._data.stage) + 1,
+            self.t.iloc[0] / 24.0,
+            self.t.iloc[-1] / 24.0,
+            max(self.summary.stage) - min(self.summary.stage) + 1,
         )
-
-    def get_timeseries_data(self) -> pd.DataFrame:
-        """Get the timeseries of summary results as a dataframe"""
-        return pd.DataFrame.from_dict(
-            {
-                "time": self.t(),
-                "days": self.t() / 24.0,
-                "convergence": self.err(),
-                "cavern volume": self.V_cavTot(),
-                "insolubles volume": self.V_insolTot(),
-                "insolubles vented": self.V_insolVent(),
-                "water injected": self.V_injTot(),
-                "oil injected": self.V_fillTot(),
-                "output sg": self.sg_out(),
-                "cavern sg": self.sg_cavAve(),
-                "insolubles depth": self.z_insol(),
-                "injection depth": self.z_inj(),
-                "production depth": self.z_prod(),
-                "plume depth": self.z_plm(),
-                "obi depth": self.z_obi(),
-                "production rate": self.Q_out(),
-                "stage": self.stage(),
-                "phase": self.phase(),
-                "time step": self.dt(),
-                "injection cell": self.injCell(),
-                "production cell": self.prodCell(),
-                "plume cell": self.plmCell(),
-                "obi cell": self.obiCell(),
-                "jet length": self.l_jet(),
-                "jet velocity": self.u_jet(),
-                "jet radius": self.r_jet(),
-            }
-        )
-
-    def z_0(self) -> pd.Series:
-        """node depth, in ft"""
-        return pd.Series(self._data.z_0, index=self._n_index, name="depth")
-
-    def h_0(self) -> pd.Series:
-        """node height above original floor, in ft"""
-        return pd.Series(self._data.h_0, index=self._n_index, name="height")
-
-    def r_0(self) -> pd.Series:
-        """initial cavern radius, in ft"""
-        return pd.Series(self._data.r_0, index=self._n_index, name="radius")
-
-    def t(self) -> pd.Series:
-        """time of each row of time-based results"""
-        return pd.Series(self._data.t, index=self._t_index, name="time")
-
-    def stage(self) -> pd.Series:
-        """stage number"""
-        return pd.Series(self._data.stage, index=self._t_index, dtype=int, name="stage")
-
-    def phase(self) -> pd.Series:
-        """phase (0=static, 1=dynamic)"""
-        return pd.Series(self._data.phase, index=self._t_index, dtype=int, name="phase")
-
-    def injCell(self) -> pd.Series:
-        """injection cell index"""
-        return pd.Series(self._data.injCell, index=self._t_index, dtype=int, name="injection cell")
-
-    def prodCell(self) -> pd.Series:
-        """production cell index"""
-        return pd.Series(
-            self._data.prodCell, index=self._t_index, dtype=int, name="production cell"
-        )
-
-    def obiCell(self) -> pd.Series:
-        """cell containing oil blanket interface"""
-        return pd.Series(self._data.obiCell, index=self._t_index, dtype=int, name="obi cell")
-
-    def plmCell(self) -> pd.Series:
-        """cell containing plume stagnation level"""
-        return pd.Series(self._data.plumCell, index=self._t_index, dtype=int)
-
-    def err(self) -> pd.Series:
-        """mass ballance error calculation"""
-        return pd.Series(self._data.err, index=self._t_index, name="convergence")
-
-    def z_obi(self) -> pd.Series:
-        """depth of blanket interface"""
-        return pd.Series(self._data.z_obi, index=self._t_index, name="obi depth")
-
-    def z_inj(self) -> pd.Series:
-        """depth of injection cell"""
-        return pd.Series(self._data.z_inj, index=self._t_index, name="injection depth")
-
-    def z_prod(self) -> pd.Series:
-        """depth of production cell"""
-        return pd.Series(self._data.z_prod, index=self._t_index, name="production depth")
-
-    def z_plm(self) -> pd.Series:
-        """depth of plume stagnation cell"""
-        return pd.Series(self._data.z_plm, index=self._t_index, name="plume depth")
-
-    def z_insol(self) -> pd.Series:
-        """depth of top of insolubles"""
-        return pd.Series(self._data.z_insol, index=self._t_index, name="insolubles depth")
-
-    def h_insol(self) -> pd.Series:
-        """height of insolubles above original floor"""
-        return pd.Series(self._data.h_insol, index=self._t_index, name="insolubles height")
-
-    def l_jet(self) -> pd.Series:
-        """length of injection jet"""
-        return pd.Series(self._data.l_jet, index=self._t_index, name="jet length")
-
-    def r_jet(self) -> pd.Series:
-        """velocity of injection jet"""
-        return pd.Series(self._data.r_jet, index=self._t_index, name="jet radius")
-
-    def u_jet(self) -> pd.Series:
-        """radius of injection jet"""
-        return pd.Series(self._data.u_jet, index=self._t_index, name="jet velocity")
-
-    def V_injTot(self) -> pd.Series:
-        """total injected water volume (bbl)"""
-        return pd.Series(self._data.V_injTot, index=self._t_index, name="water injected")
-
-    def V_fillTot(self) -> pd.Series:
-        """total injected (+) or withdrawn (-) oil volume (bbl)"""
-        return pd.Series(self._data.V_fillTot, index=self._t_index, name="oil injected")
-
-    def V_cavTot(self) -> pd.Series:
-        """total cavern volume (bbl)"""
-        return pd.Series(self._data.V_cavTot, index=self._t_index, name="cavern volume")
-
-    def V_insolTot(self) -> pd.Series:
-        """total volume of insolubles (bbl)"""
-        return pd.Series(self._data.V_insolTot, index=self._t_index, name="insolubles volume")
-
-    def V_insolVent(self) -> pd.Series:
-        """volume of insolubles vented (bbl)"""
-        return pd.Series(self._data.V_insolVent, index=self._t_index, name="insolubles vented")
-
-    def Q_out(self) -> pd.Series:
-        """current brine exiting cavern (bbl/d)"""
-        return pd.Series(self._data.Q_out, index=self._t_index, name="production rate")
-
-    def sg_out(self) -> pd.Series:
-        """current brine concentration exiting cavern (sg)"""
-        return pd.Series(self._data.sg_out, index=self._t_index, name="output sg")
-
-    def sg_cavAve(self) -> pd.Series:
-        """current average concentration in brine (sg)"""
-        return pd.Series(self._data.sg_cavAve, index=self._t_index, name="cavern sg")
-
-    def dt(self) -> pd.Series:
-        """the calculation timestep used"""
-        return pd.Series(self._data.dt, index=self._t_index, name="time step")
-
-    def r(self) -> pd.DataFrame:
-        """current radius (ft)"""
-        return pd.DataFrame(self._data.r, index=self._t_index, columns=self._n_index)
-
-    def dr(self) -> pd.DataFrame:
-        """change in radius since start of simulation (ft)"""
-        return pd.DataFrame(self._data.dr_0, index=self._t_index, columns=self._n_index)
-
-    def sg(self) -> pd.DataFrame:
-        """current concentration (sg)"""
-        return pd.DataFrame(self._data.sg, index=self._t_index, columns=self._n_index)
-
-    def theta(self) -> pd.DataFrame:
-        """current wall angle (deg)"""
-        return pd.DataFrame(self._data.theta, index=self._t_index, columns=self._n_index)
-
-    def Q_inj(self) -> pd.DataFrame:
-        """current inflow (bbl/d)"""
-        return pd.DataFrame(self._data.Q_inj, index=self._t_index, columns=self._n_index)
-
-    def V(self) -> pd.DataFrame:
-        """current volume of cell defined by node (bbl)"""
-        return pd.DataFrame(self._data.V, index=self._t_index, columns=self._n_index)
-
-    def f_dis(self) -> pd.DataFrame:
-        """current dissolution factor, including adjustments"""
-        return pd.DataFrame(self._data.f_dis, index=self._t_index, columns=self._n_index)
-
-    def f_flag(self) -> pd.DataFrame:
-        """current dissolution process adjustments flag"""
-        return pd.DataFrame(
-            self._data.f_flag, index=self._t_index, columns=self._n_index, dtype=int
-        )
-
-    def xincl(self) -> pd.DataFrame:
-        """current wall angle adjustment factor"""
-        return pd.DataFrame(self._data.xincl, index=self._t_index, columns=self._n_index)
-
-    def amd(self) -> pd.DataFrame:
-        """debug variable"""
-        return pd.DataFrame(self._data.amd, index=self._t_index, columns=self._n_index)
-
-    def D_coeff(self) -> pd.DataFrame:
-        """current diffusion coefficient in use at node depth"""
-        return pd.DataFrame(self._data.D_coeff, index=self._t_index, columns=self._n_index)
-
-    def dC_dz(self) -> pd.DataFrame:
-        """vertical concentration gradient (sg)"""
-        return pd.DataFrame(self._data.dC_dz, index=self._t_index, columns=self._n_index)
-
-    def C_old(self) -> pd.DataFrame:
-        """previous step concentration (sg)"""
-        return pd.DataFrame(self._data.C_old, index=self._t_index, columns=self._n_index)
-
-    def C_new(self) -> pd.DataFrame:
-        """current concentration (sg)"""
-        return pd.DataFrame(self._data.C_new, index=self._t_index, columns=self._n_index)
-
-    def dC_dt(self) -> pd.DataFrame:
-        """change in concentration over time"""
-        return pd.DataFrame(self._data.dC, index=self._t_index, columns=self._n_index)
-
-    def dr_dt(self) -> pd.DataFrame:
-        """current wall recession rate (ft)"""
-        return pd.DataFrame(self._data.dr, index=self._t_index, columns=self._n_index)
-
-    def C_plm(self) -> pd.DataFrame:
-        """concentration within plume at node depth"""
-        return pd.DataFrame(self._data.C_plm, index=self._t_index, columns=self._n_index)
-
-    def u_plm(self) -> pd.DataFrame:
-        """plume velocity at node depth"""
-        return pd.DataFrame(self._data.u_plm, index=self._t_index, columns=self._n_index)
-
-    def r_plm(self) -> pd.DataFrame:
-        """plume radius at node depth"""
-        return pd.DataFrame(self._data.r_plm, index=self._t_index, columns=self._n_index)
 
 
 class _OutDataBlock:
@@ -1222,6 +1331,7 @@ class _OutDataBlock:
         self.C_plm = list()
         self.u_plm = list()
         self.r_plm = list()
+        self.h_insol = None
         self.V_cavTot = None
         self.Q_out = None
         self.sg_out = None
@@ -1233,6 +1343,7 @@ class _OutDataBlock:
         self.V_ullage = None
         self.V_usable = None
         self.err = None
+        self.step = None
 
 
 class _OutputData(_OutDataBlock):
