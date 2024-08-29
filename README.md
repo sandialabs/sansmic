@@ -35,25 +35,32 @@ if you are building this from scratch, the authors assume you will
 be okay with that :grin: )
 
 
-#### PyPI
+#### PyPI wheels
 To install a pre-compiled version of sansmic, use the pip command
 
     python -m pip install sansmic
 
 
-#### Download a wheel
-
-
 #### Build from source
+To download and build from source, you should clone the repository
+(or, fork sansmic and clone your repository) and then install using
+the editable (-e) flag.
+
+    git clone https://github.com/sandialabs/sansmic.git
+    cd sansmic
+    python -m pip install -e .
 
 
 ### Usage
-
 Once installed, you can use
 
     sansmic --help
 
-to get help on how to run sansmic from the command line.
+and
+
+    sansmic-convert --help
+
+to get help on how to run sansmic commands from the command line.
 For more detailed usage and API information, please see
 [our documentation][docs].
 
