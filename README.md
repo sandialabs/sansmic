@@ -1,6 +1,6 @@
 ![Lines of code](https://sloc.xyz/github/sandialabs/sansmic/?category=code)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9399/badge)](https://www.bestpractices.dev/projects/9399)
 
 ## SANSMIC
 
