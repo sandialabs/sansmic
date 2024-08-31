@@ -9,7 +9,7 @@
 """
 The SANSMIC main program.
 
-This submodule provides the hook for the command line programs ``sansmic`` 
+This submodule provides the hook for the command line programs ``sansmic``
 and ``sansmic-convert``.
 
 """
@@ -48,12 +48,14 @@ def main():
         prog="sansmic",
         description=f"A solution mining code. v{__version__}",
     )
-    parser.add_argument("datafile", metavar="INPUTFILE", help="the SANSMIC input file to use")
+    parser.add_argument(
+        "datafile", metavar="INPUTFILE", help="the SANSMIC input file to use"
+    )
     outp = parser.add_argument_group(
         "Output options",
         """By default, only warnings will be output to the console, using
 --quiet will turn these off. Using --verbose will change the behavior up to
-three times. 1: turn on logging INFO level output. 2: output a summary of 
+three times. 1: turn on logging INFO level output. 2: output a summary of
 results at the end of each stage, and use a progress bar. 3: output summary
 results every simulation day. Using --debug will set the logging level to
 DEBUG instead of INFO and automatically set verbosity to 3. These options
@@ -103,7 +105,7 @@ are mutually exclusive.
         if args.quiet or not args.verbose:
             logger.debug("Running in batch mode")
             if not args.quiet:
-                print('Running sansmic in batch mode from '.format(repr(datafile)))
+                print("Running sansmic in batch mode from ".format(repr(datafile)))
             sim.run_sim()
         else:
             logger.debug("Running in stepwise mode")
@@ -114,10 +116,16 @@ are mutually exclusive.
             day_size = [int(round(24.0 / dt)) for dt in dt_stage]
             t_stage = [s.injection_duration + s.rest_duration for s in model.stages]
             t_inject = [s.injection_duration for s in model.stages]
-            stage_sizes = [int(round(t_stage[ct] / dt_stage[ct])) for ct in range(n_stages)]
+            stage_sizes = [
+                int(round(t_stage[ct] / dt_stage[ct])) for ct in range(n_stages)
+            ]
             n_steps = sum(stage_sizes)
             p_freq = model.stages[last_stage].save_frequency
-            print('Running sansmic scenario: {}'.format(datafile if not model.title else model.title))
+            print(
+                "Running sansmic scenario: {}".format(
+                    datafile if not model.title else model.title
+                )
+            )
             for stage, step in sim.steps:
                 if last_stage != stage:
                     if stage >= len(model.stages):
@@ -139,7 +147,7 @@ are mutually exclusive.
                                 length=60,
                                 decimals=1,
                             )
-                            print('All stages complete.')
+                            print("All stages complete.")
                     else:
                         last_stage = stage
                         last_step = step
@@ -174,8 +182,12 @@ are mutually exclusive.
         logger.debug("Simulation complete")
     res = sim.results
     if not args.quiet:
-        print('Final results:')
-        print((res.summary.iloc[[0,-1],[1,3,13,15,19,20,21,26]]).to_markdown(index=False))
+        print("Final results:")
+        print(
+            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_markdown(
+                index=False
+            )
+        )
         summary = res.summary.to_markdown(index=False)
         print(res.summary)
     logger.debug("Sansmic complete")
@@ -187,7 +199,9 @@ def convert():
         prog="sansmic-convert",
         description=f"Convert old SANSMIC DAT files to new sansmic scenario files. v{__version__}",
     )
-    parser.add_argument("infile", metavar="OLD_FILE", help="the SANSMIC input file to convert")
+    parser.add_argument(
+        "infile", metavar="OLD_FILE", help="the SANSMIC input file to convert"
+    )
     parser.add_argument(
         "outfile",
         metavar="NEW_FILE",

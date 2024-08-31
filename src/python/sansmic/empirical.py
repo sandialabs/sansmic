@@ -9,7 +9,7 @@
 """
 The values in this module are determined empirically and taken from
 published research. Among the most significant data included here
-is the table of water properties by weight-percent NaCl, temperature, 
+is the table of water properties by weight-percent NaCl, temperature,
 and density. See :cite:t:`kaufman60sodium` and :cite:t:`lide2000crc`.
 """
 

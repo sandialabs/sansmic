@@ -9,7 +9,14 @@
 """SANSMIC package"""
 __version__ = "1.0.0"
 
-from sansmic.io import (read_classic_out_ddl, read_dat, read_scenario,
-                        write_scenario)
-from sansmic.model import (RateScheduleType, Results, Scenario, SimulationMode,
-                           Simulator, StageDefinition, StopCondition, Units)
+from sansmic.io import read_classic_out_ddl, read_dat, read_scenario, write_scenario
+from sansmic.model import (
+    RateScheduleType,
+    Results,
+    Scenario,
+    SimulationMode,
+    Simulator,
+    StageDefinition,
+    StopCondition,
+    Units,
+)

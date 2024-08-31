@@ -146,10 +146,10 @@ class SimulationMode(IntEnum):
     """Ordinary leaching, with raw water or undersaturated brine injected through
     the inner tubing or outer casing and brine produced from the other."""
     WITHDRAWAL = 1
-    """Withdrawal leach, with brine injected through the suspended tubing (hanging 
+    """Withdrawal leach, with brine injected through the suspended tubing (hanging
     string) and product produced from top of cavern."""
     LEACH_FILL = 2
-    """Simultaneous leaching (water/brine injection and brine production) and 
+    """Simultaneous leaching (water/brine injection and brine production) and
     product injection from the top."""
     STORAGE_FILL = -1
     """Storage fill, with product injected from the top of the cavern and brine
@@ -169,6 +169,7 @@ class RateScheduleType(IntEnum):
 class AdvancedOptions:
     """Advanced configuration options. Most of these can and should be left as None which
     will use the default C++ library values."""
+
     absolute_error: float = None  #  1.0e-2
     """ODE solver absolute error tolerance; CModel default is 0.01"""
     relative_error: float = None  #  1.0e-4
@@ -340,10 +341,10 @@ class StageDefinition:
     # """
 
     set_initial_conditions: bool = None
-    """Unlink initial cavern brine gravity and interface level from previous stage. 
+    """Unlink initial cavern brine gravity and interface level from previous stage.
     Automatically set to True for the first stage added to a model."""
     set_cavern_sg: float = None
-    """Set the initial specific gravity for all brine-filled cells of the cavern to 
+    """Set the initial specific gravity for all brine-filled cells of the cavern to
     this value. If set_initial_conditions is False and this is not None (or 0) an error
     will be raised upon scenario validation."""
     brine_interface_depth: float = None
@@ -386,7 +387,9 @@ class StageDefinition:
         for k, v in defaults.items():
             if k not in self.valid_default_keys:
                 logger.warning(
-                    "Ignoring non-defaultable or unknown setting {} = {}".format(k, repr(v))
+                    "Ignoring non-defaultable or unknown setting {} = {}".format(
+                        k, repr(v)
+                    )
                 )
             elif getattr(self, k) is None:
                 setattr(self, k, v)
@@ -398,7 +401,9 @@ class StageDefinition:
             if isinstance(value, int):
                 value = SimulationMode(value)
             elif isinstance(value, str):
-                value = SimulationMode[value.upper().replace(" ", "_").replace("-", "_")]
+                value = SimulationMode[
+                    value.upper().replace(" ", "_").replace("-", "_")
+                ]
             elif isinstance(value, _ext.CRunMode):
                 value = SimulationMode(int(value))
             else:
@@ -512,7 +517,11 @@ class StageDefinition:
         # Validate appropriate brine injection and production settings
         if (
             self.simulation_mode
-            in [SimulationMode.ORDINARY, SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
+            in [
+                SimulationMode.ORDINARY,
+                SimulationMode.LEACH_FILL,
+                SimulationMode.STORAGE_FILL,
+            ]
             and self.brine_production_depth is None
         ):
             raise TypeError(
@@ -522,7 +531,11 @@ class StageDefinition:
             )
         if (
             self.simulation_mode
-            in [SimulationMode.ORDINARY, SimulationMode.LEACH_FILL, SimulationMode.WITHDRAWAL]
+            in [
+                SimulationMode.ORDINARY,
+                SimulationMode.LEACH_FILL,
+                SimulationMode.WITHDRAWAL,
+            ]
             and self.brine_injection_depth is None
         ):
             raise TypeError(
@@ -532,7 +545,11 @@ class StageDefinition:
             )
         if (
             self.simulation_mode
-            in [SimulationMode.ORDINARY, SimulationMode.LEACH_FILL, SimulationMode.WITHDRAWAL]
+            in [
+                SimulationMode.ORDINARY,
+                SimulationMode.LEACH_FILL,
+                SimulationMode.WITHDRAWAL,
+            ]
             and self.brine_injection_rate is None
         ):
             raise TypeError(
@@ -542,7 +559,11 @@ class StageDefinition:
             )
         if (
             self.simulation_mode
-            in [SimulationMode.ORDINARY, SimulationMode.LEACH_FILL, SimulationMode.WITHDRAWAL]
+            in [
+                SimulationMode.ORDINARY,
+                SimulationMode.LEACH_FILL,
+                SimulationMode.WITHDRAWAL,
+            ]
             and self.brine_injection_sg is None
         ):
             raise TypeError(
@@ -603,7 +624,8 @@ class StageDefinition:
 
         # Product injection depth an rate validation
         if (
-            self.simulation_mode in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
+            self.simulation_mode
+            in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
             and self.product_injection_depth is None
         ):
             self.product_injection_depth = 0.0
@@ -613,7 +635,8 @@ class StageDefinition:
                 )
             )
         if (
-            self.simulation_mode in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
+            self.simulation_mode
+            in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
             and self.product_injection_rate is None
         ):
             raise TypeError(
@@ -635,13 +658,17 @@ class StageDefinition:
         stage.subsequent = 0 if self.set_initial_conditions else 1
         stage.rest_duration = self.rest_duration
         stage.stop_value = (
-            int(self.stop_condition) * abs(self.stop_value) if self.stop_condition else 0
+            int(self.stop_condition) * abs(self.stop_value)
+            if self.stop_condition
+            else 0
         )
         stage.injection_depth = (
             self.brine_injection_depth if self.brine_injection_depth is not None else 0
         )
         stage.production_depth = (
-            self.brine_production_depth if self.brine_production_depth is not None else 0
+            self.brine_production_depth
+            if self.brine_production_depth is not None
+            else 0
         )
         stage.interface_depth = (
             self.brine_interface_depth if self.brine_interface_depth is not None else 0
@@ -668,7 +695,9 @@ class StageDefinition:
         stage.timestep = self.solver_timestep
         stage.injection_duration = self.injection_duration
         stage.fill_rate = (
-            self.product_injection_rate if self.product_injection_rate is not None else 0.0
+            self.product_injection_rate
+            if self.product_injection_rate is not None
+            else 0.0
         )
         return stage
 
@@ -711,9 +740,9 @@ class Scenario:
     """The activity stages to simulate."""
 
     def __setattr__(self, name, value):
-        """The setattr method is overloaded. IntEnum parameters are 
+        """The setattr method is overloaded. IntEnum parameters are
         automatically converted from strings or integers and stages and
-        advanced options are converted to the appropriate classes if a 
+        advanced options are converted to the appropriate classes if a
         dictionary is passed."""
         if isinstance(value, str) and value.strip() == "":
             value = None
@@ -721,7 +750,9 @@ class Scenario:
             if isinstance(value, int):
                 value = GeometryFormat(value)
             elif isinstance(value, str):
-                value = GeometryFormat[value.upper().replace(" ", "_").replace("-", "_")]
+                value = GeometryFormat[
+                    value.upper().replace(" ", "_").replace("-", "_")
+                ]
             elif isinstance(value, _ext.CGeometryFormat):
                 value = GeometryFormat(int(value))
             else:
@@ -733,7 +764,11 @@ class Scenario:
                 value = Units[value.upper().replace(" ", "_").replace("-", "_")]
             else:
                 TypeError("Units cannot be of type {}".format(type(value)))
-        elif name == "advanced" and value is not None and not isinstance(value, AdvancedOptions):
+        elif (
+            name == "advanced"
+            and value is not None
+            and not isinstance(value, AdvancedOptions)
+        ):
             if isinstance(value, dict):
                 value = AdvancedOptions.from_dict(value)
             else:
@@ -819,7 +854,7 @@ class Scenario:
 
     def new_stage(self, pos: int = None, **kwargs) -> StageDefinition:
         """Add a new stage in the optionally-specified `pos` position, and create it
-        based on keyword arguments. Passes existing :attr:`~Scenario.defaults` 
+        based on keyword arguments. Passes existing :attr:`~Scenario.defaults`
         unless a separate `defaults` dictionary is passed as one of the keyword arguments.
 
         Parameters
@@ -888,7 +923,9 @@ class Scenario:
         # if self.advanced.solid_density is not None:
         #     cmodel._salt.set_solid_density(self.advanced.solid_density)
         if self.advanced.temperature_model_version is not None:
-            cmodel._set_temperature_model_version(self.advanced.temperature_model_version)
+            cmodel._set_temperature_model_version(
+                self.advanced.temperature_model_version
+            )
         if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
             self.geometry_data, str
         ):
@@ -976,7 +1013,7 @@ class Simulator:
     from the class or by using the :meth:`~Scenario.new_simulation` method.
 
     *Running in batch mode without context management*
-    
+
     .. code:: python
 
         sim = sansmic.Simulator(scenario, prefix='run13')
@@ -985,7 +1022,7 @@ class Simulator:
         sim.close()
         res13 = sim.results
 
-        
+
     *Run in batch mode with context management*
 
     .. code:: python
@@ -994,19 +1031,21 @@ class Simulator:
             sim.run_sim()
         res14 = sim.results
 
-        
+
     *Run in stepwise mode with context management*
 
     .. code:: python
-    
+
         with scenario.new_simulation('run15') as sim:
             for stage, step in sim.steps:
                 pass
         res15 = sim.results
-    
+
     """
 
-    def __init__(self, scenario: Union[Scenario, _ext.CModel], prefix="temp", verbosity=0):
+    def __init__(
+        self, scenario: Union[Scenario, _ext.CModel], prefix="temp", verbosity=0
+    ):
         self._scenario = None
         self._prefix = prefix
         self._cmodel = None
@@ -1035,13 +1074,13 @@ class Simulator:
         Examples
         --------
         .. code:: python
-        
+
             # Generate and step through the model
             with scenario.new_simulation('run14') as sim:
                 for stage, step in sim.steps:
                     pass
             results = sim.results
-        
+
         """
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
@@ -1181,7 +1220,9 @@ class Simulator:
     def results(self) -> "Results":
         """The results for an entire simulation."""
         if not self._has_run and self.__results is None:
-            warnings.warn("Simulation incomplete - use get_current_state to get partial results")
+            warnings.warn(
+                "Simulation incomplete - use get_current_state to get partial results"
+            )
             return None
         return self.__results
 
@@ -1215,39 +1256,61 @@ class Results:
         """The change in radius :term:`wrt` time"""
         self.sg = pd.DataFrame(data.sg, columns=self.z).T.sort_index(ascending=True)
         """The specific gravity of brine in the cell :term:`wrt` time"""
-        self.theta = pd.DataFrame(data.theta, columns=self.z).T.sort_index(ascending=True)
+        self.theta = pd.DataFrame(data.theta, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The angle of cell wall :term:`wrt` time"""
-        self.Q_inj = pd.DataFrame(data.Q_inj, columns=self.z).T.sort_index(ascending=True)
+        self.Q_inj = pd.DataFrame(data.Q_inj, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The instantaneous injection rate at each time"""
         self.V = pd.DataFrame(data.V, columns=self.z).T.sort_index(ascending=True)
         """The volume of each cell through time"""
-        self.f_dis = pd.DataFrame(data.f_dis, columns=self.z).T.sort_index(ascending=True)
+        self.f_dis = pd.DataFrame(data.f_dis, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The modified dissolution factor :term:`wrt` time"""
         self.f_flag = pd.DataFrame(data.f_flag, columns=self.z, dtype=int).T.sort_index(
             ascending=True
         )
         """The dissolution status variable indicating if dissolution is occuring."""
-        self.xincl = pd.DataFrame(data.xincl, columns=self.z).T.sort_index(ascending=True)
+        self.xincl = pd.DataFrame(data.xincl, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The inclination of the cell wall"""
         self.amd = pd.DataFrame(data.amd, columns=self.z).T.sort_index(ascending=True)
         """Temporary variable for debugging"""
-        self.D_coeff = pd.DataFrame(data.D_coeff, columns=self.z).T.sort_index(ascending=True)
+        self.D_coeff = pd.DataFrame(data.D_coeff, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The calculated effective diffusion coefficient"""
-        self.dC_dz = pd.DataFrame(data.dC_dz, columns=self.z).T.sort_index(ascending=True)
+        self.dC_dz = pd.DataFrame(data.dC_dz, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The change in concentration with respect to depth in each cell at each time"""
-        self.C_old = pd.DataFrame(data.C_old, columns=self.z).T.sort_index(ascending=True)
+        self.C_old = pd.DataFrame(data.C_old, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The previous concentration in the cell"""
-        self.C_new = pd.DataFrame(data.C_new, columns=self.z).T.sort_index(ascending=True)
+        self.C_new = pd.DataFrame(data.C_new, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The current concentration in the cell"""
         self.dC_dt = pd.DataFrame(data.dC, columns=self.z).T.sort_index(ascending=True)
         """The change in concentration with respect to time, related to the rate of dissolution"""
         self.dr_dt = pd.DataFrame(data.dr, columns=self.z).T.sort_index(ascending=True)
         """The change in radius with respect to time"""
-        self.C_plm = pd.DataFrame(data.C_plm, columns=self.z).T.sort_index(ascending=True)
+        self.C_plm = pd.DataFrame(data.C_plm, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The concentration within the injection plume"""
-        self.u_plm = pd.DataFrame(data.u_plm, columns=self.z).T.sort_index(ascending=True)
+        self.u_plm = pd.DataFrame(data.u_plm, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The velocity of the fluid in the injection plume"""
-        self.r_plm = pd.DataFrame(data.r_plm, columns=self.z).T.sort_index(ascending=True)
+        self.r_plm = pd.DataFrame(data.r_plm, columns=self.z).T.sort_index(
+            ascending=True
+        )
         """The radius of the injection plume"""
         self.summary = pd.DataFrame.from_dict(
             {
@@ -1342,7 +1405,7 @@ class Results:
             the average cavern brine concentration
         dt_h
             the timestep size
-        
+
         """
 
     def __repr__(self):

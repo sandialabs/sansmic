@@ -22,7 +22,9 @@ ext_modules = [
         sources=sorted(glob("src/ext_modules/libsansmic/*.cpp")),
         cxx_std=17,
         # Example: passing in the version to the compiled code
-        define_macros=[("VERSION_INFO", __version__),],
+        define_macros=[
+            ("VERSION_INFO", __version__),
+        ],
     ),
 ]
 

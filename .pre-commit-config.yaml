@@ -1,0 +1,29 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+ci:
+    autofix_prs: false
+    autoupdate_commit_msg: "ci: pre-commit auto-update"
+
+repos:
+
+    - repo: https://github.com/gitleaks/gitleaks
+      rev: v8.16.3
+      hooks:
+        - id: gitleaks
+
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.6.0
+      hooks:
+          - id: check-added-large-files
+          - id: check-ast
+          - id: check-case-conflict
+          - id: check-merge-conflict
+          - id: check-yaml
+          - id: end-of-file-fixer
+          - id: mixed-line-ending
+          - id: trailing-whitespace
+
+    -   repo: https://github.com/psf/black
+        rev: 22.10.0
+        hooks:
+        -   id: black

@@ -91,9 +91,13 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
         if key not in scenario_fields:
             if strict:
                 logger.error(
-                    'Unrecognized option "{}" in scenario file options. Exiting'.format(key)
+                    'Unrecognized option "{}" in scenario file options. Exiting'.format(
+                        key
+                    )
                 )
-                raise RuntimeError('Unrecognized option "{}" in scenario file options'.format(key))
+                raise RuntimeError(
+                    'Unrecognized option "{}" in scenario file options'.format(key)
+                )
             elif warn:
                 logger.warn(
                     'Unrecognized option "{}" in scenario file options. Ignoring and continuing.'.format(
@@ -117,7 +121,9 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
                         )
                     )
                     raise RuntimeError(
-                        'Unrecognized option "{}" in scenario file, stage {}'.format(key, ct)
+                        'Unrecognized option "{}" in scenario file, stage {}'.format(
+                            key, ct
+                        )
                     )
                 elif warn:
                     warnings.warn(
@@ -146,7 +152,9 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
 
     """
     scenario = Scenario()
-    with open(str_or_buffer, "r") if isinstance(str_or_buffer, str) else str_or_buffer as fin:
+    with open(str_or_buffer, "r") if isinstance(
+        str_or_buffer, str
+    ) else str_or_buffer as fin:
         prefix = fin.name
         scenario.title = "Converted from {}".format(prefix)
         first = True
@@ -231,7 +239,9 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             logger.debug("  dt            = {}".format(timestep))
             logger.debug("  tend          = {}".format(injection_duration))
             # Stage - block 8
-            fill_rate, tDelay, coallescing_well_separation = fin.readline().strip().split()
+            fill_rate, tDelay, coallescing_well_separation = (
+                fin.readline().strip().split()
+            )
             logger.debug(" Record 8: Oil fill rates")
             logger.debug("  qfil          = {}".format(fill_rate))
             logger.debug("  tdlay  [depr.]= {}".format(tDelay))
@@ -290,9 +300,13 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 logger.debug("  refdep [depr.]= {}".format(refdep))
                 logger.debug("  depth         = {}".format(depth))
                 if refdep != depth:
-                    logger.warning("The REFDEP is no longer used, only DEPTH. Ignoring REFDEP.")
+                    logger.warning(
+                        "The REFDEP is no longer used, only DEPTH. Ignoring REFDEP."
+                    )
                 if float(dissolution_factor) != 1.0:
-                    logger.warning("The ZDIS should always be 1.0. This is a dangerous choice.")
+                    logger.warning(
+                        "The ZDIS should always be 1.0. This is a dangerous choice."
+                    )
                 scenario.geometry_format = geometry_format
                 scenario.geometry_data = geometry_data
                 scenario.num_cells = int(num_cells)
@@ -366,7 +380,10 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
         elif isinstance(sdict[k], IntEnum):
             sdict[k] = sdict[k].name.lower().replace("_", "-")
     for ct, s in enumerate(sdict["stages"]):
-        if not redundant and scenario.stages[ct].stop_condition == StopCondition.DURATION:
+        if (
+            not redundant
+            and scenario.stages[ct].stop_condition == StopCondition.DURATION
+        ):
             del s["stop-condition"]
             del s["stop-value"]
         if scenario.stages[ct].set_initial_conditions is False:
@@ -381,7 +398,11 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
             s["product-injection-rate"] = None
         keys = [k for k in s.keys()]
         for k in keys:
-            if not redundant and k in scenario.defaults and scenario.defaults.get(k, None) == s[k]:
+            if (
+                not redundant
+                and k in scenario.defaults
+                and scenario.defaults.get(k, None) == s[k]
+            ):
                 del s[k]
                 continue
             if s[k] is None:
@@ -396,7 +417,7 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
     name, ext = os.path.splitext(filename)
     if not ext:
         filename = filename + ".toml"
-        ext = '.toml'
+        ext = ".toml"
     with open(filename, "w") as fout:
         if ext.lower() == ".toml":
             for k, v in sdict.items():
