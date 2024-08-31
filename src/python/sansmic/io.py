@@ -24,7 +24,6 @@ from .model import (
     Results,
     Scenario,
     SimulationMode,
-    SansmicConfigError,
     StageDefinition,
     StopCondition,
     _OutDataBlock,
@@ -129,7 +128,7 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
                 remove.append(key)
         for key in remove:
             stage.pop(key)
-    return Scenario(**data)
+    return Scenario.from_dict(**data)
 
 
 def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
@@ -299,7 +298,9 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 scenario.num_cells = int(num_cells)
                 scenario.coallescing_wells = int(num_coallescing)
                 scenario.well_separation = float(coallescing_well_separation)
-                scenario.dissolution_factor = float(dissolution_factor)
+                df = float(dissolution_factor)
+                if df != 1.0:
+                    scenario.advanced.dissolution_factor = df
                 scenario.insolubles_ratio = float(insoluble_fraction)
                 scenario.floor_depth = float(depth)
                 scenario.cavern_height = float(cavern_height)
@@ -308,14 +309,14 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 logger.debug("Subsequent stage initialization")
             if not first and scenario.num_cells != int(num_cells) and not ignore_errors:
                 logger.critical("Old-style DAT has changes in NDIV throughout the file")
-                raise SansmicConfigError("Invalid data in DAT file: NDIV not constant.")
+                raise TypeError("Invalid data in DAT file: NDIV not constant.")
             elif not first and int(iResetGeo) != 0 and not ignore_errors:
                 logger.critical(
                     "The RESETGEO flag (item 5 on line 2 of stage {}) is set to 1. This is not valid in this version of SANSMIC. Please correct this and rerun.".format(
                         len(scenario.stages) + 1
                     )
                 )
-                raise SansmicConfigError("Invalid data in DAT file: RESETGEO not 0")
+                raise TypeError("Invalid data in DAT file: RESETGEO not 0")
             if not first and not bool(1 - int(subsequent)):
                 logger.warning(
                     "The REPEAT option is supposed to turn off the cavern SG; initial cavern SG set to None."
@@ -333,7 +334,7 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 stage.stop_condition = StopCondition.VOLUME
             stage.brine_injection_depth = float(injection_height)
             stage.brine_production_depth = float(production_height)
-            stage.set_interface_level = float(interface_height)
+            stage.brine_interface_depth = float(interface_height)
             stage.brine_injection_rate = float(injection_rate)
             stage.inner_tbg_inside_diam = float(inn_tbg_inside_radius) * 2
             stage.inner_tbg_outside_diam = float(inn_tbg_outside_radius) * 2

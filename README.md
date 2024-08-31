@@ -65,35 +65,6 @@ For more detailed usage and API information, please see
 [our documentation][docs].
 
 
-### Acknowledgements and Credits
-There are undoubtedly more people who deserve acknowledgement for
-their contributions to the science, and if the current maintainers
-have missed anyone, please let us know. 
-
-Much of the research into numerical modeling of leaching has come 
-from the solution mining industry or from nuclear waste disposal 
-research in the 1970s and 1980s. The Solution Mining Research 
-Institute (SMRI) funded research that was done by Ahmad Saberian 
-and A. J. Podio in the early 1970s. Saberian wrote the SALT code 
-which became the SMRI software product SalGas.
-
-A. J. Russo from Sandia National Laboratories released the first 
-version of SANSMIC in 1983. Modifications were made to SANSMIC in 
-the 1990s by P. S. Kuhlman. From 2013-2015 the code underwent a 
-code review by Paula Weber and David Rudeen, who found that other, 
-undocumented changes had been made at some point and documented 
-those changes.
-
-Thomas Eyerman performed an independent evaluation of SANSMIC in 
-1984, and also generously provided a technical review of a "SANSMIC 
-Validation" by Weber, Rudeen and Lord from 2014.
-
-The U.S. Strategic Petroleum Reserve (DOE) has been the primary 
-sponsor for sansmic development and current use, and the Cavern 
-Integiry group at the SPR Project Management Office in New Orleans 
-has been very supportive.
-
-
 ### License & Copyright
 See [LICENSE.md](LICENSE.md) and [COPYRIGHT.md](COPYRIGHT.md).
 
