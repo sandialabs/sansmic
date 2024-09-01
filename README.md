@@ -67,7 +67,7 @@ For more detailed usage and API information, please see
 
 
 ### License & Copyright
-See [LICENSE.md](LICENSE.md) and [COPYRIGHT.md](COPYRIGHT.md).
+See [LICENSE](LICENSE) and [COPYRIGHT](COPYRIGHT.md).
 
 Sandia National Laboratories is a multimission laboratory managed
 and operated by National Technology & Engineering Solutions of Sandia,
