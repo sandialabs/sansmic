@@ -21,7 +21,7 @@ from numpy import round
 
 from sansmic import __version__
 from sansmic import io as sio
-from ._progress_bar import print_progress
+from pip._vendor.rich.progress import Progress
 
 logging.basicConfig()
 logger = logging.getLogger("sansmic")
@@ -126,59 +126,52 @@ are mutually exclusive.
                     datafile if not model.title else model.title
                 )
             )
-            for stage, step in sim.steps:
-                if last_stage != stage:
-                    if stage >= len(model.stages):
-                        if args.verbose == 1:
-                            print_progress(
-                                n_steps,
-                                n_steps,
-                                prefix="Progress",
-                                suffix="Complete",
-                                length=60,
-                                decimals=1,
-                            )
-                        if args.verbose == 2:
-                            print_progress(
-                                stage_sizes[last_stage],
-                                stage_sizes[last_stage],
-                                prefix="Stage {:<2d}".format(last_stage + 1),
-                                suffix="Complete",
-                                length=60,
-                                decimals=1,
-                            )
-                            print("All stages complete.")
+            stage = 0
+            with Progress() as progress:
+                if args.verbose >= 1:
+                    task = progress.add_task("Progress...", total=n_steps)
+                if args.verbose >= 2:
+                    task_S = progress.add_task(
+                        "[red]Stage {}...".format(stage + 1), total=stage_sizes[stage]
+                    )
+                for stage, step in sim.steps:
+                    if last_stage != stage:
+                        if stage >= len(model.stages):
+                            if args.verbose >= 1:
+                                progress.update(
+                                    task,
+                                    completed=n_steps,
+                                )
+                            if args.verbose >= 2:
+                                progress.update(
+                                    task_S,
+                                    completed=n_steps,
+                                )
+                                print("All stages complete.")
+                        else:
+                            last_stage = stage
+                            last_step = step
+                            p_freq = model.stages[last_stage].save_frequency
+                            if args.verbose >= 2:
+                                progress.update(
+                                    task_S,
+                                    completed=n_steps,
+                                )
+                                task_S = progress.add_task(
+                                    "[red]Stage {}...".format(stage + 1),
+                                    total=stage_sizes[stage],
+                                )
                     else:
-                        last_stage = stage
-                        last_step = step
-                        p_freq = model.stages[last_stage].save_frequency
-                        if args.verbose == 2:
-                            print_progress(
-                                stage_sizes[last_stage],
-                                stage_sizes[last_stage],
-                                prefix="Stage {:<2d}".format(last_stage),
-                                suffix="Complete",
-                                length=60,
-                                decimals=1,
+                        if args.verbose >= 1 and (step - last_step) % p_freq == 0:
+                            progress.update(
+                                task,
+                                advance=p_freq,
                             )
-                elif args.verbose == 1 and (step - last_step) % p_freq == 0:
-                    print_progress(
-                        step,
-                        n_steps,
-                        prefix="Progress",
-                        suffix="Complete",
-                        length=60,
-                        decimals=1,
-                    )
-                elif args.verbose == 2 and (step - last_step) % p_freq == 0:
-                    print_progress(
-                        step - last_step,
-                        stage_sizes[last_stage],
-                        prefix="Stage {:<2d}".format(last_stage + 1),
-                        suffix="Complete",
-                        length=60,
-                        decimals=1,
-                    )
+                        if args.verbose >= 2 and (step - last_step) % p_freq == 0:
+                            progress.update(
+                                task_S,
+                                advance=p_freq,
+                            )
         logger.debug("Simulation complete")
     res = sim.results
     if not args.quiet:
@@ -218,8 +211,7 @@ def convert():
     verb = parser.add_argument_group(
         "Output options",
         """By default, only warnings will be output to the console
-        The following options are mutually exclusive.
-""",
+        The following options are mutually exclusive.""",
     )
     verb = verb.add_mutually_exclusive_group()
     verb.add_argument(
