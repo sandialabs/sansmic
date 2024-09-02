@@ -38,6 +38,7 @@ def _get_verbosity(args):
         level = logging.DEBUG
     logger.setLevel(level)
     if args.debug:
+        args.verbose = 3
         return 3
     return args.verbose
 

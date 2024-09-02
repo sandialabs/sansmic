@@ -60,12 +60,14 @@ except ImportError:
 
 
 def _rename_with_underscore(orig: dict, new: dict):
+    """Rename all keys in a dictionary with underscores instead of spaces or dashes"""
     for k, v in orig.items():
         k = k.lower().replace("-", "_")
         new[k] = v
 
 
 def _rename_with_dash(orig: dict, new: dict):
+    """Rename all keys in a dictionary with dashes instead of underscores"""
     for k, v in orig.items():
         k = k.lower().replace("_", "-")
         new[k] = v
@@ -891,41 +893,55 @@ class Scenario:
         """
         return Simulator(self, prefix, verbosity)
 
-    def _to_cmodel(self, prefix="temp"):
+    def _to_cscenario(self):
         """Create a C++ model object; in general, this should only be called internally."""
-        cmodel = _ext.CModel(prefix)
-        cmodel._set_dissolution_factor(self.dissolution_factor)
-        cmodel._set_fraction_insol(self.insolubles_ratio)
-        cmodel._set_num_cells(self.num_cells)
-        cmodel._set_cavern_height(self.cavern_height)
-        cmodel._set_floor_depth(self.floor_depth)
-        cmodel._geometry_format = _ext.CGeometryFormat(int(self.geometry_format))
+        cscenario = _ext.CScenario()
+        cscenario.fraction_insolubles = self.insolubles_ratio
+        cscenario.floor_depth = self.floor_depth
+        cscenario.geometry_format = _ext.CGeometryFormat(int(self.geometry_format))
+        cscenario.num_cells = self.num_cells
+        cscenario.ullage_standoff = self.ullage_standoff
+        cscenario.cavern_height = self.cavern_height
+        cscenario.coallescing_wells = self.coallescing_wells
+        cscenario.well_separation = self.well_separation
         if self.advanced.absolute_error is not None:
-            cmodel._set_solver_abserr(self.advanced.absolute_error)
+            cscenario.absolute_error = self.advanced.absolute_error
+
         if self.advanced.diffusion_beta is not None:
-            cmodel._set_diffusion_beta(self.advanced.diffusion_beta)
+            cscenario.diffusion_beta = self.advanced.diffusion_beta
+
         if self.advanced.dissolution_factor is not None:
-            cmodel._set_dissolution_factor(self.advanced.dissolution_factor)
+            cscenario.dissolution_factor = self.advanced.dissolution_factor
+
         if self.advanced.eddy_coefficient is not None:
-            cmodel._set_diffusion_D_0(self.advanced.eddy_coefficient)
+            cscenario.eddy_coefficient = self.advanced.eddy_coefficient
+
         if self.advanced.entrainment_coeff is not None:
-            cmodel._set_entrainment_alpha(self.advanced.entrainment_coeff)
+            cscenario.entrainment_coeff = self.advanced.entrainment_coeff
+
         if self.advanced.jet_model_version is not None:
-            cmodel._set_jet_model_version(self.advanced.jet_model_version)
-        # if self.advanced.max_brine_sg is not None:
-        #     cmodel._salt.set_saturated_sg(self.advanced.max_brine_sg)
+            cscenario.jet_model_version = self.advanced.jet_model_version
+
+        if self.advanced.max_brine_sg is not None:
+            cscenario.max_brine_sg = self.advanced.max_brine_sg
+
         if self.advanced.molecular_diffusion is not None:
-            cmodel._set_diffusion_D_mol(self.advanced.molecular_diffusion)
+            cscenario.molecular_diffusion = self.advanced.molecular_diffusion
+
         if self.advanced.plume_model_version is not None:
-            cmodel._set_plume_model_version(self.advanced.plume_model_version)
+            cscenario.plume_model_version = self.advanced.plume_model_version
+
         if self.advanced.relative_error is not None:
-            cmodel._set_solver_relerr(self.advanced.relative_error)
-        # if self.advanced.solid_density is not None:
-        #     cmodel._salt.set_solid_density(self.advanced.solid_density)
+            cscenario.relative_error = self.advanced.relative_error
+
+        if self.advanced.solid_density is not None:
+            cscenario.solid_density = self.advanced.solid_density
+
         if self.advanced.temperature_model_version is not None:
-            cmodel._set_temperature_model_version(
+            cscenario.temperature_model_version = (
                 self.advanced.temperature_model_version
             )
+
         if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
             self.geometry_data, str
         ):
@@ -934,29 +950,26 @@ class Scenario:
                 for line in fin.readlines():
                     if len(line.strip()) > 0:
                         radii.append(float(line.strip()))
-            cmodel._radius_vector = radii
+            cscenario.radius_vector = radii
         elif isinstance(self.geometry_data, dict):
             if "radii" in self.geometry_data:
                 tmp = self.geometry_data["radii"].copy()
                 tmp.insert(0, 0)
-                cmodel._radius_vector = tmp
+                cscenario.radius_vector = tmp
             if "depths" in self.geometry_data:
                 tmp = self.geometry_data["depths"]
                 tmp.insert(0, 0)
-                cmodel._depth_vector = tmp
+                cscenario.depth_vector = tmp
             if "volumes" in self.geometry_data:
                 tmp = self.geometry_data["volumes"]
                 tmp.insert(0, 0)
-                cmodel._volume_vector = tmp
+                cscenario.volume_vector = tmp
         for stage_num, stage in enumerate(self.stages):
             if stage_num == 0:
                 stage.set_initial_conditions = True
             cstage = stage._to_cstage()
-            cstage.num_coallescing = self.coallescing_wells
-            cstage.ullage_standoff = self.ullage_standoff
-            cstage.coallescing_well_separation = self.well_separation
-            cmodel.add_stage(cstage)
-        return cmodel
+            cscenario.add_stage(cstage)
+        return cscenario
 
 
 class StepwiseIterator:
@@ -1049,6 +1062,7 @@ class Simulator:
         self._scenario = None
         self._prefix = prefix
         self._cmodel = None
+        self._verbosity = verbosity
         if isinstance(scenario, Scenario):
             self._scenario = scenario
         else:
@@ -1062,6 +1076,7 @@ class Simulator:
 
     def __enter__(self):
         self.open(self._prefix)
+        self._cmodel.verbosity = self._verbosity
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1126,14 +1141,14 @@ class Simulator:
         return self._cmodel._get_current_volume()
 
     @property
-    def is_running(self):
+    def is_running(self) -> bool:
         """Is the simulation mid-stage?"""
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel.is_running()
 
     @property
-    def num_stages(self):
+    def num_stages(self) -> int:
         """The total number of stages that have been defined"""
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
@@ -1143,7 +1158,6 @@ class Simulator:
         """Initialize the simulation (for iterators)"""
         if self._is_initialized:
             raise RuntimeError("The simulation has already been initialized")
-        self._cmodel.initialize()
         self._cmodel.open_outfiles(False)
         self._is_initialized = True
         self._has_run = False
@@ -1178,7 +1192,9 @@ class Simulator:
         else:
             self._prefix = prefix
         if self._cmodel is None and self._scenario is not None:
-            self._cmodel = self._scenario._to_cmodel(prefix)
+            cscenario = self._scenario._to_cscenario()
+            self._cmodel = _ext.CModel(prefix)
+            self._cmodel.configure(cscenario)
         self.__results = None
         self._is_open = True
 
@@ -1408,7 +1424,7 @@ class Results:
 
         """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Results: from {:.3g} to {:.3g} d ({:d} stages)>".format(
             self.t.iloc[0] / 24.0,
             self.t.iloc[-1] / 24.0,
@@ -1417,6 +1433,8 @@ class Results:
 
 
 class _OutDataBlock:
+    """Useful for processing old SANSMIC .out files"""
+
     def __init__(self):
         self.t = None
         self.dt = None
@@ -1471,6 +1489,8 @@ class _OutDataBlock:
 
 
 class _OutputData(_OutDataBlock):
+    """Useful for processing old SANSMIC .out files"""
+
     def __init__(self):
         super().__init__()
         self.timeTotal = None

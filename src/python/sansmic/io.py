@@ -53,7 +53,7 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
     Raises
     ------
     RuntimeError
-        if there is an unrecognized option and ``strict`` is True or if there are no
+        if there is an unrecognized option and ``strict`` is True, or if there are no
         stages defined.
     """
     logger.debug(
