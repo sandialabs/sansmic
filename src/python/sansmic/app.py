@@ -43,7 +43,7 @@ def _get_verbosity(args):
     return args.verbose
 
 
-def main():
+def main(args=None):
     """Command line function to run sansmic."""
     parser = ArgumentParser(
         prog="sansmic",
@@ -93,7 +93,7 @@ are mutually exclusive.
     )
     meth = parser.add_argument_group("Execution method")
     meth = meth.add_mutually_exclusive_group()
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
     datafile = args.datafile
     prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
     verbosity = _get_verbosity(args)
