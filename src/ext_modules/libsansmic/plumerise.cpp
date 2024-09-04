@@ -16,6 +16,12 @@
 
 using namespace sansmic;
 
+/**
+ * @brief Construct a new Plume Rise object
+ * @param delta_z cell size
+ * @param alpha_coeff entrainment coefficient
+ * @param conc concentration vector
+ */
 PlumeRise::PlumeRise(double delta_z, double alpha_entr,
                      std::vector<double> &conc) {
   dz = delta_z;
@@ -24,6 +30,12 @@ PlumeRise::PlumeRise(double delta_z, double alpha_entr,
   solver = ODESolver(neqn, (Derivable *)this);
 }
 
+/**
+ * @brief Calculate derivatives for ODE
+ * @param x point to evaluate
+ * @param y solution vector
+ * @param yp derivative vector
+ */
 void PlumeRise::func(double &x, std::vector<double> &y,
                      std::vector<double> &yp) {
   double u = 1.0e-32;

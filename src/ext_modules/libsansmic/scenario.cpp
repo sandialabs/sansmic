@@ -17,6 +17,9 @@
 
 #include "libsansmic.hpp"
 
+/**
+ * @brief Blank options with default version and coefficient values.
+ */
 sansmic::Scenario::Scenario() {
   title = "";
   num_cells = -1;
@@ -44,11 +47,20 @@ sansmic::Scenario::Scenario() {
   solid_density = 2.16;
 }
 
+/**
+ * @brief Add a stage to the simulation.
+ * @param stage the stage definition struct
+ * @return the current number of stages
+ */
 int sansmic::Scenario::add_stage(Stage stage) {
   stages.push_back(stage);
   return stages.size();
 }
 
+/**
+ * @brief Add a debug output to a file
+ * @param fout the open steam to print to
+ */
 void sansmic::Scenario::debug_log(ofstream &fout) {
   fout << "# Scenario definition" << endl;
   fout << "title = '" << title << "'" << endl;

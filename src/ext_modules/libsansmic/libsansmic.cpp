@@ -161,12 +161,12 @@ PYBIND11_MODULE(libsansmic, m) {
            py::arg("c"),
            "Set coefficients **c**[n=3] for the wt-pct vs specific gravity "
            "equation")
-      .def("wt_pct_to_sg", &sansmic::Salt::get_sg, py::arg("wt"),
+      .def("wt_pct_to_sg", &sansmic::Salt::sg, py::arg("wt"),
            py::arg("T") = 75.0,
            "Convert weight-percent NaCl to specific gravity")
-      .def("recession_rate", &sansmic::Salt::get_recession_rate, py::arg("sg"),
+      .def("recession_rate", &sansmic::Salt::recession_rate, py::arg("sg"),
            "Calculate the recession rate in ft/s for wall dissolution")
-      .def("sg_to_wt_pct", &sansmic::Salt::get_wt_pct, py::arg("sg"),
+      .def("sg_to_wt_pct", &sansmic::Salt::wt_pct, py::arg("sg"),
            py::arg("T") = 75.0,
            "Convert specific gravity to weight-percent NaCl");
 
@@ -187,7 +187,7 @@ PYBIND11_MODULE(libsansmic, m) {
            py::call_guard<py::scoped_ostream_redirect,
                           py::scoped_estream_redirect>(),
            "Run the next step in stage `istage` of the model.")
-      .def("num_stages", &sansmic::Model::num_stages,
+      .def("num_stages", &sansmic::Model::get_num_stages,
            "Get the number of model stages.")
       .def("is_running", &sansmic::Model::get_running_status,
            "int: Is the model in the middle of a stage.")

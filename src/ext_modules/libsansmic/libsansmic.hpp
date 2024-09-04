@@ -26,6 +26,7 @@ using namespace std;
 
 namespace sansmic {
 
+// physical constants and conversion factors
 const double _pi_ = 3.141592653589793;        //!< pi without having to import
 const double std_gravity = 9.80665;           //!< standard gravity (m/s²)
 const double inch = 0.0254;                   //!< 1 in. := *y* m
@@ -51,82 +52,24 @@ const double julian_year = 86400.0 * 365.25;        //!< s / aⱼ
 const double per_d_to_per_h = hour / day;           //!< h / d
 const double per_h_to_per_d = day / hour;           //!< d / h
 
-/**
- * @brief Shortcut for square
- * @details Because FORTRAN and Python have an operator for power, a shortcut
- * function was written for brevity and to ensure there are no mistakes due to
- * typos between two complex groupings of products/sums that are then squared.
- * @param val
- * @return double
- */
-double sq(double val);
+// error codes
+const int MISSING_DAT_FILE = 55;  //!< unable to open the "dat" input file
+const int INVALID_LOG_FILE = 54;  //!< unable to open the "log" log file
+const int INVALID_OUT_FILE = 56;  //!< unable to open the "out" output file
+const int INVALID_TST_FILE = 59;  //!< unable to open the "tst" file
+const int NDIV_CHANGES_THROUGHOUT_FILE = 101;  //!< inconsistent n_div value
+const int OBI_AT_CAVERN_FLOOR = 201;  //!< the OBI has reached the cavern floor
+const int ODE_IFLAG_SIX = 306;        //!< ODE solver failed with value 6
+const int ODE_IFLAG_SEVEN = 307;      //!< ODE solver failed with value 7
+const int ODE_BAD_ABSERR = 300;  //!< ODE solver failed due to bad error value
+const int UNIMPLEMENTED_FLOW_TABLES =
+    900;  //!< flow tables not currently implemented
+const int UNIMPLEMENTED_GEOMETRY_IDATA =
+    901;  //!< the geometry type is not implemented yet
 
-/**
- * @brief absolute value for doubles
- * @param d1 value
- * @return double
- */
-double dabs(double d1);
+// ENUM definitions
 
-/**
- * @brief implementation of FORTRAN DDIM1 function in C++
- * @param d1 value 1
- * @param d2 value 2
- * @return double
- */
-double ddim(double d1, double d2);
-
-/**
- * @brief implementation of FORTRAN DSIGN function in C++
- * @param d1
- * @param d2
- * @return double
- */
-double sign(double d1, double d2);
-
-/**
- * @brief implementation of FORTRAN ISIGN function in C++
- * @param i1
- * @param i2
- * @return int
- */
-int sign(int i1, int i2);
-
-/**
- * @brief interpolation function
- * @param xf x value at which to interpolate
- * @param x known x values
- * @param y known y values
- * @param nmax length of arrays
- * @return double, interpolated y value at xf
- */
-double xnterp_dkr(double xf, vector<double> x, vector<double> y, int nmax);
-
-/**
- * @brief bound a value within a certain range
- * @param value original value
- * @param low bound on low end
- * @param high bound on high end
- * @return double bounded value
- */
-double bound(double value, double low, double high);
-
-/**
- * @brief Tridiagonal solver
- * @param ns lower boundary
- * @param nf last unknown point
- * @param y concentration (C_new in sansmic::Model)
- * @param a main-1 diagonal
- * @param b main diagonal
- * @param c main+1 diagonal
- * @param d right hand side
- */
-void trigad(int ns, int nf, vector<double> &y, vector<double> &a,
-            vector<double> &b, vector<double> &c, vector<double> &d);
-
-/**
- * @brief The leaching/operations mode for SANSMIC.
- */
+/// @brief The leaching operations mode for sansmic.
 enum LeachMode : int {
   Ordinary = 0,    //!< fill with raw water, produce brine
   Withdrawal = 1,  //!< fill with raw water, produce oil
@@ -134,9 +77,8 @@ enum LeachMode : int {
   OilFill = -1     //!< fill with oil, produce brine
 };
 
-/**
- * @brief The format of the input data.
- */
+/// @brief The format of the data; will go away once python code fully handles
+/// these.
 enum GeomFormat : int {
   RadiusList = 0,    //!< equally spaced radius measurements, from bottom to top
   VolumeList = 1,    //!< depth data followed by corresponding partial volumes
@@ -144,14 +86,22 @@ enum GeomFormat : int {
   RadiusTable = 2    //!< list of depth-radius pairs
 };
 
-/**
- * @brief Instructions and input values for a single stage of SANSMIC.
- */
+// utility mathematics functions in "util.cpp"
+double sq(double val);
+double dabs(double d1);
+double ddim(double d1, double d2);
+double sign(double d1, double d2);
+int sign(int i1, int i2);
+double xnterp_dkr(double xf, vector<double> x, vector<double> y, int nmax);
+double bound(double value, double low, double high);
+void trigad(int ns, int nf, vector<double> &y, vector<double> &a,
+            vector<double> &b, vector<double> &c, vector<double> &d);
+
+// Stage struct definition in "stage.cpp"
+/// @brief Instructions and input values for a single stage of SANSMIC.
 struct Stage {
-  /**
-   * @brief Stage constructor with default values.
-   */
   Stage();
+  void debug_log(ofstream &fout);
 
   string title;  //!< stage title
 
@@ -178,22 +128,16 @@ struct Stage {
   double dt;       //!< timestep (in hours)
   double t_stage;  //!< injection duration (in hours)
   double Q_oil;    //!< fill rate for LeachFill mode (in bbl/hr)
-
-  /**
-   * @brief Output debug data to a stream.
-   * @param fout Open stream to output to
-   */
-  void debug_log(ofstream &fout);
 };
 
-/**
- * @brief Scenario options that are constant through all stages.
- */
+// Scenario struct definitions in "scenario.cpp"
+/// @brief Scenario options that are constant through all stages.
 struct Scenario {
-  /**
-   * Blank options with default version and coefficient values.
-   */
   Scenario();
+
+  int add_stage(Stage stage);
+
+  void debug_log(ofstream &fout);
 
   string title;     //!< a title for the full scenario
   string comments;  //!< longer comments about scenario
@@ -228,114 +172,31 @@ struct Scenario {
   double absolute_error;       //!< the absolute tolerance for the ODE solver
 
   // deprecated options
-  int coallescing_wells;  //!< the number of identical wells coallescing
-
+  int coallescing_wells;      //!< the number of identical wells coallescing
   double well_separation;     //!< the separation between coallescing wells
   double dissolution_factor;  //!< the dissolution factor (this should be 1.0!)
-
-  /**
-   * @brief Add a stage to the simulation.
-   * @param stage the stage definition struct
-   * @return the current number of stages
-   */
-  int add_stage(Stage stage);
-
-  /**
-   * @brief Add a debug output to a file
-   * @param fout the open steam to print to
-   */
-  void debug_log(ofstream &fout);
 };
 
-/**
- * @brief Class defining the properties for a certain type of rock salt.
- */
+// Salt definition in "salt.cpp"
+/// @brief Class defining the properties for a certain type of rock salt.
 class Salt {
  public:
-  /**
-   * @brief Construct a new Salt object with default vaules for halite,
-   * sg_max = 1.2019, rho_s = 2.16 g/cm³. These are default values based on
-   * brine created by dissolution of essentially-pure halite.
-   */
   Salt(void);
-
-  /**
-   * @brief Construct a new Salt object
-   * @param sg_max maximum saturated brine density as specific gravity
-   * @param rho_solid solid rock density in g/cm³
-   */
   Salt(double sg_max, double rho_solid);
 
-  /**
-   * @brief Set the saturated sg value
-   * @param sg_max maximum saturated brine density, as specific gravity
-   */
-  void set_sg_max(double sg_max);
-
-  /**
-   * @brief Get the saturated sg value
-   * @return (double) saturated brine specific gravity
-   */
   double get_sg_max(void);
-
-  /**
-   * @brief Set the solid density value
-   * @param rho_solid solid rock salt density in g/cm³
-   */
-  void set_solid_density(double rho_solid);
-
-  /**
-   * @brief Get the solid density value
-   * @return solid rock salt density in g/cm³
-   */
   double get_solid_density(void);
-
-  /**
-   * @brief Get a COPY of the a-parameter VALUES
-   * @return (array<6>) a
-   */
   array<double, 6> get_recession_rate_coeff();
-
-  /**
-   * @brief Set the recession rate params VALUES
-   * @param new_coeff_a length-6 array with parameter values
-   */
-  void set_recession_rate_coeff(array<double, 6> new_coeff_a);
-
-  /**
-   * @brief Get a COPY of the c-parameter VALUES
-   * @return array<double,3> c
-   */
   array<double, 3> get_sg_wt_pct_convert_coeff();
 
-  /**
-   * @brief Set the wt pct sg params VALUES
-   * @param new_coeff_c length-3 array
-   */
+  void set_sg_max(double sg_max);
+  void set_solid_density(double rho_solid);
+  void set_recession_rate_coeff(array<double, 6> new_coeff_a);
   void set_density_conversion_coeff(array<double, 3> new_coeff_c);
 
-  /**
-   * @brief Calculate the weight-percent of brine.
-   * @param sg specific gravity of the brine
-   * @param temp the brine temperature in degrees Fahrenheit, by default 75
-   * @return weight percent of salt in brine
-   */
-  double get_wt_pct(double sg, double temp = 75.0);
-
-  /**
-   * @brief Calculate the specific gravity of brine.
-   * @param wt_pct weight-percent salt in the brine
-   * @param temp brine temperature in degrees Fahrenheit, by default 75
-   * @return specific gravity of the brine
-   */
-  double get_sg(double wt_pct, double temp = 75.0);
-
-  /**
-   * @brief Calculate the recession rate of the wall.
-   * @param sg specific gravity of the brine
-   * @return recession rate in ft/s
-   */
-  double get_recession_rate(double sg);
+  double wt_pct(double sg, double temp = 75.0);
+  double sg(double wt_pct, double temp = 75.0);
+  double recession_rate(double sg);
 
  private:
   double C_sat;  //!< specific gravity of saturated brine
@@ -345,56 +206,25 @@ class Salt {
   array<double, 3> c_;  //!< the coeff for converting b/w sg & wt pct
 };
 
-/**
- * @brief Model of the water jet flow out the end of tubing.
- */
+// JetModel definition in "jetmodel.cpp"
+/// @brief Model of the water jet flow out the end of tubing.
 class JetModel {
  public:
-  /**
-   * @brief Create a new version-1 jet model.
-   */
   JetModel(void);
-
-  /**
-   * @brief Create a new jet model, specifying the version.
-   * @param ver the version number, 0 for off
-   */
   JetModel(int ver);
 
-  /**
-   * @brief Set the jet model version
-   * @param ver version number, 0 for off
-   */
   void set_version(int ver);
-
-  /**
-   * @brief Get the jet model version
-   * @returns the version
-   */
   int get_version(void);
 
-  /**
-   * @brief Calculate the jet velocity.
-   * @param Q the flow rate in ft3/h
-   * @param r the orifice radius in ft
-   * @returns the velocity in ft/s
-   */
   double velocity(double Q, double r);
-
-  /**
-   * @brief Calculate the jet length.
-   * @param u the velocity in ft/s
-   * @returns the penetration depth in ft
-   */
   double length(double u);
 
  private:
   int version;  //!< the jet model version - 0 is off
 };
 
-/**
- * @brief Interface for a class that provides n-derivatives for an ODE func.
- */
+// Interface definition local
+/// @brief Interface for a class that provides n-derivatives for an ODE func.
 class Derivable {
  public:
   /**
@@ -408,6 +238,7 @@ class Derivable {
   int neqn;  //!< The number of equations being calculated
 };
 
+// ODESolver definition in "odesolver.cpp"
 /**
  * @brief The ODE solver class
  * @details The function of this code is completely explained and documented in
@@ -418,76 +249,17 @@ class Derivable {
  */
 class ODESolver {
  public:
-  /**
-   * @brief Create a new, blank ODE solver object.
-   */
   ODESolver(void);
-
-  /**
-   * @brief Create a new solver object with a specific ODE in mind.
-   * @param n the number of equations
-   * @param f the derivative function object
-   */
   ODESolver(int n, Derivable *f);
-
-  /**
-   * @brief Integrate a system of neqn first order ODEs
-   * @param y solution vector at t
-   * @param t independent variable
-   * @param tout point at which solution is desired
-   * @param relerr relative error tolerance for local error test
-   * @param abserr absolute error tolerance for local error test
-   * @param iflag status of integration
-   */
+  int num_eqn(void);
   void ode(vector<double> &y, double &t, double tout, double &relerr,
            double &abserr, int &iflag);
 
-  /**
-   * @brief Get the number of equations this solver was configured for.
-   * @returns number of equations
-   */
-  int num_eqn(void);
-
  protected:
-  /**
-   * @brief Differential equation solver
-   * @param y solution vector at T
-   * @param t independent variable
-   * @param tout point at which solution is desired
-   * @param relerr relative error tolerance
-   * @param abserr absolute error tolerance
-   * @param iflag status of integration
-   * @param phase1 work variable
-   * @param start work variable
-   * @param ns work variable
-   * @param nornd work variable
-   * @param k work variable
-   * @param kold work variable
-   * @param isnold work variable
-   */
   void de(vector<double> &y, double &t, double tout, double &relerr,
           double &abserr, int &iflag, bool &phase1, bool &start, int &ns,
           bool &nornd, int &k, int &kold, int &isnold);
-
-  /**
-   * @brief Approximate the solution near x by polymonial.
-   * @param xout points at which solution is known
-   * @param yout solution at xout
-   * @param kold pass from sansmic::step1 - unchanged
-   */
   void intrp(double xout, vector<double> &yout, int kold);
-
-  /**
-   * @brief Take a single solver step, used indirectly through ODE
-   * @param eps local error tolerance
-   * @param start logical variable set true for first step
-   * @param k appropriate order for next step
-   * @param kold order used for last successful step
-   * @param crash logical variable set true when no step can be taken
-   * @param phase1 elimainate local retention of variables
-   * @param ns elimainate local retention of variables
-   * @param nornd elimainate local retention of variables
-   */
   void step1(double &eps, bool &start, int &k, int &kold, bool &crash,
              bool &phase1, int &ns, bool &nornd);
 
@@ -531,25 +303,12 @@ class ODESolver {
   vector<vector<double> > phi;  //!< internal work variable
 };
 
-/**
- * @brief Class defining the function for the plume rise integration in ODE.
- */
+// PlumeRise definition in "plumerise.cpp"
+/// @brief Class defining the function for the plume rise integration in ODE.
 class PlumeRise : public Derivable {
  public:
-  /**
-   * @brief Construct a new Plume Rise object
-   * @param delta_z cell size
-   * @param alpha_coeff entrainment coefficient
-   * @param conc concentration vector
-   */
   PlumeRise(double delta_z, double alpha_entr, vector<double> &conc);
 
-  /**
-   * @brief Calculate derivatives for ODE
-   * @param x point to evaluate
-   * @param y solution vector
-   * @param yp derivative vector
-   */
   void func(double &x, vector<double> &y, vector<double> &yp);
 
   ODESolver solver;    //!< solver for the ode
@@ -562,9 +321,8 @@ class PlumeRise : public Derivable {
   vector<double> co;  //!< concentration vector for the cavern
 };
 
-/**
- * @brief Structure containing the results of the simulation
- */
+// Results struct definition is local
+/// @brief Structure containing the results of the simulation
 struct Results {
   /* vectors by height */
   vector<double> r_0;  //!< initial radius by node
@@ -623,118 +381,40 @@ struct Results {
   vector<vector<double> > r_plm;    //!< plume radius
 };
 
-/**
- * @brief The main SANSMIC model class.
- */
+// The sansmic numerical model is located in "model.cpp"
+/// @brief The main SANSMIC model class.
 class Model {
  public:
-  /**
-   * @brief Create a new model for the simulation
-   * @param out_prefix the prefix to use for file outputs
-   */
-  Model(string out_prefix = "sansmic");
+  Model();
+  Model(string out_prefix);
+  void configure(Scenario scen);
+
+  void run_sim(void);
+  int run_stage();
+  int run_step();
+  int init_stage(void);
+  int end_stage();
+
+  int open_outfiles(bool append = false);
+  void close_outfiles(void);
+
+  bool get_running_status(void);
+  int get_num_stages(void);
+  int get_current_stage(void);
+  double get_current_time(void);
+  double get_current_volume(void);
+  Results get_current_state(void);
+  Results get_results(void);
+  vector<Stage> get_stages(void);
 
   int verb = 0;  //!< verbosity setting for output
 
-  /**
-   * @brief Configure the model with the scenario provided.
-   */
-  void configure(Scenario scen);
-
-  /**
-   * @brief Run the complete model.
-   */
-  void run_sim(void);
-
-  /**
-   * @brief Run the next stage and all timesteps therein
-   * @return 1 if the stage is complete
-   */
-  int run_stage();
-
-  /**
-   * @brief Run the next time step
-   * @return 1 if the stage is complete
-   */
-  int run_step();
-
-  /**
-   * @brief Move on to the next stage
-   * @return the current stage number
-   */
-  int init_stage(void);
-
-  /**
-   * @brief End the current stage
-   * @return 1 if the stage is complete
-   */
-  int end_stage();
-
-  /**
-   * @brief Open output files and initialize the headers.
-   * @param append whether the files should be opened with append, by default
-   * false
-   * @return success code
-   */
-  int open_outfiles(bool append = false);
-
-  /**
-   * @brief Close the file handles for output files
-   */
-  void close_outfiles(void);
-
-  /**
-   * @brief Get the current stage number
-   * @return the stage number
-   */
-  int get_current_stage(void) { return stageNum; }
-
-  /**
-   * @brief Get the current time
-   * @return the time
-   */
-  double get_current_time(void) { return days + timet; }
-
-  /**
-   * @brief Get the current cavern volume (in bbl)
-   * @return the volume
-   */
-  double get_current_volume(void) { return V_tot; }
-
-  /**
-   * @brief Get the single-timestep state of the model in a Results object.
-   * @return Results object with single timestep of data.
-   */
-  Results get_current_state(void);
-
-  /**
-   * @brief Get the compelte results object
-   * @return Results
-   */
-  Results get_results(void) { return results; }
-
-  /**
-   * @brief Get the stages object
-   * @return vector of all stage definitions
-   */
-  vector<Stage> get_stages(void) { return stages; }
-
-  /**
-   * @brief Get the current number of stages
-   * @return the number of stages
-   */
-  size_t num_stages(void) { return stages.size(); }
-
-  /**
-   * @brief Is this model currently running?
-   * @return running status
-   */
-  bool get_running_status(void) { return b_running; }
-
  private:
-  string prefix;  //!< output file prefix
-  string Q_fill_table_name;
-  string Q_inj_table_name;
+  void init_vars(void);
+
+  string prefix;             //!< output file prefix
+  string Q_fill_table_name;  //!< name of fill table file
+  string Q_inj_table_name;   //!< name of injection table file
 
   ofstream fileOut;  //!< output file
   ofstream fileLog;  //!< log file
@@ -746,7 +426,7 @@ class Model {
   PlumeRise *plume_rise;  //!< plume rise model, create on next_stage
   GeomFormat dataFmt;     //!< the format of the geometry data
 
-  vector<Stage> stages;  // simulation stages
+  vector<Stage> stages;  //!< simulation stages
 
   bool b_initialized;     // has the model been initialized
   bool b_running;         // continue running the timestp
@@ -780,8 +460,8 @@ class Model {
   int im;                 // i minus 1
   int ip;                 // i plus 1
   int L;                  // TODO: ew ew ew change this var name
-  int m;                  // mass
-  int nEqn = 3;           //
+  int m;                  //
+  int nEqn;               //
   int idqf;               //
   int idqi;               //
   int i_obi;              // temp blanket cell index
@@ -790,45 +470,45 @@ class Model {
   int jplp;               // bounded jetPlumeCell + 1
   int jpls;               // jet plume cell
 
-  double dt;            //!< timestep size (h)
-  double err_cfac;      //!< convergence level
-  double C_cavAve;      //!< average cavern brine sg
-  double L_jet;         //!< jet model: jet length
-  double Q_fOld;        //!< oil fill: last timestep
-  double Q_fTot;        //!< oil fill: total volume
-  double Q_iOld;        //!< injection: last timestep
-  double Q_iTot;        //!< injection: total volume
-  double r_inj0;        //!< jet model: injection point radius
-  double days;          //!< time: current loop time, in days
-  double timet;         //!< time: total time, in days
-  double V_ullage;      //!< volume: ullage available
-  double u_inj0;        //!< jet model: injection point velocity
-  double V_insol;       //!< volume: insolubles in cavern
-  double volInsolVent;  //!< volume: insolubles vented out
-  double V_usable;      //!< volume: total usable
-  double V_tot;         //!< volume: total volume
-  double h_obi;         //!< height: OBI/blanket
-  double h_insol;       //!< height: of top of insolubles
-  double abserr;        //!< ODE solver: absolute tolerance
-  double relerr;        //!< ODE solver: relative tolerance
-  double floor_depth;   //!< measured depth: bottom of the cavern
-  double C_plm;         // plume concentraion
-  double ca;            // temp variable A
-  double cb;            // temp variable B
-  double cc;            // temp variable C
-  double cnext;         // next concentration
-  double cold;          // old concentration
-  double dC_dt;         // concentration derivative w.r.t. time
-  double dum;           // temp variable
-  double duml;          // temp variable
-  double fallf;         // fraction of falling insolubles
-  double z_obi;         // obi depth
+  double dt;           //!< timestep size (h)
+  double C_cavAve;     //!< average cavern brine sg
+  double L_jet;        //!< jet model: jet length
+  double Q_fOld;       //!< oil fill: last timestep
+  double Q_fTot;       //!< oil fill: total volume
+  double Q_iOld;       //!< injection: last timestep
+  double Q_iTot;       //!< injection: total volume
+  double r_inj0;       //!< jet model: injection point radius
+  double days;         //!< time: current loop time, in days
+  double timet;        //!< time: total time, in days
+  double V_ullage;     //!< volume: ullage available
+  double u_inj0;       //!< jet model: injection point velocity
+  double V_insol;      //!< volume: insolubles in cavern
+  double V_insolVent;  //!< volume: insolubles vented out
+  double V_usable;     //!< volume: total usable
+  double V_tot;        //!< volume: total volume
+  double h_obi;        //!< height: OBI/blanket
+  double h_insol;      //!< height: of top of insolubles
+  double err_cfac;     //!< convergence level
+  double abserr;       //!< ODE solver: absolute tolerance
+  double relerr;       //!< ODE solver: relative tolerance
+  double z_TD0;        //!< bottom of the cavern
+  double z_obi;        // obi depth
+  double C_plm;        // plume concentraion
+  double ca;           // temp variable A
+  double cb;           // temp variable B
+  double cc;           // temp variable C
+  double cnext;        // next concentration
+  double cold;         // old concentration
+  double dC_dt;        // concentration derivative w.r.t. time
+  double dum;          // temp variable
+  double duml;         // temp variable
+  double fallf;        // fraction of falling insolubles
   double p1, p2, p3, p4, p5, p7, p8, p9, p10;
   double rho_sat;        // saturated density
   double r;              // radius
   double S_d;            //
   double slctim;         //
-  double thet;           // wall angle
+  double theta;          // wall angle
   double u;              // velocity
   double vdif;           //
   double vel;            //
@@ -887,7 +567,6 @@ class Model {
   double C_inj;          // specific gravity of injected water
   double sig;            //
   double z_obi_stop;     // OBI-final (for stage termination criteria)
-  double ppp;            //
   double stopCriteria;   //
   double t;              // current time
   double t_last;         //
@@ -959,33 +638,13 @@ class Model {
   array<int, 2> idxq;   // USED FOR QI/QF TABLES
   array<int, 2> iqnum;  // USED FOR QI/QF TABLES
 
-  /// @brief Perform the leaching
-  /// @return is the stage complete
   int leach();
-
-  /// @brief Calculate the brine mass
-  /// @param dz the height to calculate within
-  /// @return the mass
   double brine_mass(double dz);
-
-  /// @brief Remove salt from the walls
-  /// @param i the cell to look at
-  /// @param recession_rate the recession rate
-  /// @param dt the timestep size
-  /// @param dz the vertical cell size
   void remove_salt(int i, double recession_rate, double dt, double dz);
-
-  /// @brief Calculate the plume concentration
   void plume(double ci, double zi, double zb, double &x, double &u, double dz,
              double alpha, int nmax, double &r, double &cpl);
-
-  /// @brief Calculate the new slope
-  /// @param i the cell to use
   void slope(int i);
 
-  /// @brief Save results in a results object
-  /// @param new_results the object to add to
-  /// @param to_file output to files as well
   void save_results(Results &new_results, bool to_file);
 
   void write_header(ofstream &);
@@ -999,26 +658,6 @@ class Model {
   void write_out_timestep_insolubles(double p1, double p2);
   void write_out_timestep_removed(double p1);
 };
-
-/**
- * @brief Namespace for SANSMIC error codes and processing
- */
-namespace error {
-const int MISSING_DAT_FILE = 55;  //!< unable to open the "dat" input file
-const int INVALID_LOG_FILE = 54;  //!< unable to open the "log" log file
-const int INVALID_OUT_FILE = 56;  //!< unable to open the "out" output file
-const int INVALID_TST_FILE = 59;  //!< unable to open the "tst" file
-const int NDIV_CHANGES_THROUGHOUT_FILE = 101;  //!< inconsistent n_div value
-const int OBI_AT_CAVERN_FLOOR = 201;  //!< the OBI has reached the cavern floor
-const int ODE_IFLAG_SIX = 306;        //!< ODE solver failed with value 6
-const int ODE_IFLAG_SEVEN = 307;      //!< ODE solver failed with value 7
-const int ODE_BAD_ABSERR = 300;  //!< ODE solver failed due to bad error value
-const int UNIMPLEMENTED_FLOW_TABLES =
-    900;  //!< flow tables not currently implemented
-const int UNIMPLEMENTED_GEOMETRY_IDATA =
-    901;  //!< the geometry type is not implemented yet
-
-}  // namespace error
 
 }  // namespace sansmic
 #endif

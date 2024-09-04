@@ -17,6 +17,9 @@
 
 #include "libsansmic.hpp"
 
+/**
+ * @brief Stage constructor with default values.
+ */
 sansmic::Stage::Stage() {
   title = "";
   leach_mode = Withdrawal;
@@ -38,6 +41,10 @@ sansmic::Stage::Stage() {
   dt = 0.1;
 }
 
+/**
+ * @brief Output debug data to a stream.
+ * @param fout Open stream to output to
+ */
 void sansmic::Stage::debug_log(ofstream &fout) {
   fout << "[[stages]]" << endl;
   fout << "title = '" << title << "'" << endl;

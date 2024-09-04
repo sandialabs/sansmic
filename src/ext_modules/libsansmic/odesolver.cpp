@@ -25,8 +25,9 @@
 sansmic::ODESolver::ODESolver(void) { neqn = 0; }
 
 /**
- * @details Create a new ODESolver object with a specific number of equations
- * and the appropriate Derivable object that can provide derivative values.
+ * @brief Create a new solver object with a specific ODE in mind.
+ * @param n the number of equations
+ * @param f the derivative function object
  */
 sansmic::ODESolver::ODESolver(int n, Derivable *f) {
   neqn = n;
@@ -64,9 +65,20 @@ sansmic::ODESolver::ODESolver(int n, Derivable *f) {
   iwork5 = 0;
 }
 
+/**
+ * @brief Get the number of equations this solver was configured for.
+ * @returns number of equations
+ */
 int sansmic::ODESolver::num_eqn(void) { return neqn; }
 
 /**
+ * @brief Integrate a system of neqn first order ODEs
+ * @param y solution vector at t
+ * @param t independent variable
+ * @param tout point at which solution is desired
+ * @param relerr relative error tolerance for local error test
+ * @param abserr absolute error tolerance for local error test
+ * @param iflag status of integration
  * @details @verbatim embed:rst
 
 .. rubric:: Abstract
@@ -212,6 +224,20 @@ void sansmic::ODESolver::ode(std::vector<double> &y, double &t, double tout,
 }
 
 /**
+ * @brief Differential equation solver
+ * @param y solution vector at T
+ * @param t independent variable
+ * @param tout point at which solution is desired
+ * @param relerr relative error tolerance
+ * @param abserr absolute error tolerance
+ * @param iflag status of integration
+ * @param phase1 work variable
+ * @param start work variable
+ * @param ns work variable
+ * @param nornd work variable
+ * @param k work variable
+ * @param kold work variable
+ * @param isnold work variable
  * @details @verbatim embed:rst
 
 .. rubric:: Abstract
@@ -250,7 +276,7 @@ void sansmic::ODESolver::de(vector<double> &y, double &t, double tout,
   if ((neqn < 1) || (t == tout) || (relerr < 0.0 || abserr < 0.0) ||
       (eps < 0.0) || (iflag == 0)) {
     iflag = 7;
-    errcode = sansmic::error::ODE_IFLAG_SEVEN;
+    errcode = sansmic::ODE_IFLAG_SEVEN;
     return;
   }
   isn = sign(1, iflag);
@@ -259,19 +285,19 @@ void sansmic::ODESolver::de(vector<double> &y, double &t, double tout,
     noop = 1;
   } else if (t != told) {
     iflag = 7;
-    errcode = sansmic::error::ODE_IFLAG_SEVEN;
+    errcode = sansmic::ODE_IFLAG_SEVEN;
     return;
   } else if ((iflag >= 2 && iflag <= 5) || (iflag == 6 && abserr > 0)) {
     noop = 2;
   } else if (iflag != 6 && iflag != 7) {
     iflag = 7;
-    errcode = sansmic::error::ODE_IFLAG_SEVEN;
+    errcode = sansmic::ODE_IFLAG_SEVEN;
     return;
   } else if (iflag == 6) {
-    errcode = sansmic::error::ODE_IFLAG_SIX;
+    errcode = sansmic::ODE_IFLAG_SIX;
     return;
   } else if (iflag == 7) {
-    errcode = sansmic::error::ODE_IFLAG_SEVEN;
+    errcode = sansmic::ODE_IFLAG_SEVEN;
     return;
   } else {
     return;
@@ -358,7 +384,7 @@ void sansmic::ODESolver::de(vector<double> &y, double &t, double tout,
         told = t;
         isnold = 1;
 
-        errcode = sansmic::error::ODE_BAD_ABSERR;
+        errcode = sansmic::ODE_BAD_ABSERR;
         return;
       }
     }
@@ -393,6 +419,15 @@ void sansmic::ODESolver::de(vector<double> &y, double &t, double tout,
 }
 
 /**
+ * @brief Take a single solver step, used indirectly through ODE
+ * @param eps local error tolerance
+ * @param start logical variable set true for first step
+ * @param k appropriate order for next step
+ * @param kold order used for last successful step
+ * @param crash logical variable set true when no step can be taken
+ * @param phase1 elimainate local retention of variables
+ * @param ns elimainate local retention of variables
+ * @param nornd elimainate local retention of variables
  * @details @verbatim embed:rst
 
 .. rubric:: Abstract
@@ -975,6 +1010,10 @@ void sansmic::ODESolver::step1(double &eps, bool &start, int &k, int &kold,
 }
 
 /**
+ * @brief Approximate the solution near x by polymonial.
+ * @param xout points at which solution is known
+ * @param yout solution at xout
+ * @param kold pass from sansmic::step1 - unchanged
  * @details @verbatim embed:rst
 
 .. rubric:: Abstract
