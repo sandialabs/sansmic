@@ -175,12 +175,16 @@ void sansmic::Model::configure(Scenario scenario) {
   dx_sep = scenario.well_separation;
   h_uso = scenario.ullage_standoff;
   dataFmt = scenario.geometry_format;
-
   stages = scenario.stages;
-
   open_outfiles(false);
 
   if (verb > 0) scenario.debug_log(fileLog);
+
+  dz = h_max / double(n_cells);
+  diffCoeff = D_mol;
+  C_hat = salt.get_sg_max();
+  C_wall = salt.get_solid_density();
+  w_hat = salt.wt_pct(C_hat, temp);
 
   C_tmp = vector<double>(n_nodes + 1, 0.0);
   tunc = vector<double>(n_cells + 1, -1e10);
@@ -223,12 +227,6 @@ void sansmic::Model::configure(Scenario scenario) {
   results.r_0 = vector<double>(n_nodes, 0.0);
   results.h_0 = vector<double>(n_nodes, 0.0);
   results.z_0 = vector<double>(n_nodes, 0.0);
-
-  dz = h_max / double(n_cells);
-  C_hat = salt.get_sg_max();
-  C_wall = salt.get_solid_density();
-  w_hat = salt.wt_pct(C_hat, temp);
-  diffCoeff = D_mol;
 
   plume_rise = new PlumeRise(dz, alpha, C_cav);
 

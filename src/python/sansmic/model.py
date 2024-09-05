@@ -439,7 +439,7 @@ class StageDefinition:
         super().__setattr__(name, value)
 
     @classmethod
-    def from_dict(cls, opts: dict) -> "StageDefinition":
+    def from_dict(cls, opts: dict, defaults=None) -> "StageDefinition":
         """Create a new object from a dictionary of options.
 
         This method differs from the __init__ constructor by automatically
@@ -462,7 +462,7 @@ class StageDefinition:
 
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
-        return cls(**new_opts)
+        return cls(**new_opts, defaults=defaults)
 
     def to_dict(self, keep_empty: bool = False):
         """Convert the object's data to a dictionary of options.
@@ -516,17 +516,21 @@ class StageDefinition:
             raise ValueError("Rest duration must be positive")
 
         # Validate appropriate initial conditions settings
-        if self.set_initial_conditions and (
-            self.set_cavern_sg is None or self.brine_interface_depth is None
-        ):
-            raise TypeError(
-                "An initial stage must have both set_cavern_sg and set_interface_level."
+        if self.set_initial_conditions and self.set_cavern_sg is None:
+            warnings.warn(
+                "Setting the initial conditions without setting cavern sg -- cavern sg will be set to fully saturated brine"
             )
-        elif not self.set_initial_conditions and self.set_cavern_sg:
+            self.set_cavern_sg = 10.0
+        elif (
+            not self.set_initial_conditions
+            and self.set_cavern_sg is not None
+            and self.set_cavern_sg >= 1.0
+        ):
             # raise TypeError(
             warnings.warn(
-                "Setting the starting cavern sg ought to use 'set_initial_conditions' to be set to True"
+                "Setting the starting cavern sg requires set_initial_conditions to be set to True -- setting to 0.0"
             )
+            self.set_cavern_sg = 0.0
         elif not self.set_initial_conditions and self.brine_interface_depth:
             warnings.warn(
                 "Make sure you meant to reset the interface level; use 0.0 or None to continue from the last stage."
@@ -800,9 +804,16 @@ class Scenario:
                 value = list()
             elif not hasattr(self, name) or self.stages is None:
                 converted_stages = list()
-                for stage in value:
+                for ct, stage in enumerate(value):
                     if isinstance(stage, dict):
-                        stage = StageDefinition(**stage, defaults=self.defaults)
+                        if (
+                            "set-initial-conditions" in stage
+                            or "set_initial_conditions" in stage
+                        ):
+                            pass
+                        else:
+                            stage["set-initial-conditions"] = ct == 0
+                        stage = StageDefinition.from_dict(stage, defaults=self.defaults)
                     converted_stages.append(stage)
                 value = converted_stages
             else:

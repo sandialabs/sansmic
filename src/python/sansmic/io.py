@@ -88,59 +88,10 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
         logger.error("Error reading scenario file {}".format(config_file))
         raise
 
-    # Do error checking and remove extra fields so that the Scenario's __init__
-    # does not have an exception
-    scenario_fields = [f.name for f in fields(Scenario)]
-    stage_fields = [f.name for f in fields(StageDefinition)]
-    remove = list()
-    for key in data.keys():
-        if key not in scenario_fields:
-            if strict:
-                logger.error(
-                    'Unrecognized option "{}" in scenario file options. Exiting'.format(
-                        key
-                    )
-                )
-                raise RuntimeError(
-                    'Unrecognized option "{}" in scenario file options'.format(key)
-                )
-            elif warn:
-                logger.warn(
-                    'Unrecognized option "{}" in scenario file options. Ignoring and continuing.'.format(
-                        key
-                    )
-                )
-            remove.append(key)
-    for key in remove:
-        data.pop(key)
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
         raise RuntimeError("No stages provided.")
-    for ct, stage in enumerate(data["stages"]):
-        remove = list()
-        for key in stage.keys():
-            if key not in stage_fields:
-                if strict:
-                    logger.error(
-                        'Unrecognized option "{}" in scenario file, stage {}. Exiting.'.format(
-                            key, ct
-                        )
-                    )
-                    raise RuntimeError(
-                        'Unrecognized option "{}" in scenario file, stage {}'.format(
-                            key, ct
-                        )
-                    )
-                elif warn:
-                    warnings.warn(
-                        'Unrecognized option "{}" in scenario file, stage {}. Ignoring and continuing.'.format(
-                            key, ct
-                        )
-                    )
-                remove.append(key)
-        for key in remove:
-            stage.pop(key)
-    return Scenario.from_dict(**data)
+    return Scenario.from_dict(data)
 
 
 def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
@@ -392,11 +343,11 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
         ):
             del s["stop-condition"]
             del s["stop-value"]
-        if scenario.stages[ct].set_initial_conditions is False:
+        if scenario.stages[ct].set_initial_conditions is False and ct > 0:
             s["set-cavern-sg"] = None
             s["brine-interface-depth"] = None
             s["set-initial-conditions"] = None
-        elif scenario.stages[ct].set_initial_conditions is None:
+        elif scenario.stages[ct].set_initial_conditions is None and ct > 0:
             s["set-cavern-sg"] = None
             if not s.get("brine-interface-depth", None) and redundant:
                 s["brine-interface-depth"] = 0

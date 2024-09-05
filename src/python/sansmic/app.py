@@ -259,7 +259,7 @@ def main(args=None, ret=False):
     if not args.quiet:
         print("Initial and final results:")
         print(
-            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_markdown(
+            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
                 index=False
             )
         )
