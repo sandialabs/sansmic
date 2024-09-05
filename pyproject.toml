@@ -27,7 +27,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-docs = ['Sphinx', 'pydata-sphinx-theme', 'sphinx_design', 'sphinxcontrib-bibtex', 'breathe', 'exhale']
+formats = ['h5py', 'openpyxl', 'tabulate']
+docs = ['Sphinx', 'pydata-sphinx-theme', 'sphinx_design', 'sphinxcontrib-bibtex', 'breathe', 'exhale', 'sphinx-argparse']
 test = ['unittest']
 dev = ['pre-commit', 'pyproject_hooks', 'black', 'pybind11']
 

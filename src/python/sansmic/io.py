@@ -17,7 +17,13 @@ from dataclasses import fields
 from enum import IntEnum
 
 import numpy as np
+import pandas as pd
 import yaml
+
+try:
+    import h5py
+except ImportError as e:
+    h5py = e
 
 from .model import (
     GeometryFormat,
@@ -388,12 +394,12 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
             del s["stop-value"]
         if scenario.stages[ct].set_initial_conditions is False:
             s["set-cavern-sg"] = None
-            s["set-interface-level"] = None
+            s["brine-interface-depth"] = None
             s["set-initial-conditions"] = None
         elif scenario.stages[ct].set_initial_conditions is None:
             s["set-cavern-sg"] = None
-            if not s["set-interface-level"] and redundant:
-                s["set-interface-level"] = 0
+            if not s.get("brine-interface-depth", None) and redundant:
+                s["brine-interface-depth"] = 0
         if s.get("simulation-mode", None) == SimulationMode.WITHDRAWAL:
             s["product-injection-rate"] = None
         keys = [k for k in s.keys()]
@@ -647,3 +653,68 @@ def read_classic_out_ddl(file_prefix):
 
     res = Results(combo)
     return res
+
+
+def write_hdf(results: Results, filename: str, **kwargs):
+    """Write results to an HDF5 file.
+
+    Parameters
+    ----------
+    results : Results
+        The results object to write
+    filename : str
+        The filename to write the results to.
+
+    Keyword Arguments
+    -----------------
+    kwargs : additional keyword arguments
+        See :meth:`~sansmic.model.Results.to_hdf` for keyword arguments.
+
+    """
+    results.to_hdf(filename)
+
+
+def read_hdf(filename: str) -> Results:
+    """Read results from an HDF5 file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read the results from.
+
+    """
+    results = Results.from_hdf(filename)
+    return results
+
+
+def write_json(results: Results, filename: str, **kwargs):
+    """Write results to a JSON file.
+
+    Parameters
+    ----------
+    results : Results
+        The results object to write
+    filename : str
+        The filename to write the results to.
+
+    Keyword Arguments
+    -----------------
+    kwargs : additional keyword arguments
+        See :meth:`json.dump` for valid keyword arguments
+
+    """
+    with open(filename, "w") as f:
+        json.dump(results.to_dict(), f, **kwargs)
+
+
+def read_json(filename: str):
+    """Read results from a JSON file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read the results from.
+    """
+    with open(filename, "w") as f:
+        d = json.load(f)
+    return Results.from_dict(d)

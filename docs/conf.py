@@ -39,6 +39,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx_design",
+    "sphinxarg.ext",
     "sphinxcontrib.bibtex",
 ]
 

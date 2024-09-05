@@ -21,6 +21,12 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import pandas as pd
 
+try:
+    import h5py
+except ImportError as e:
+    h5py = e
+
+
 logger = logging.getLogger("sansmic")
 
 has_ext = False
@@ -43,6 +49,9 @@ except ImportError:
         class _CStage:
             pass
 
+        class _CScenario:
+            pass
+
         class _CResults:
             pass
 
@@ -53,6 +62,7 @@ except ImportError:
             blah = 1
 
         CStage = _CStage
+        CScenario = _CScenario
         CModel = _CModel
         CGeometryFormat = _CGeometryFormat
         CRunMode = _CRunMode
@@ -218,6 +228,7 @@ class AdvancedOptions:
         StageDefinition
             the new stage
         """
+
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
         return cls(**new_opts)
@@ -242,6 +253,7 @@ class AdvancedOptions:
         dict
             the options dictionary
         """
+
         ret = dict()
         _rename_with_dash(asdict(self), ret)
         keys = list(ret.keys())
@@ -447,6 +459,7 @@ class StageDefinition:
         StageDefinition
             the new stage
         """
+
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
         return cls(**new_opts)
@@ -471,6 +484,7 @@ class StageDefinition:
         dict
             the options dictionary
         """
+
         ret = dict()
         _rename_with_dash(asdict(self), ret)
         keys = list(ret.keys())
@@ -491,7 +505,9 @@ class StageDefinition:
             if there are missing or misconfigured options
         ValueError
             if timing options are invalid
+
         """
+
         if self.solver_timestep <= 0:
             raise ValueError("Timestep must be greater than 0 hours")
         if self.injection_duration <= 0:
@@ -652,6 +668,7 @@ class StageDefinition:
         This method is protected because, in general, it is better not to
         try to operate directly on the C++ stage object.
         """
+
         self.validate()
         stage = _ext.CStage()
         stage.title = self.title
@@ -746,6 +763,7 @@ class Scenario:
         automatically converted from strings or integers and stages and
         advanced options are converted to the appropriate classes if a
         dictionary is passed."""
+
         if isinstance(value, str) and value.strip() == "":
             value = None
         if name == "geometry_format" and not isinstance(value, GeometryFormat):
@@ -812,6 +830,7 @@ class Scenario:
         StageDefinition
             the new stage
         """
+
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
         return cls(**new_opts)
@@ -836,6 +855,7 @@ class Scenario:
         dict
             the options dictionary
         """
+
         ret = dict()
         _rename_with_dash(asdict(self), ret)
         ret["advanced"] = self.advanced.to_dict(keep_empty)
@@ -873,6 +893,7 @@ class Scenario:
             new stage created from the keyword arguments. It will have been
             added into the stage list in the proper position.
         """
+
         defaults = kwargs.pop("defaults", self.defaults)
         stage = StageDefinition(defaults=defaults, **kwargs)
         if pos is None:
@@ -942,10 +963,11 @@ class Scenario:
                 self.advanced.temperature_model_version
             )
 
+        # TODO: This needs to be far more robust
         if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
             self.geometry_data, str
         ):
-            radii = list()
+            radii = list([0])  # Have to pad the data by 1
             with open(self.geometry_data, "r") as fin:
                 for line in fin.readlines():
                     if len(line.strip()) > 0:
@@ -1097,6 +1119,7 @@ class Simulator:
             results = sim.results
 
         """
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         if self.__stepwise is not None:
@@ -1117,11 +1140,13 @@ class Simulator:
     @property
     def is_open(self) -> bool:
         """Is this simulator attached to a C++ SANSMIC model?"""
+
         return self._is_open
 
     @property
     def current_stage(self) -> int:
         """The current stage of the simulation"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel._get_current_stage()
@@ -1129,6 +1154,7 @@ class Simulator:
     @property
     def current_time(self) -> float:
         """The current time (within the stage) of the simulation"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel._get_current_time()
@@ -1136,6 +1162,7 @@ class Simulator:
     @property
     def current_volume(self) -> float:
         """The current simulated cavern volume"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel._get_current_volume()
@@ -1143,6 +1170,7 @@ class Simulator:
     @property
     def is_running(self) -> bool:
         """Is the simulation mid-stage?"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel.is_running()
@@ -1150,12 +1178,14 @@ class Simulator:
     @property
     def num_stages(self) -> int:
         """The total number of stages that have been defined"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel.num_stages()
 
     def _initialize(self):
         """Initialize the simulation (for iterators)"""
+
         if self._is_initialized:
             raise RuntimeError("The simulation has already been initialized")
         self._cmodel.open_outfiles(False)
@@ -1165,11 +1195,13 @@ class Simulator:
 
     def _run_step(self):
         """Run the next timestep in the specified stage."""
+
         step_num = self._cmodel.run_next_step()
         return step_num
 
     def _finalize(self):
         """Finalize the simulation (for iterators)"""
+
         if self._is_finalized:
             raise RuntimeError("The simulation has already been finalized")
         self._cmodel.close_outfiles()
@@ -1185,6 +1217,7 @@ class Simulator:
             The output filename prefix to use, by default None which
             uses the value specified when the Simulator was created.
         """
+
         if self._is_open or self._cmodel is not None:
             raise RuntimeError("The simulation is already open")
         if prefix is None:
@@ -1200,6 +1233,7 @@ class Simulator:
 
     def close(self):
         """Close and garbage collect the C++ model object."""
+
         if not self._is_finalized and self._is_initialized:
             self._finalize()
         data = self._cmodel._get_results()
@@ -1213,6 +1247,7 @@ class Simulator:
 
     def run_sim(self):
         """Run the complete simulation; requires the Simulator to have been opened first."""
+
         if self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         if self.__stepwise is not None:
@@ -1226,6 +1261,7 @@ class Simulator:
 
     def get_current_state(self) -> "Results":
         """Get the current state of the model as a single-timestep results object."""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation has not been started")
         data = self._cmodel._get_current_state()
@@ -1235,6 +1271,7 @@ class Simulator:
     @property
     def results(self) -> "Results":
         """The results for an entire simulation."""
+
         if not self._has_run and self.__results is None:
             warnings.warn(
                 "Simulation incomplete - use get_current_state to get partial results"
@@ -1255,79 +1292,93 @@ class Results:
 
     def __init__(self, data: _ext.CResults) -> None:
         self._data = data
-        self.z = pd.Series(data.z_0, name="depth")
-        """The depth (:term:`MD`) of the bottom of each cell"""
-        self.h = pd.Series(data.h_0, name="height")
-        """The height above the original :term:`TD` of the bottom of each cell"""
-        self.r_0 = pd.Series(data.r_0, name="radius")
-        """The initial radius of each node"""
+        if self._data is None:
+            self.t = None
+            self.geometry = None
+            self.timing = None
+            self.cavern = None
+            self.flux = None
+            self.chemistry = None
+            self.summary = None
+            return
         self.t = pd.Series(data.t, name="time")
         """The times when data were saved"""
-        self.step = pd.Series(data.step, name="step")
-        """The steps when the data were saved"""
-        # self.summary.set_index(self.t, inplace=True, drop=True)
-        self.r = pd.DataFrame(data.r, columns=self.z).T.sort_index(ascending=True)
+
+        self.geometry = pd.DataFrame.from_dict(dict(z=data.z_0, h=data.h_0, r=data.r_0))
+        self.timing = pd.DataFrame.from_dict(
+            dict(
+                t=data.t, dt=data.dt, step=data.step, stage=data.stage, phase=data.phase
+            )
+        )
+
+        r = pd.DataFrame(data.r, columns=data.z_0, index=data.t)
         """The radius of each node with respect to time"""
-        self.dr = pd.DataFrame(data.dr_0, columns=self.z).T.sort_index(ascending=True)
+        dr = pd.DataFrame(data.dr_0, columns=data.z_0, index=data.t)
         """The change in radius :term:`wrt` time"""
-        self.sg = pd.DataFrame(data.sg, columns=self.z).T.sort_index(ascending=True)
+        sg = pd.DataFrame(data.sg, columns=data.z_0, index=data.t)
         """The specific gravity of brine in the cell :term:`wrt` time"""
-        self.theta = pd.DataFrame(data.theta, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        theta = pd.DataFrame(data.theta, columns=data.z_0, index=data.t)
         """The angle of cell wall :term:`wrt` time"""
-        self.Q_inj = pd.DataFrame(data.Q_inj, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        Q_inj = pd.DataFrame(data.Q_inj, columns=data.z_0, index=data.t)
         """The instantaneous injection rate at each time"""
-        self.V = pd.DataFrame(data.V, columns=self.z).T.sort_index(ascending=True)
+        V = pd.DataFrame(data.V, columns=data.z_0, index=data.t)
         """The volume of each cell through time"""
-        self.f_dis = pd.DataFrame(data.f_dis, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        f_dis = pd.DataFrame(data.f_dis, columns=data.z_0, index=data.t)
         """The modified dissolution factor :term:`wrt` time"""
-        self.f_flag = pd.DataFrame(data.f_flag, columns=self.z, dtype=int).T.sort_index(
-            ascending=True
-        )
+        f_flag = pd.DataFrame(data.f_flag, columns=data.z_0, index=data.t, dtype=int)
         """The dissolution status variable indicating if dissolution is occuring."""
-        self.xincl = pd.DataFrame(data.xincl, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        xincl = pd.DataFrame(data.xincl, columns=data.z_0, index=data.t)
         """The inclination of the cell wall"""
-        self.amd = pd.DataFrame(data.amd, columns=self.z).T.sort_index(ascending=True)
+        amd = pd.DataFrame(data.amd, columns=data.z_0, index=data.t)
         """Temporary variable for debugging"""
-        self.D_coeff = pd.DataFrame(data.D_coeff, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        D_coeff = pd.DataFrame(data.D_coeff, columns=data.z_0, index=data.t)
         """The calculated effective diffusion coefficient"""
-        self.dC_dz = pd.DataFrame(data.dC_dz, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        dC_dz = pd.DataFrame(data.dC_dz, columns=data.z_0, index=data.t)
         """The change in concentration with respect to depth in each cell at each time"""
-        self.C_old = pd.DataFrame(data.C_old, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        C_old = pd.DataFrame(data.C_old, columns=data.z_0, index=data.t)
         """The previous concentration in the cell"""
-        self.C_new = pd.DataFrame(data.C_new, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        C_new = pd.DataFrame(data.C_new, columns=data.z_0, index=data.t)
         """The current concentration in the cell"""
-        self.dC_dt = pd.DataFrame(data.dC, columns=self.z).T.sort_index(ascending=True)
+        dC_dt = pd.DataFrame(data.dC, columns=data.z_0, index=data.t)
         """The change in concentration with respect to time, related to the rate of dissolution"""
-        self.dr_dt = pd.DataFrame(data.dr, columns=self.z).T.sort_index(ascending=True)
+        dr_dt = pd.DataFrame(data.dr, columns=data.z_0, index=data.t)
         """The change in radius with respect to time"""
-        self.C_plm = pd.DataFrame(data.C_plm, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        C_plm = pd.DataFrame(data.C_plm, columns=data.z_0, index=data.t)
         """The concentration within the injection plume"""
-        self.u_plm = pd.DataFrame(data.u_plm, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        u_plm = pd.DataFrame(data.u_plm, columns=data.z_0, index=data.t)
         """The velocity of the fluid in the injection plume"""
-        self.r_plm = pd.DataFrame(data.r_plm, columns=self.z).T.sort_index(
-            ascending=True
-        )
+        r_plm = pd.DataFrame(data.r_plm, columns=data.z_0, index=data.t)
         """The radius of the injection plume"""
+
+        self.cavern = pd.DataFrame.from_dict(
+            dict(
+                r=r.stack(),
+                dr=dr.stack(),
+                dr_dt=dr_dt.stack(),
+                theta=theta.stack(),
+                xincl=xincl.stack(),
+                V=V.stack(),
+            )
+        )
+        self.flux = pd.DataFrame.from_dict(
+            dict(
+                r=r_plm.stack(),
+                u=u_plm.stack(),
+                C=C_plm.stack(),
+                Q_inj=Q_inj.stack(),
+            )
+        )
+        self.chemistry = pd.DataFrame.from_dict(
+            dict(
+                sg=sg.stack(),
+                dC_dt=dC_dt.stack(),
+                dC_dz=dC_dz.stack(),
+                f_flag=f_flag.stack(),
+                f_dis=f_dis.stack(),
+                D_coeff=D_coeff.stack(),
+            )
+        )
+
         self.summary = pd.DataFrame.from_dict(
             {
                 "t_h": self.t,
@@ -1431,6 +1482,157 @@ class Results:
             max(self.summary.stage) - min(self.summary.stage) + 1,
         )
 
+    def to_dict(self) -> dict:
+        """Convert the results object to a dictionary format."""
+        ret = dict()
+        for k in ["summary", "timing", "geometry", "cavern", "chemistry", "flux"]:
+            ret[k] = getattr(self, k).to_dict("tight")
+        return ret
+
+    @classmethod
+    def from_dict(cls, d) -> "Results":
+        """Create a new object from a tight dictionary representation."""
+        new = cls(None)
+        for k in ["summary", "timing", "geometry", "cavern", "chemistry", "flux"]:
+            setattr(new, k, pd.DataFrame.from_dict(d[k], orient="tight"))
+        return new
+
+    def to_hdf(
+        self,
+        filename: str,
+        *,
+        compression: str = "gzip",
+        compression_opts: int = 9,
+        shuffle: bool = True,
+        fletcher32: bool = True,
+        **kwargs,
+    ):
+        """Write results to an HDF5 file.
+
+        Parameters
+        ----------
+        filename : str
+            A filename with extension ".h5", or filename prefix without extension, to write to
+
+        Keyword Arguments
+        -----------------
+        compression : str
+            The HDF5 compression filter library to use, by default 'gzip'
+        compression_opts : int
+            The compression level to use, by default 9 (highest)
+        shuffle : bool
+            Whether to use the shuffle filter, by default True
+        fletcher32 : bool
+            Whether to use checksum filter, by default True
+        kwargs : additional keyword arguments
+            Any additional arguments to be passed to the :mod:`h5py` module ``create_dataset`` call.
+
+        """
+
+        if isinstance(h5py, ImportError):
+            raise RuntimeError("Optional dependency not installed: h5py") from h5py
+        if not filename.lower().endswith(".h5"):
+            filename = filename + ".h5"
+        with h5py.File(filename, "w") as f:
+            f.create_dataset(
+                "summary",
+                data=self.summary.to_records(),
+                dtype=[(k, v) for (k, v) in self.summary.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "timing",
+                data=self.timing.to_records(),
+                dtype=[(k, v) for (k, v) in self.timing.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "geometry",
+                data=self.geometry.to_records(),
+                dtype=[(k, v) for (k, v) in self.geometry.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "cavern",
+                data=self.cavern.to_records(),
+                dtype=[(k, v) for (k, v) in self.cavern.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "chemistry",
+                data=self.chemistry.to_records(),
+                dtype=[(k, v) for (k, v) in self.chemistry.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "flux",
+                data=self.flux.to_records(),
+                dtype=[(k, v) for (k, v) in self.flux.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+
+    @classmethod
+    def from_hdf(cls, filename: str) -> "Results":
+        """Read results from an HDF5 file.
+
+        Parameters
+        ----------
+        filename : str
+            A filename with extension ".h5", or filename prefix without extension, to read from.
+
+        """
+
+        results = cls(None)
+        if isinstance(h5py, ImportError):
+            raise RuntimeError("Optional dependency not installed: h5py") from h5py
+        if not filename.lower().endswith(".h5"):
+            filename = filename + ".h5"
+        with h5py.File(filename, "w") as f:
+            results.summary = pd.DataFrame(
+                np.array(f["summary"], dtype=f["summary"].dtype).view(np.recarray)
+            )
+            results.timing = pd.DataFrame(
+                np.array(f["timing"], dtype=f["timing"].dtype).view(np.recarray)
+            )
+            results.t = pd.Series(results.timing["t"].values, name="time")
+            results.geometry = pd.DataFrame(
+                np.array(f["geometry"], dtype=f["geometry"].dtype).view(np.recarray)
+            )
+            results.cavern = pd.DataFrame(
+                np.array(f["cavern"], dtype=f["cavern"].dtype).view(np.recarray)
+            )
+            results.chemistry = pd.DataFrame(
+                np.array(f["chemistry"], dtype=f["chemistry"].dtype).view(np.recarray)
+            )
+            results.flux = pd.DataFrame(
+                np.array(f["flux"], dtype=f["flux"].dtype).view(np.recarray)
+            )
+        return results
+
 
 class _OutDataBlock:
     """Useful for processing old SANSMIC .out files"""
@@ -1507,3 +1709,4 @@ if not has_ext:
     _ext.CRunMode = SimulationMode
     _ext.CModel = Scenario
     _ext.CStage = StageDefinition
+    _ext.CScenario = Scenario
