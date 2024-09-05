@@ -17,11 +17,16 @@ and ``sansmic-convert``.
 import logging
 from argparse import ArgumentParser
 from os.path import splitext
-from numpy import round
 
+from numpy import round
+from pip._vendor.rich.progress import Progress
 from sansmic import __version__
 from sansmic import io as sio
-from pip._vendor.rich.progress import Progress
+
+try:
+    import h5py
+except ImportError as e:
+    h5py = e
 
 logging.basicConfig()
 logger = logging.getLogger("sansmic")
@@ -38,67 +43,144 @@ def _get_verbosity(args):
         level = logging.DEBUG
     logger.setLevel(level)
     if args.debug:
+        args.verbose = 3
         return 3
     return args.verbose
 
 
-def main():
-    """Command line function to run sansmic."""
+def _main_parser(default_hdf5=None):
+    if default_hdf5 is None:
+        kwargs = dict(default=None)
+    else:
+        kwargs = dict()
     parser = ArgumentParser(
         prog="sansmic",
         description=f"A solution mining code. v{__version__}",
     )
     parser.add_argument(
-        "datafile", metavar="INPUTFILE", help="the SANSMIC input file to use"
+        "datafile",
+        metavar="INPUTFILE",
+        help="the SANSMIC input file to use; if extension is '.dat', --toml is implied",
     )
     outp = parser.add_argument_group(
         "Output options",
-        """By default, only warnings will be output to the console, using
---quiet will turn these off. Using --verbose will change the behavior up to
-three times. 1: turn on logging INFO level output. 2: output a summary of
-results at the end of each stage, and use a progress bar. 3: output summary
-results every simulation day. Using --debug will set the logging level to
-DEBUG instead of INFO and automatically set verbosity to 3. These options
-are mutually exclusive.
-""",
+        """Default options:   {}  {}""".format(
+            "--hdf" if default_hdf5 or default_hdf5 is None else "--no-hdf",
+            "--json" if not default_hdf5 and default_hdf5 is not None else "--no-json",
+        ),
     )
     outp.add_argument(
         "-o",
         "--output",
         dest="prefix",
-        help="change result files' prefix [default: from datafile]",
+        help="change output file prefix; if used, --toml is implied",
         default=None,
+    )
+    wwo1 = outp.add_mutually_exclusive_group()
+
+    wwo1.add_argument(
+        "--toml", default=None, action="store_true", help="Create a TOML scenario file."
+    )
+    wwo1.add_argument(
+        "--no-toml",
+        dest="toml",
+        action="store_false",
+        help="Don't create a TOML scenario file.",
+        **kwargs,
+    )
+    wwo2 = outp.add_mutually_exclusive_group()
+    wwo2.add_argument(
+        "--hdf",
+        default=default_hdf5,
+        action="store_true",
+        help="Create an HDF5 formatted results file.",
+    )
+    wwo2.add_argument(
+        "--no-hdf",
+        dest="hdf",
+        action="store_false",
+        help="Don't create an HDF5 results file.",
+        **kwargs,
+    )
+    wwo3 = outp.add_mutually_exclusive_group()
+    wwo3.add_argument(
+        "--json",
+        default=not default_hdf5 if default_hdf5 is not None else None,
+        action="store_true",
+        help="Create a JSON formatted results file.",
+    )
+    wwo3.add_argument(
+        "--no-json",
+        dest="json",
+        action="store_false",
+        help="Don't create a JSON results file.",
+        **kwargs,
+    )
+
+    outp = parser.add_argument_group(
+        "Console/stdout/stderr reporting",
+        "The following options are mutually exclusive",
     )
     verb = outp.add_mutually_exclusive_group()
     verb.add_argument(
         "-v",
         "--verbose",
-        help="turn on info-level messages, increase the output verbosity up to 3 times",
+        help="increase reporting details",
         action="count",
         default=0,
     )
     verb.add_argument(
         "-q",
         "--quiet",
-        help="set log level to errors-only",
+        help="turn off runtime screen output",
         action="store_true",
         default=False,
     )
     verb.add_argument(
         "--debug",
-        help="turn on debug-level messages and set verbosity to 3",
+        help="turn on debug messages and set max verbosity",
         action="store_true",
         default=False,
     )
-    meth = parser.add_argument_group("Execution method")
-    meth = meth.add_mutually_exclusive_group()
-    args = parser.parse_args()
+    return parser
+
+
+def main(args=None, ret=False):
+    """Command line function to run sansmic.
+
+    If this function is run from somewhere other than the command line, then
+    arguments can be passed in to control execution as a list of strings.
+    The ``ret`` argument can be set to ``True`` to return the results when
+    using this as a function, also.
+
+    Parameters
+    ----------
+    args : argparse.Namespace or list[str]
+        Arguments as a list of strings that would be used on the command-line.
+    ret : bool
+        Should the function return a results object, by default False.
+
+    """
+    if ret or args is not None:
+        default_hdf5 = False
+    else:
+        default_hdf5 = not isinstance(h5py, Exception)
+    parser = _main_parser(default_hdf5)
+    args = parser.parse_args(args=args)
     datafile = args.datafile
     prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
     verbosity = _get_verbosity(args)
     logger.debug("Running sansmic with {}".format(args))
     model = sio.read_scenario(datafile, warn=not args.quiet)
     logger.info("Successfully created scenario from {}".format(datafile))
+    if (args.toml is None and args.prefix is not None) or datafile.lower().endswith(
+        ".dat"
+    ):
+        args.toml = True
+    elif args.toml is None and args.prefix is None:
+        args.toml = False
+    if args.toml:
+        sio.write_scenario(model, prefix + ".toml")
     logger.debug("Running simulation")
     with model.new_simulation(prefix, verbosity) as sim:
         logger.debug("Created new simulation")
@@ -175,19 +257,22 @@ are mutually exclusive.
         logger.debug("Simulation complete")
     res = sim.results
     if not args.quiet:
-        print("Final results:")
+        print("Initial and final results:")
         print(
-            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_markdown(
+            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
                 index=False
             )
         )
-        summary = res.summary.to_markdown(index=False)
-        print(res.summary)
+    if args.hdf:
+        sio.write_hdf(res, prefix + ".h5")
+    if args.json:
+        sio.write_json(res, prefix + ".json")
     logger.debug("Sansmic complete")
+    if ret:
+        return res
 
 
-def convert():
-    """Command line function to convert a scenario/dat to a new format."""
+def _convert_parser():
     parser = ArgumentParser(
         prog="sansmic-convert",
         description=f"Convert old SANSMIC DAT files to new sansmic scenario files. v{__version__}",
@@ -234,6 +319,13 @@ def convert():
         action="store_true",
         default=False,
     )
+    return parser
+
+
+def convert():
+    """Command line function to convert a scenario/dat to a new format."""
+
+    parser = _convert_parser()
     args = parser.parse_args()
     if args.debug and args.quiet:
         parser.error("argument --debug: not allowed with argument -q/--quiet")

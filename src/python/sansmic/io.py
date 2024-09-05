@@ -17,7 +17,13 @@ from dataclasses import fields
 from enum import IntEnum
 
 import numpy as np
+import pandas as pd
 import yaml
+
+try:
+    import h5py
+except ImportError as e:
+    h5py = e
 
 from .model import (
     GeometryFormat,
@@ -53,7 +59,7 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
     Raises
     ------
     RuntimeError
-        if there is an unrecognized option and ``strict`` is True or if there are no
+        if there is an unrecognized option and ``strict`` is True, or if there are no
         stages defined.
     """
     logger.debug(
@@ -82,59 +88,10 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
         logger.error("Error reading scenario file {}".format(config_file))
         raise
 
-    # Do error checking and remove extra fields so that the Scenario's __init__
-    # does not have an exception
-    scenario_fields = [f.name for f in fields(Scenario)]
-    stage_fields = [f.name for f in fields(StageDefinition)]
-    remove = list()
-    for key in data.keys():
-        if key not in scenario_fields:
-            if strict:
-                logger.error(
-                    'Unrecognized option "{}" in scenario file options. Exiting'.format(
-                        key
-                    )
-                )
-                raise RuntimeError(
-                    'Unrecognized option "{}" in scenario file options'.format(key)
-                )
-            elif warn:
-                logger.warn(
-                    'Unrecognized option "{}" in scenario file options. Ignoring and continuing.'.format(
-                        key
-                    )
-                )
-            remove.append(key)
-    for key in remove:
-        data.pop(key)
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
         raise RuntimeError("No stages provided.")
-    for ct, stage in enumerate(data["stages"]):
-        remove = list()
-        for key in stage.keys():
-            if key not in stage_fields:
-                if strict:
-                    logger.error(
-                        'Unrecognized option "{}" in scenario file, stage {}. Exiting.'.format(
-                            key, ct
-                        )
-                    )
-                    raise RuntimeError(
-                        'Unrecognized option "{}" in scenario file, stage {}'.format(
-                            key, ct
-                        )
-                    )
-                elif warn:
-                    warnings.warn(
-                        'Unrecognized option "{}" in scenario file, stage {}. Ignoring and continuing.'.format(
-                            key, ct
-                        )
-                    )
-                remove.append(key)
-        for key in remove:
-            stage.pop(key)
-    return Scenario.from_dict(**data)
+    return Scenario.from_dict(data)
 
 
 def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
@@ -386,14 +343,14 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
         ):
             del s["stop-condition"]
             del s["stop-value"]
-        if scenario.stages[ct].set_initial_conditions is False:
+        if scenario.stages[ct].set_initial_conditions is False and ct > 0:
             s["set-cavern-sg"] = None
-            s["set-interface-level"] = None
+            s["brine-interface-depth"] = None
             s["set-initial-conditions"] = None
-        elif scenario.stages[ct].set_initial_conditions is None:
+        elif scenario.stages[ct].set_initial_conditions is None and ct > 0:
             s["set-cavern-sg"] = None
-            if not s["set-interface-level"] and redundant:
-                s["set-interface-level"] = 0
+            if not s.get("brine-interface-depth", None) and redundant:
+                s["brine-interface-depth"] = 0
         if s.get("simulation-mode", None) == SimulationMode.WITHDRAWAL:
             s["product-injection-rate"] = None
         keys = [k for k in s.keys()]
@@ -647,3 +604,68 @@ def read_classic_out_ddl(file_prefix):
 
     res = Results(combo)
     return res
+
+
+def write_hdf(results: Results, filename: str, **kwargs):
+    """Write results to an HDF5 file.
+
+    Parameters
+    ----------
+    results : Results
+        The results object to write
+    filename : str
+        The filename to write the results to.
+
+    Keyword Arguments
+    -----------------
+    kwargs : additional keyword arguments
+        See :meth:`~sansmic.model.Results.to_hdf` for keyword arguments.
+
+    """
+    results.to_hdf(filename)
+
+
+def read_hdf(filename: str) -> Results:
+    """Read results from an HDF5 file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read the results from.
+
+    """
+    results = Results.from_hdf(filename)
+    return results
+
+
+def write_json(results: Results, filename: str, **kwargs):
+    """Write results to a JSON file.
+
+    Parameters
+    ----------
+    results : Results
+        The results object to write
+    filename : str
+        The filename to write the results to.
+
+    Keyword Arguments
+    -----------------
+    kwargs : additional keyword arguments
+        See :meth:`json.dump` for valid keyword arguments
+
+    """
+    with open(filename, "w") as f:
+        json.dump(results.to_dict(), f, **kwargs)
+
+
+def read_json(filename: str):
+    """Read results from a JSON file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read the results from.
+    """
+    with open(filename, "w") as f:
+        d = json.load(f)
+    return Results.from_dict(d)
