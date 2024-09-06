@@ -44,6 +44,10 @@ void sansmic::Model::init_vars() {
   results = sansmic::Results();
   jet_model = sansmic::JetModel();
 
+  b_use_tstfile = true;
+  b_use_outfile = false;
+  verbosity = 0;
+
   b_initialized = false;
   b_running = false;
   b_times_up = false;
@@ -178,7 +182,7 @@ void sansmic::Model::configure(Scenario scenario) {
   stages = scenario.stages;
   open_outfiles(false);
 
-  if (verb > 0) scenario.debug_log(fileLog);
+  if (verbosity > 0) scenario.debug_log(fileLog);
 
   dz = h_max / double(n_cells);
   diffCoeff = D_mol;
@@ -276,6 +280,7 @@ void sansmic::Model::configure(Scenario scenario) {
   V_saltRemove[n_nodes] = 0.0;
   C_cavAve = C_hat;
 
+  write_tst_header();  // It's nice to have this header at each stage
   save_results(results, false);
   b_initialized = true;
 }
@@ -472,9 +477,8 @@ int sansmic::Model::init_stage(void) {
   V_saltRemove[obiCell] = 0.0;
 
   // stage has been initialized
-  write_tst_header();  // It's nice to have this header at each stage
-  b_running = true;    // This says the stage has been initialized
-  stageNum++;          // Increment the stage number
+  b_running = true;  // This says the stage has been initialized
+  stageNum++;        // Increment the stage number
   return stageNum;
 }
 
@@ -487,7 +491,7 @@ int sansmic::Model::end_stage(void) {
   timet = timet + days;
   t_last = t_tot;
   h_obiSave = h_obi;
-  if (verb > 1) {
+  if (verbosity > 1) {
     fileLog << "stageNum, t_last, timet, h_obi = " << stageNum << ", " << t_last
             << ", " << timet << ", " << h_obiSave << endl;
     write_log_end_stage();
@@ -501,7 +505,6 @@ int sansmic::Model::end_stage(void) {
 void sansmic::Model::run_sim(void) {
   // do a complete run from initialization to finalization
   open_outfiles(false);
-  write_tst_header();
   for (unsigned long istage = 0; istage < stages.size(); istage++) {
     run_stage();
   }
@@ -1233,8 +1236,10 @@ int sansmic::Model::leach() {
       // OR after the waiting period, when t_wait is
       // set to 0.
       b_running = false;
+      write_tst_end_or_wo("=== END");
     } else {
       t_end = t + t_wait;
+      write_tst_end_or_wo("--- WO");
       stopCriteria = 0;
       Q_in = 0.0;
       Q_fill = 0.0;
@@ -1583,13 +1588,35 @@ void sansmic::Model::save_results(sansmic::Results &new_results, bool to_file) {
 }
 
 /**
+ * @brief Choose whether the .TST file should be written
+ * @param use_file the choice
+ */
+void sansmic::Model::generate_tst_file(bool use_file) {
+  b_use_tstfile = use_file;
+}
+
+/**
+ * @brief Choose whether the .OUT file should be written
+ * @param use_file the choice
+ */
+void sansmic::Model::generate_out_file(bool use_file) {
+  b_use_outfile = use_file;
+}
+
+/**
+ * @brief Set the verbosity output level for cout/cerr
+ * @param verb the verbosity level
+ */
+void sansmic::Model::set_verbosity_level(int verb) { verbosity = verb; }
+
+/**
  * @brief Open output files and initialize the headers.
  * @param append whether the files should be opened with append, by default
  * false
  * @return success code
  */
 int sansmic::Model::open_outfiles(bool append) {
-  if (!this->fileOut.is_open()) {
+  if (!this->fileOut.is_open() && b_use_outfile) {
     if (append) {
       this->fileOut.open(prefix + ".out", std::ios::app);
     } else {
@@ -1597,7 +1624,7 @@ int sansmic::Model::open_outfiles(bool append) {
       write_header(this->fileOut);
     }
   }
-  if (!this->fileOut.is_open()) {
+  if (!this->fileOut.is_open() && b_use_outfile) {
     std::cerr << "Error writing file " << prefix << ".out - exiting" << endl;
     return sansmic::INVALID_OUT_FILE;
   }
@@ -1613,7 +1640,7 @@ int sansmic::Model::open_outfiles(bool append) {
     std::cerr << "Error writing file " << prefix << ".log - exiting" << endl;
     return sansmic::INVALID_LOG_FILE;
   }
-  if (!this->fileTst.is_open()) {
+  if (!this->fileTst.is_open() && b_use_tstfile) {
     if (append) {
       this->fileTst.open(prefix + ".tst", std::ios::app);
     } else {
@@ -1621,7 +1648,7 @@ int sansmic::Model::open_outfiles(bool append) {
       write_header(this->fileTst);
     }
   }
-  if (!this->fileTst.is_open()) {
+  if (!this->fileTst.is_open() && b_use_tstfile) {
     std::cerr << "Error writing file " << prefix << ".tst - exiting" << endl;
     return sansmic::INVALID_TST_FILE;
   }
@@ -1632,20 +1659,28 @@ int sansmic::Model::open_outfiles(bool append) {
  * @brief Close the file handles for output files
  */
 void sansmic::Model::close_outfiles(void) {
-  if (this->fileOut.is_open()) this->fileOut.close();
+  if (this->fileOut.is_open() && b_use_outfile) this->fileOut.close();
   if (this->fileLog.is_open()) this->fileLog.close();
-  if (this->fileTst.is_open()) this->fileTst.close();
+  if (this->fileTst.is_open() && b_use_tstfile) this->fileTst.close();
 }
 
+/**
+ * @brief Add header information to a file
+ * @param sout the file to write to
+ */
 void sansmic::Model::write_header(ofstream &sout) {
   sout << "# Output generated by sansmic.libsansmic-1.0.0" << endl;
   sout << "#  sansmic home: https://github.com/SandiaLabs/sansmic" << endl;
 }
 
+/**
+ * @brief Initialize the TST file
+ */
 void sansmic::Model::write_tst_header(void) {
-  fileTst << "# File= " << prefix << endl;
-  fileTst << std::setw(13) << "t"      // time in days
-          << std::setw(13) << "V_tot"  // total volume
+  if (!b_use_tstfile) return;
+  fileTst << "File= " << prefix << endl;
+  fileTst << "#" << std::setw(12) << "t"  // time in days
+          << std::setw(13) << "V_tot"     // total volume
           << std::setw(13)
           << "err_conv"  // measure of stability of the mass balance solver
           << std::setw(13) << "sg_out"  // specific gravity of produced brine
@@ -1667,18 +1702,23 @@ void sansmic::Model::write_tst_header(void) {
           << std::setw(13) << "V_inj"   // total volume injected
           << std::setw(13) << "Q_fill"  // rate of oil injection
           << std::setw(13) << "V_fill"  // total volume oil injected
-          << std::setw(8) << "stage" << std::setw(8) << "phase" << endl;
-  fileTst << std::setw(13) << "(d)" << std::setw(13) << "(bbl)" << std::setw(13)
-          << "(:1)" << std::setw(13) << "(:1.kg/L)" << std::setw(13)
-          << "(:1.kg/L)" << std::setw(13) << "(bbl)" << std::setw(13) << "(ft)"
-          << std::setw(13) << "(ft)" << std::setw(13) << "(bbl)"
-          << std::setw(12) << "(bbl)" << std::setw(13) << "(bbl)"
+          << endl;
+  fileTst << " #" << std::setw(11) << "(d)" << std::setw(13) << "(bbl)"
+          << std::setw(13) << "(:1)" << std::setw(13) << "(:1.kg/L)"
+          << std::setw(13) << "(:1.kg/L)" << std::setw(13) << "(bbl)"
+          << std::setw(13) << "(ft)" << std::setw(13) << "(ft)" << std::setw(13)
+          << "(bbl)" << std::setw(12) << "(bbl)" << std::setw(13) << "(bbl)"
           << std::setw(13) << "(bbl/d)" << std::setw(13) << "(bbl)"
-          << std::setw(13) << "(bbl/d)" << std::setw(13) << "(bbl)"
-          << std::setw(8) << "---" << std::setw(8) << "---" << endl;
+          << std::setw(13) << "(bbl/d)" << std::setw(13) << "(bbl)" << endl;
 }
 
+/**
+ * @brief Write data to the TST file
+ * @param stage the stage number
+ * @param inject whether this is injection or workover
+ */
 void sansmic::Model::write_tst_step(int stage, bool inject) {
+  if (!b_use_tstfile) return;
   fileTst << std::scientific;
   fileTst << std::setprecision(4);
   fileTst << std::setw(13) << (days + timet) << std::setw(13) << V_tot
@@ -1689,28 +1729,34 @@ void sansmic::Model::write_tst_step(int stage, bool inject) {
           << std::setw(12) << V_ullage << std::setw(13) << V_usable
           << std::setw(13) << Q_iTot - Q_iOld << std::setw(13) << Q_iTot
           << std::setw(13) << Q_fTot - Q_fOld << std::setw(13) << Q_fTot
-          << std::setw(8) << stage;
-  if (inject) {
-    fileTst << std::setw(8) << "inject";
-  } else {
-    fileTst << std::setw(8) << "static";
-  }
-  fileTst << endl;
+          << endl;
 }
 
+/**
+ * @brief Write end of phase to the TST file
+ * @param text what to use as a prefix
+ */
 void sansmic::Model::write_tst_end_or_wo(const char *text) {
+  if (!b_use_tstfile) return;
   fileTst
-      << "#                                                                  "
+      << "                                                     "
          "                                                                   "
          "                                                 "
       << text << std::setw(2) << stageNum << endl;
 }
 
+/**
+ * @brief Write data to the LOG file
+ */
 void sansmic::Model::write_log_end_stage(void) {
   fileLog << "END STAGE ----------------------------------" << endl;
 }
 
+/**
+ * @brief Write data to the OUT file
+ */
 void sansmic::Model::write_out_timestep_summary(void) {
+  if (!b_use_outfile) return;
   fileOut << endl;
   fileOut << std::setprecision(4);
   fileOut << std::scientific;
@@ -1762,8 +1808,14 @@ void sansmic::Model::write_out_timestep_summary(void) {
   fileOut << endl;
 }
 
+/**
+ * @brief Write data to the OUT file
+ * @param i cell index
+ * @param p1 flow rate
+ * @param p2 volume
+ */
 void sansmic::Model::write_out_timestep_per_cell(int i, double p1, double p2) {
-  // 670      FORMAT (" ",I4, 1pe11.4,e11.4, 2e11.4, 4e11.4,i5, 17e11.4)
+  if (!b_use_outfile) return;
   fileOut << " " << setw(4) << i << setw(11) << h_cav[i] << setw(11) << r_cav[i]
           << setw(11) << r_cav[i] - r_cav0[i] << setw(11) << C_cav[i]
           << setw(11) << phi[i] << setw(11) << p2 << setw(11) << p1 << setw(11)
@@ -1775,7 +1827,12 @@ void sansmic::Model::write_out_timestep_per_cell(int i, double p1, double p2) {
           << r_plume[i] << endl;
 }
 
+/**
+ * @brief Write data to the OUT file
+ * @param qo output flow rate
+ */
 void sansmic::Model::write_out_timestep_totals(double qo) {
+  if (!b_use_outfile) return;
   fileOut << endl;
   fileOut << " TIME=" << setw(11) << days << " DAYS (" << setw(11)
           << days * 24.0 << " HRS)"
@@ -1790,7 +1847,6 @@ void sansmic::Model::write_out_timestep_totals(double qo) {
     fileOut << " WORKOVER PHASE " << setw(5) << stageNum << endl;
   }
   fileOut << endl;
-  // WRITE (iuout,690) VTOT, QO, CO(prodCell)
   fileOut << " TOTAL VOLUME           =" << setw(11) << V_tot << " BBLS "
           << endl;
   fileOut << " BRINE OUT              =" << setw(11) << qo << " BBLS/DAY"
@@ -1798,8 +1854,13 @@ void sansmic::Model::write_out_timestep_totals(double qo) {
   fileOut << " OUTLET SPECIFIC GRAVITY=" << setw(11) << C_cav[prodCell] << endl;
 }
 
+/**
+ * @brief Write data to the OUT file
+ * @param p1 insolubles deposited
+ * @param p2 insolubles vented
+ */
 void sansmic::Model::write_out_timestep_insolubles(double p1, double p2) {
-  // WRITE (iuout,710) P1, depthInsol, ZB, P2
+  if (!b_use_outfile) return;
   fileOut << " VOLUME OF INSOLUBLES   =" << setw(11) << p1 << " BBLS " << endl;
   fileOut << " INSOL LEVEL            =" << setw(11) << h_insol << " FT"
           << endl;
@@ -1807,8 +1868,12 @@ void sansmic::Model::write_out_timestep_insolubles(double p1, double p2) {
   fileOut << " VOL OF INS VENTED      =" << setw(11) << p2 << " BBLS" << endl;
 }
 
+/**
+ * @brief Write data to the OUT file
+ * @param p1 total brine volume
+ */
 void sansmic::Model::write_out_timestep_removed(double p1) {
-  //   WRITE (iuout,720) P1, ULLAGE, VOLZU, CFAC
+  if (!b_use_outfile) return;
   fileOut << " BRINE VOLUME           =" << setw(11) << p1 << " BBLS " << endl;
   fileOut << " ULLAGE                 =" << setw(11) << V_ullage << " BBLS"
           << endl;
