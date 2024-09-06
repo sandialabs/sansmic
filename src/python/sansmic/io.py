@@ -731,6 +731,6 @@ def read_json(filename: str):
     filename : str
         Filename to read the results from.
     """
-    with open(filename, "w") as f:
+    with open(filename, "r") as f:
         d = json.load(f)
     return Results.from_dict(d)

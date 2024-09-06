@@ -395,6 +395,10 @@ class Model {
   int init_stage(void);
   int end_stage();
 
+  void generate_tst_file(bool use_file);
+  void generate_out_file(bool use_file);
+  void set_verbosity_level(int verb);
+
   int open_outfiles(bool append = false);
   void close_outfiles(void);
 
@@ -407,7 +411,10 @@ class Model {
   Results get_results(void);
   vector<Stage> get_stages(void);
 
-  int verb = 0;  //!< verbosity setting for output
+protected:
+  int verbosity = 0;  //!< verbosity setting for output
+  bool b_use_outfile;     //!< use or don't use the .OUT file; default false
+  bool b_use_tstfile;     //!< use or don't use the .TST file; default true
 
  private:
   void init_vars(void);

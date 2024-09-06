@@ -65,7 +65,7 @@ def _main_parser(default_hdf5=None):
 
     outp = parser.add_argument_group(
         "Output options",
-        """Default options:   {}  {}""".format(
+        """Default options:  ``{}  {}  --tst  --no-old-out``""".format(
             "--hdf" if default_hdf5 or default_hdf5 is None else "--no-hdf",
             "--json" if not default_hdf5 and default_hdf5 is not None else "--no-json",
         ),
@@ -78,11 +78,11 @@ def _main_parser(default_hdf5=None):
         default=None,
     )
 
-    wwo1 = outp.add_mutually_exclusive_group()
-    wwo1.add_argument(
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
         "--toml", default=None, action="store_true", help="Create a TOML scenario file."
     )
-    wwo1.add_argument(
+    wwo.add_argument(
         "--no-toml",
         dest="toml",
         action="store_false",
@@ -90,14 +90,14 @@ def _main_parser(default_hdf5=None):
         **kwargs,
     )
 
-    wwo2 = outp.add_mutually_exclusive_group()
-    wwo2.add_argument(
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
         "--hdf",
         default=default_hdf5,
         action="store_true",
         help="Create an HDF5 formatted results file.",
     )
-    wwo2.add_argument(
+    wwo.add_argument(
         "--no-hdf",
         dest="hdf",
         action="store_false",
@@ -105,19 +105,48 @@ def _main_parser(default_hdf5=None):
         **kwargs,
     )
 
-    wwo3 = outp.add_mutually_exclusive_group()
-    wwo3.add_argument(
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
         "--json",
         default=not default_hdf5 if default_hdf5 is not None else None,
         action="store_true",
         help="Create a JSON formatted results file.",
     )
-    wwo3.add_argument(
+    wwo.add_argument(
         "--no-json",
         dest="json",
         action="store_false",
         help="Don't create a JSON results file.",
         **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--tst",
+        default=True,
+        action="store_true",
+        help="Create a daily summary TST text file.",
+    )
+    wwo.add_argument(
+        "--no-tst",
+        dest="tst",
+        action="store_false",
+        help="Don't create a TST summary file.",
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--old-out",
+        dest="old_out",
+        action="store_true",
+        default=False,
+        help="Create an old-style SANSMIC OUT file.",
+    )
+    wwo.add_argument(
+        "--no-old-out",
+        dest="old_out",
+        action="store_false",
+        help="Don't create an old-style OUT file.",
     )
 
     outp = parser.add_argument_group(
@@ -185,7 +214,7 @@ def main(args=None, ret=False):
     if args.toml:
         sio.write_scenario(model, prefix + ".toml")
     logger.debug("Running simulation")
-    with model.new_simulation(prefix, verbosity) as sim:
+    with model.new_simulation(prefix, verbosity, args.tst, args.old_out) as sim:
         logger.debug("Created new simulation")
         if args.quiet or not args.verbose:
             logger.debug("Running in batch mode")
@@ -262,7 +291,7 @@ def main(args=None, ret=False):
     if not args.quiet:
         print("Initial and final results:")
         print(
-            (res.by_time.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
+            (res.df_t_1D.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
                 index=False
             )
         )
@@ -296,32 +325,6 @@ def _convert_parser():
         default=False,
         help="Keep all entries, even if they are blank",
     )
-    verb = parser.add_argument_group(
-        "Output options",
-        """By default, only warnings will be output to the console
-        The following options are mutually exclusive.""",
-    )
-    verb = verb.add_mutually_exclusive_group()
-    verb.add_argument(
-        "-v",
-        "--verbose",
-        help="turn on info-level messages, increase the output verbosity up to 3 times",
-        action="count",
-        default=0,
-    )
-    verb.add_argument(
-        "-q",
-        "--quiet",
-        help="set log level to errors-only",
-        action="store_true",
-        default=False,
-    )
-    verb.add_argument(
-        "--debug",
-        help="turn on debug-level messages and set verbosity to 3",
-        action="store_true",
-        default=False,
-    )
     return parser
 
 
@@ -330,10 +333,7 @@ def convert():
 
     parser = _convert_parser()
     args = parser.parse_args()
-    if args.debug and args.quiet:
-        parser.error("argument --debug: not allowed with argument -q/--quiet")
     infile = args.infile
-    verbosity = _get_verbosity(args)
     logger.debug("Running sansmic-convert")
     model = sio.read_scenario(infile, warn=not args.quiet)
     logger.debug("Successfully created scenario from {}".format(infile))

@@ -15,7 +15,7 @@ class TestModelRun(unittest.TestCase):
             sim.run_sim()
         resPy = sim.results
         resF = sansmic.io.read_classic_out_ddl("baseline")
-        diff = resF.by_time.iloc[0:, :] - resPy.by_time.iloc[1:, :].reset_index()
+        diff = resF.df_t_1D.iloc[0:, :] - resPy.df_t_1D.iloc[1:, :].reset_index()
         return resF, resPy, diff
 
 
