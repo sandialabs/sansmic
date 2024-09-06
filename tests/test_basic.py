@@ -8,17 +8,17 @@ import numpy as np
 
 class TestModelRun(unittest.TestCase):
     def runTest(self):
-        filename = "old.dat"
+        filename = "baseline.dat"
         model = sansmic.read_scenario(filename)
-        sansmic.write_scenario(model, "new.toml")
-        with model.new_simulation("new") as sim:
+        sansmic.write_scenario(model, "regression.toml")
+        with model.new_simulation("regression") as sim:
             sim.run_sim()
         resPy = sim.results
-        resF = sansmic.io.read_classic_out_ddl("old")
-        diff = resF.summary.iloc[0:, :] - resPy.summary.iloc[1:, :].reset_index()
-        return resF, resPy
+        resF = sansmic.io.read_classic_out_ddl("baseline")
+        diff = resF.by_time.iloc[0:, :] - resPy.by_time.iloc[1:, :].reset_index()
+        return resF, resPy, diff
 
 
 if __name__ == "__main__":
     test = TestModelRun()
-    resF, resPy = test.runTest()
+    resF, resPy, diff = test.runTest()

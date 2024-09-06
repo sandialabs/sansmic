@@ -62,6 +62,7 @@ def _main_parser(default_hdf5=None):
         metavar="INPUTFILE",
         help="the SANSMIC input file to use; if extension is '.dat', --toml is implied",
     )
+
     outp = parser.add_argument_group(
         "Output options",
         """Default options:   {}  {}""".format(
@@ -76,8 +77,8 @@ def _main_parser(default_hdf5=None):
         help="change output file prefix; if used, --toml is implied",
         default=None,
     )
-    wwo1 = outp.add_mutually_exclusive_group()
 
+    wwo1 = outp.add_mutually_exclusive_group()
     wwo1.add_argument(
         "--toml", default=None, action="store_true", help="Create a TOML scenario file."
     )
@@ -88,6 +89,7 @@ def _main_parser(default_hdf5=None):
         help="Don't create a TOML scenario file.",
         **kwargs,
     )
+
     wwo2 = outp.add_mutually_exclusive_group()
     wwo2.add_argument(
         "--hdf",
@@ -102,6 +104,7 @@ def _main_parser(default_hdf5=None):
         help="Don't create an HDF5 results file.",
         **kwargs,
     )
+
     wwo3 = outp.add_mutually_exclusive_group()
     wwo3.add_argument(
         "--json",
@@ -259,7 +262,7 @@ def main(args=None, ret=False):
     if not args.quiet:
         print("Initial and final results:")
         print(
-            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
+            (res.by_time.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
                 index=False
             )
         )

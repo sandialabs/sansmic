@@ -1305,95 +1305,17 @@ class Results:
         self._data = data
         if self._data is None:
             self.t = None
-            self.geometry = None
-            self.timing = None
-            self.cavern = None
-            self.flux = None
-            self.chemistry = None
-            self.summary = None
+            self.by_time = None
+            self.by_depth = None
+            self.by_time_and_depth = None
             return
-        self.t = pd.Series(data.t, name="time")
-        """The times when data were saved"""
+        t = pd.Series(data.t, name="time")
 
-        self.geometry = pd.DataFrame.from_dict(dict(z=data.z_0, h=data.h_0, r=data.r_0))
-        self.timing = pd.DataFrame.from_dict(
-            dict(
-                t=data.t, dt=data.dt, step=data.step, stage=data.stage, phase=data.phase
-            )
-        )
-
-        r = pd.DataFrame(data.r, columns=data.z_0, index=data.t)
-        """The radius of each node with respect to time"""
-        dr = pd.DataFrame(data.dr_0, columns=data.z_0, index=data.t)
-        """The change in radius :term:`wrt` time"""
-        sg = pd.DataFrame(data.sg, columns=data.z_0, index=data.t)
-        """The specific gravity of brine in the cell :term:`wrt` time"""
-        theta = pd.DataFrame(data.theta, columns=data.z_0, index=data.t)
-        """The angle of cell wall :term:`wrt` time"""
-        Q_inj = pd.DataFrame(data.Q_inj, columns=data.z_0, index=data.t)
-        """The instantaneous injection rate at each time"""
-        V = pd.DataFrame(data.V, columns=data.z_0, index=data.t)
-        """The volume of each cell through time"""
-        f_dis = pd.DataFrame(data.f_dis, columns=data.z_0, index=data.t)
-        """The modified dissolution factor :term:`wrt` time"""
-        f_flag = pd.DataFrame(data.f_flag, columns=data.z_0, index=data.t, dtype=int)
-        """The dissolution status variable indicating if dissolution is occuring."""
-        xincl = pd.DataFrame(data.xincl, columns=data.z_0, index=data.t)
-        """The inclination of the cell wall"""
-        amd = pd.DataFrame(data.amd, columns=data.z_0, index=data.t)
-        """Temporary variable for debugging"""
-        D_coeff = pd.DataFrame(data.D_coeff, columns=data.z_0, index=data.t)
-        """The calculated effective diffusion coefficient"""
-        dC_dz = pd.DataFrame(data.dC_dz, columns=data.z_0, index=data.t)
-        """The change in concentration with respect to depth in each cell at each time"""
-        C_old = pd.DataFrame(data.C_old, columns=data.z_0, index=data.t)
-        """The previous concentration in the cell"""
-        C_new = pd.DataFrame(data.C_new, columns=data.z_0, index=data.t)
-        """The current concentration in the cell"""
-        dC_dt = pd.DataFrame(data.dC, columns=data.z_0, index=data.t)
-        """The change in concentration with respect to time, related to the rate of dissolution"""
-        dr_dt = pd.DataFrame(data.dr, columns=data.z_0, index=data.t)
-        """The change in radius with respect to time"""
-        C_plm = pd.DataFrame(data.C_plm, columns=data.z_0, index=data.t)
-        """The concentration within the injection plume"""
-        u_plm = pd.DataFrame(data.u_plm, columns=data.z_0, index=data.t)
-        """The velocity of the fluid in the injection plume"""
-        r_plm = pd.DataFrame(data.r_plm, columns=data.z_0, index=data.t)
-        """The radius of the injection plume"""
-
-        self.cavern = pd.DataFrame.from_dict(
-            dict(
-                r=r.stack(),
-                dr=dr.stack(),
-                dr_dt=dr_dt.stack(),
-                theta=theta.stack(),
-                xincl=xincl.stack(),
-                V=V.stack(),
-            )
-        )
-        self.flux = pd.DataFrame.from_dict(
-            dict(
-                r=r_plm.stack(),
-                u=u_plm.stack(),
-                C=C_plm.stack(),
-                Q_inj=Q_inj.stack(),
-            )
-        )
-        self.chemistry = pd.DataFrame.from_dict(
-            dict(
-                sg=sg.stack(),
-                dC_dt=dC_dt.stack(),
-                dC_dz=dC_dz.stack(),
-                f_flag=f_flag.stack(),
-                f_dis=f_dis.stack(),
-                D_coeff=D_coeff.stack(),
-            )
-        )
-
-        self.summary = pd.DataFrame.from_dict(
+        self.by_depth = pd.DataFrame.from_dict(dict(z=data.z_0, h=data.h_0, r=data.r_0))
+        self.by_time = pd.DataFrame.from_dict(
             {
-                "t_h": self.t,
-                "t_d": self.t / 24.0,
+                "t_h": t,
+                "t_d": t / 24.0,
                 "step": data.step,
                 "stage": data.stage,
                 "phase": data.phase,
@@ -1422,81 +1344,290 @@ class Results:
                 "dt_h": data.dt,
             },
         )
-        """
-        The cavern-wide data summary from the simulation. Contains the following elements:
 
-        .. rubric:: summary DataFrame columns
+        r = pd.DataFrame(data.r)
+        dr = pd.DataFrame(data.dr_0)
+        sg = pd.DataFrame(data.sg)
+        theta = pd.DataFrame(data.theta)
+        Q_inj = pd.DataFrame(data.Q_inj)
+        V = pd.DataFrame(data.V)
+        f_dis = pd.DataFrame(data.f_dis)
+        f_flag = pd.DataFrame(data.f_flag, dtype=int)
+        xincl = pd.DataFrame(data.xincl)
+        amd = pd.DataFrame(data.amd)
+        D_coeff = pd.DataFrame(data.D_coeff)
+        dC_dz = pd.DataFrame(data.dC_dz)
+        C_old = pd.DataFrame(data.C_old)
+        C_new = pd.DataFrame(data.C_new)
+        dC_dt = pd.DataFrame(data.dC)
+        dr_dt = pd.DataFrame(data.dr)
+        C_plm = pd.DataFrame(data.C_plm)
+        u_plm = pd.DataFrame(data.u_plm)
+        r_plm = pd.DataFrame(data.r_plm)
 
-        t_h
-            the time in hours
-        t_d
-            the time in days
-        step
-            the step number
-        stage
-            the stage number
-        phase
-            the leaching phase, where 1 is active and 0 is passive
-        i_inj
-            the cell where injection is occurring
-        i_prod
-            the cell where production is occurring
-        i_plume
-            the plume stagnation cell index
-        i_obi
-            the OBI cell index
-        err_ode
-            the ODE convergence value (closer to 1.0 is better)
-        z_inj
-            the injection depth
-        z_prod
-            the production depth
-        z_plume
-            the plume stagnation depth
-        z_obi
-            the OBI depth
-        z_insol
-            the depth to the top of the insoluble pile
-        h_insol
-            the height of the insolubles above the original TD
-        l_jet
-            the jet length
-        u_jet
-            the jet velocity
-        r_jet
-            the jet radius
-        V_inj
-            the cumulative injection volume
-        V_fill
-            the cumulative fill volume
-        V_cav
-            the total cavern volume
-        V_insol
-            the volume of insolubles that have fallen
-        V_vented
-            the volume of insolubles that were sucked out with the brine (ordinary and leach/fill modes only)
-        Q_out
-            the instantaneous outflow in bbl/d
-        sg_out
-            the instantaneous outflow specific gravity
-        sg_ave
-            the average cavern brine concentration
-        dt_h
-            the timestep size
-
-        """
+        self.by_time_and_depth = pd.DataFrame.from_dict(
+            dict(
+                r=r.stack(),
+                dr=dr.stack(),
+                dr_dt=dr_dt.stack(),
+                theta=theta.stack(),
+                xincl=xincl.stack(),
+                V=V.stack(),
+                sg=sg.stack(),
+                dC_dt=dC_dt.stack(),
+                dC_dz=dC_dz.stack(),
+                f_flag=f_flag.stack(),
+                f_dis=f_dis.stack(),
+                D_coeff=D_coeff.stack(),
+                r_plm=r_plm.stack(),
+                u_plm=u_plm.stack(),
+                C_plm=C_plm.stack(),
+                Q_inj=Q_inj.stack(),
+            )
+        )
+        self.by_time_and_depth.index.set_names(["save", "node"], inplace=True)
 
     def __repr__(self) -> str:
         return "<Results: from {:.3g} to {:.3g} d ({:d} stages)>".format(
-            self.t.iloc[0] / 24.0,
-            self.t.iloc[-1] / 24.0,
-            max(self.summary.stage) - min(self.summary.stage) + 1,
+            self.by_time.t_d.iloc[0],
+            self.by_time.t_d.iloc[-1],
+            max(self.by_time.stage) - min(self.by_time.stage) + 1,
         )
+
+    @property
+    def time(self) -> pd.Series:
+        """Time domain: time in days, by timestep"""
+        return self.by_time.t_d
+
+    @property
+    def injection_cell(self) -> pd.Series:
+        """The injection cell, by timestep"""
+        return self.by_time.i_inj
+
+    @property
+    def production_cell(self) -> pd.Series:
+        """The production cell, by timestep"""
+        return self.by_time.i_prod
+
+    @property
+    def plume_stagnation_cell(self) -> pd.Series:
+        """The plume stagnation cell, by timestep"""
+        return self.by_time.i_plume
+
+    @property
+    def interface_cell(self) -> pd.Series:
+        """The brine interface cell, by timestep"""
+        return self.by_time.i_obi
+
+    @property
+    def ode_convergence(self) -> pd.Series:
+        """The ODE convergence factor, by timestep"""
+        return self.by_time.err_ode
+
+    @property
+    def injection_depth(self) -> pd.Series:
+        """The water/brine injection depth, by timestep"""
+        return self.by_time.z_inj
+
+    @property
+    def production_depth(self) -> pd.Series:
+        """The depth of brine production, by timestep"""
+        return self.by_time.z_prod
+
+    @property
+    def plume_stagnation_depth(self) -> pd.Series:
+        """The plume stagnation depth, by timestep"""
+        return self.by_time.z_plm
+
+    @property
+    def interface_depth(self) -> pd.Series:
+        """The brine interface depth, by timestep"""
+        return self.by_time.z_obi
+
+    @property
+    def cavern_total_depth(self) -> pd.Series:
+        """The depth to the new cavern TD, by timestep"""
+        return self.by_time.z_insol
+
+    @property
+    def insoluble_material_height(self) -> pd.Series:
+        """The height of the insoluble materials deposited, by timestep"""
+        return self.by_time.h_insol
+
+    @property
+    def jet_length(self) -> pd.Series:
+        """The length of the injection fluid jet's penetration below EOT, by timestep"""
+        return self.by_time.l_jet
+
+    @property
+    def jet_velocity(self) -> pd.Series:
+        """The velocity of the injection fluid, by timestep"""
+        return self.by_time.u_jet
+
+    @property
+    def jet_radius(self) -> pd.Series:
+        """The radius of the injection fluid jet and starting plume radius, by timestep"""
+        return self.by_time.r_jet
+
+    @property
+    def cumulative_injection_volume(self) -> pd.Series:
+        """Total injected water/brine volume, by timestep"""
+        return self.by_time.V_inj
+
+    @property
+    def cumulative_fill_volume(self) -> pd.Series:
+        """Total product fill volume, by timestep"""
+        return self.by_time.V_fill
+
+    @property
+    def cavern_volume(self) -> pd.Series:
+        """Total cavern volume, by timestep"""
+        return self.by_time.V_cav
+
+    @property
+    def cumulative_insoluble_material_volume(self) -> pd.Series:
+        """Total volume of insoluble materials deposited, by timestep"""
+        return self.by_time.V_insol
+
+    @property
+    def cumulative_insoluble_material_vented(self) -> pd.Series:
+        """Total volume of insoluble materials vented, by timestep"""
+        return self.by_time.V_vented
+
+    @property
+    def brine_production_rate(self) -> pd.Series:
+        """Instantaneous brine production rate, by timestep"""
+        return self.by_time.Q_out
+
+    @property
+    def brine_production_sg(self) -> pd.Series:
+        """Instantaneous brine production cell sg, by timestep"""
+        return self.by_time.sg_out
+
+    @property
+    def cavern_average_brine_sg(self) -> pd.Series:
+        """Instantaneous average cavern brine sg, by timestep"""
+        return self.by_time.sg_ave
+
+    @property
+    def depths(self) -> pd.Series:
+        """Vertical domain: depths, by node"""
+        return self.by_depth.z
+
+    @property
+    def node_heights(self) -> pd.Series:
+        """Vertical domain: heights above initial TD, by node"""
+        return self.by_depth.h
+
+    @property
+    def hours(self) -> pd.Series:
+        """Time domain: time in hours, by timestep"""
+        return self.by_time.t_h
+
+    @property
+    def step_size(self) -> pd.Series:
+        """Simulation step size, by timestep"""
+        return self.by_time.dt
+
+    @property
+    def step_number(self) -> pd.Series:
+        """Simulation step number, by timestep"""
+        return self.by_time.step
+
+    @property
+    def stage_number(self) -> pd.Series:
+        """Simulation stage number, by timestep"""
+        return self.by_time.stage
+
+    @property
+    def injection_phase(self) -> pd.Series:
+        """Simulation injection(1) or static(0) phase, by timestep"""
+        return self.by_time.phase
+
+    @property
+    def radius(self) -> pd.DataFrame:
+        """Cavern radius, by node and timestep"""
+        return self.by_time_and_depth.r.unstack().T
+
+    @property
+    def change_in_radius(self) -> pd.DataFrame:
+        """Change in cavern radius since previous time, by node and timestep"""
+        return self.by_time_and_depth.dr.unstack().T
+
+    @property
+    def rate_of_change_in_radius(self) -> pd.DataFrame:
+        """Rate of change in cavern radius, by node and timestep"""
+        return self.by_time_and_depth.dr_dt.unstack().T
+
+    @property
+    def wall_angle(self) -> pd.DataFrame:
+        """Dissolution wall angle, by node and timestep"""
+        return self.by_time_and_depth.theta.unstack().T
+
+    @property
+    def wall_factor(self) -> pd.DataFrame:
+        """Dissolution wall factor, by node and timestep"""
+        return self.by_time_and_depth.xincl.unstack().T
+
+    @property
+    def cell_volume(self) -> pd.DataFrame:
+        """Cell volume above node, by node and timestep"""
+        return self.by_time_and_depth.V.unstack().T
+
+    @property
+    def plume_radius(self) -> pd.DataFrame:
+        """Plume radius at node depth, by node and timestep"""
+        return self.by_time_and_depth.r_plm.unstack().T
+
+    @property
+    def plume_velocity(self) -> pd.DataFrame:
+        """Plume velocity at node depth, by node and timestep"""
+        return self.by_time_and_depth.u_plm.unstack().T
+
+    @property
+    def plume_sg(self) -> pd.DataFrame:
+        """Plume concentration(sg) at node depth, by node and timestep"""
+        return self.by_time_and_depth.C_plm.unstack().T
+
+    @property
+    def cell_injection_rate(self) -> pd.DataFrame:
+        """Injection rate within cell above node, by node and timestep"""
+        return self.by_time_and_depth.Q_inj.unstack().T
+
+    @property
+    def cell_sg(self) -> pd.DataFrame:
+        """Concentration(sg) in cell above node, by node and timestep"""
+        return self.by_time_and_depth.sg.unstack().T
+
+    @property
+    def rate_of_change_in_sg(self) -> pd.DataFrame:
+        """Rate of change in concentration in cell above node, by node and timestep"""
+        return self.by_time_and_depth.dC_dt.unstack().T
+
+    @property
+    def vertical_diffusion_rate(self) -> pd.DataFrame:
+        """Vertical change in concentration across node, by node and timestep"""
+        return self.by_time_and_depth.dC_dz.unstack().T
+
+    @property
+    def state_indicator(self) -> pd.DataFrame:
+        """Dissolution state flag, by node and timestep"""
+        return self.by_time_and_depth.f_flag.unstack().T
+
+    @property
+    def effective_dissolution_factor(self) -> pd.DataFrame:
+        """Effective dissolution factor at node, by node and timestep"""
+        return self.by_time_and_depth.f_dis.unstack().T
+
+    @property
+    def effective_diffusion_coefficient(self) -> pd.DataFrame:
+        """Effective diffusion coefficient at node, by node and timestep"""
+        return self.by_time_and_depth.D_coeff.unstack().T
 
     def to_dict(self) -> dict:
         """Convert the results object to a dictionary format."""
         ret = dict()
-        for k in ["summary", "timing", "geometry", "cavern", "chemistry", "flux"]:
+        for k in ["by_time", "by_depth", "by_time_and_depth"]:
             ret[k] = getattr(self, k).to_dict("tight")
         return ret
 
@@ -1504,7 +1635,7 @@ class Results:
     def from_dict(cls, d) -> "Results":
         """Create a new object from a tight dictionary representation."""
         new = cls(None)
-        for k in ["summary", "timing", "geometry", "cavern", "chemistry", "flux"]:
+        for k in ["by_time", "by_depth", "by_time_and_depth"]:
             setattr(new, k, pd.DataFrame.from_dict(d[k], orient="tight"))
         return new
 
@@ -1546,9 +1677,9 @@ class Results:
             filename = filename + ".h5"
         with h5py.File(filename, "w") as f:
             f.create_dataset(
-                "summary",
-                data=self.summary.to_records(),
-                dtype=[(k, v) for (k, v) in self.summary.dtypes.items()],
+                "by_time",
+                data=self.by_time.to_records(),
+                dtype=[(k, v) for (k, v) in self.by_time.dtypes.items()],
                 compression=compression,
                 compression_opts=compression_opts,
                 shuffle=shuffle,
@@ -1556,9 +1687,9 @@ class Results:
                 **kwargs,
             )
             f.create_dataset(
-                "timing",
-                data=self.timing.to_records(),
-                dtype=[(k, v) for (k, v) in self.timing.dtypes.items()],
+                "by_depth",
+                data=self.by_depth.to_records(),
+                dtype=[(k, v) for (k, v) in self.by_depth.dtypes.items()],
                 compression=compression,
                 compression_opts=compression_opts,
                 shuffle=shuffle,
@@ -1566,39 +1697,9 @@ class Results:
                 **kwargs,
             )
             f.create_dataset(
-                "geometry",
-                data=self.geometry.to_records(),
-                dtype=[(k, v) for (k, v) in self.geometry.dtypes.items()],
-                compression=compression,
-                compression_opts=compression_opts,
-                shuffle=shuffle,
-                fletcher32=fletcher32,
-                **kwargs,
-            )
-            f.create_dataset(
-                "cavern",
-                data=self.cavern.to_records(),
-                dtype=[(k, v) for (k, v) in self.cavern.dtypes.items()],
-                compression=compression,
-                compression_opts=compression_opts,
-                shuffle=shuffle,
-                fletcher32=fletcher32,
-                **kwargs,
-            )
-            f.create_dataset(
-                "chemistry",
-                data=self.chemistry.to_records(),
-                dtype=[(k, v) for (k, v) in self.chemistry.dtypes.items()],
-                compression=compression,
-                compression_opts=compression_opts,
-                shuffle=shuffle,
-                fletcher32=fletcher32,
-                **kwargs,
-            )
-            f.create_dataset(
-                "flux",
-                data=self.flux.to_records(),
-                dtype=[(k, v) for (k, v) in self.flux.dtypes.items()],
+                "by_time_and_depth",
+                data=self.by_time_and_depth.to_records(),
+                dtype=[(k, v) for (k, v) in self.by_time_and_depth.dtypes.items()],
                 compression=compression,
                 compression_opts=compression_opts,
                 shuffle=shuffle,
@@ -1623,24 +1724,16 @@ class Results:
         if not filename.lower().endswith(".h5"):
             filename = filename + ".h5"
         with h5py.File(filename, "w") as f:
-            results.summary = pd.DataFrame(
-                np.array(f["summary"], dtype=f["summary"].dtype).view(np.recarray)
+            results.by_time = pd.DataFrame(
+                np.array(f["by_time"], dtype=f["by_time"].dtype).view(np.recarray)
             )
-            results.timing = pd.DataFrame(
-                np.array(f["timing"], dtype=f["timing"].dtype).view(np.recarray)
+            results.by_depth = pd.DataFrame(
+                np.array(f["by_depth"], dtype=f["by_depth"].dtype).view(np.recarray)
             )
-            results.t = pd.Series(results.timing["t"].values, name="time")
-            results.geometry = pd.DataFrame(
-                np.array(f["geometry"], dtype=f["geometry"].dtype).view(np.recarray)
-            )
-            results.cavern = pd.DataFrame(
-                np.array(f["cavern"], dtype=f["cavern"].dtype).view(np.recarray)
-            )
-            results.chemistry = pd.DataFrame(
-                np.array(f["chemistry"], dtype=f["chemistry"].dtype).view(np.recarray)
-            )
-            results.flux = pd.DataFrame(
-                np.array(f["flux"], dtype=f["flux"].dtype).view(np.recarray)
+            results.by_time_and_depth = pd.DataFrame(
+                np.array(
+                    f["by_time_and_depth"], dtype=f["by_time_and_depth"].dtype
+                ).view(np.recarray)
             )
         return results
 

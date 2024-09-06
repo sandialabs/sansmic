@@ -606,6 +606,71 @@ def read_classic_out_ddl(file_prefix):
     return res
 
 
+def read_tst(file_prefix: str):
+    """Read a .tst output file into a DataFrame.
+
+    Parameters
+    ----------
+    file_prefix : str
+        Filename without extension.
+    """
+    Q_fill = list()
+    t = list()
+    V_cavTot = list()
+    err = list()
+    sg_out = list()
+    sg_cavAve = list()
+    V_insolTot = list()
+    z_insol = list()
+    z_obi = list()
+    V_insolVent = list()
+    V_ullage = list()
+    V_usable = list()
+    Q_inj = list()
+    Q_fill = list()
+    V_injTot = list()
+    V_fillTot = list()
+    with open(file_prefix + ".tst", "r") as fout:
+        for line in fout.readlines():
+            words = line.split()
+            if len(words) == 0:
+                continue
+            if words[0] in ["#", "t", "(d)", "File=", "TIME", "Days", "---", "==="]:
+                continue
+            t.append(float(words[0]))
+            V_cavTot.append(float(words[1]))
+            err.append(float(words[2]))
+            sg_out.append(float(words[3]))
+            sg_cavAve.append(float(words[4]))
+            V_insolTot.append(float(words[5]))
+            z_insol.append(float(words[6]))
+            z_obi.append(float(words[7]))
+            V_insolVent.append(float(words[8]))
+            V_ullage.append(float(words[9]))
+            V_usable.append(float(words[10]))
+            Q_inj.append(float(words[11]))
+            V_injTot.append(float(words[12]))
+            Q_fill.append(float(words[13]))
+            V_fillTot.append(float(words[14]))
+    return pd.DataFrame.from_dict(
+        dict(
+            t_d=t,
+            V_cav=V_cavTot,
+            err_ode=err,
+            sg_out=sg_out,
+            sg_ave=sg_cavAve,
+            V_insol=V_insolVent,
+            z_insol=z_insol,
+            z_obi=z_obi,
+            V_vented=V_insolVent,
+            Q_inj=Q_inj,
+            Q_fill=Q_fill,
+            V_inj=V_injTot,
+            V_fill=V_fillTot,
+        )
+    )
+
+
 def write_hdf(results: Results, filename: str, **kwargs):
     """Write results to an HDF5 file.
 
