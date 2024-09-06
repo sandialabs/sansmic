@@ -10,62 +10,33 @@
 
 import logging
 import warnings
-from copy import deepcopy
 from dataclasses import InitVar, asdict, dataclass, field
 from enum import IntEnum
 from fractions import Fraction
-from math import nan
-from types import NoneType
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
 import numpy as np
 import pandas as pd
 
-logger = logging.getLogger("sansmic")
-
-has_ext = False
 try:
-    from . import libsansmic as _ext
+    import h5py
+except ImportError as e:
+    h5py = e
 
-    has_ext = True
+from . import libsansmic as _ext
 
-
-except ImportError:
-    logger.critical(
-        "The C++ library is not installed. Conversions will work, but the main program will not run."
-    )
-    has_ext = False
-
-    class _ext:
-        class _CModel:
-            pass
-
-        class _CStage:
-            pass
-
-        class _CResults:
-            pass
-
-        class _CGeometryFormat(IntEnum):
-            blah = 1
-
-        class _CRunMode(IntEnum):
-            blah = 1
-
-        CStage = _CStage
-        CModel = _CModel
-        CGeometryFormat = _CGeometryFormat
-        CRunMode = _CRunMode
-        CResults = _CResults
+logger = logging.getLogger("sansmic")
 
 
 def _rename_with_underscore(orig: dict, new: dict):
+    """Rename all keys in a dictionary with underscores instead of spaces or dashes"""
     for k, v in orig.items():
         k = k.lower().replace("-", "_")
         new[k] = v
 
 
 def _rename_with_dash(orig: dict, new: dict):
+    """Rename all keys in a dictionary with dashes instead of underscores"""
     for k, v in orig.items():
         k = k.lower().replace("_", "-")
         new[k] = v
@@ -171,27 +142,31 @@ class AdvancedOptions:
     will use the default C++ library values."""
 
     absolute_error: float = None  #  1.0e-2
-    """ODE solver absolute error tolerance; CModel default is 0.01"""
+    """ODE solver absolute error tolerance; CScenario default is 0.01"""
     relative_error: float = None  #  1.0e-4
-    """ODE solver absolute error tolerance; CModel default is 0.0001"""
+    """ODE solver absolute error tolerance; CScenario default is 0.0001"""
+    coallescing_wells: int = None  #  1
+    """The number of wells for multi-well cavern construction; CScenario default is 1"""
+    well_separation: float = None  # 0.0
+    """The separation distance for multi-well cavern construction; CScenario default is 0.0"""
     jet_model_version: int = None  #  1
-    """Jet model version; CModel default is 1"""
+    """Jet model version; CScenario default is 1"""
     plume_model_version: int = None  #  1
-    """Plume model version; CModel default is 1"""
+    """Plume model version; CScenario default is 1"""
     temperature_model_version: int = None  #  0
-    """Temperature model version; CModel default is 0"""
+    """Temperature model version; CScenario default is 0"""
     dissolution_factor: float = None  # 1.0
-    """Dissolution factor; CModel default is 1.0 - this should not be changed unless you are sure you know the effects"""
+    """Dissolution factor; CScenario default is 1.0 - this should not be changed unless you are sure you know the effects"""
     max_brine_sg: float = None  #  1.2019
     """Maximum brine specific gravity; CSalt default is 1.2019"""
     solid_density: float = None  #  2.16
     """Rock density in solid form; CSalt default is 2.16 g/cc"""
     entrainment_coeff: float = None  #  0.09
-    """Dissolution entrainment coefficient; CModel default is 0.09"""
+    """Dissolution entrainment coefficient; CScenario default is 0.09"""
     molecular_diffusion: float = None  #  5.03e-5
-    """Molecular diffusion coefficient; CModel default is 5.03e-5"""
+    """Molecular diffusion coefficient; CScenario default is 5.03e-5"""
     eddy_coefficient: float = None  #  1.142e5
-    """Eddy coefficient; CModel default is 1.142e5"""
+    """Eddy coefficient; CScenario default is 1.142e5"""
     diffusion_beta: float = None  #  0.147
     """Diffusion beta coefficient; default is 0.147"""
 
@@ -216,6 +191,7 @@ class AdvancedOptions:
         StageDefinition
             the new stage
         """
+
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
         return cls(**new_opts)
@@ -240,6 +216,7 @@ class AdvancedOptions:
         dict
             the options dictionary
         """
+
         ret = dict()
         _rename_with_dash(asdict(self), ret)
         keys = list(ret.keys())
@@ -262,8 +239,8 @@ class StageDefinition:
     """The simulation mode used in this stage."""
     solver_timestep: float = None
     """The solver timestep in hours."""
-    save_frequency: int = None
-    """The save frequency in number of timesteps"""
+    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = "daily"
+    """The save frequency in number of timesteps or one of {"hourly", "daily", "bystage"}, by default "daily"."""
     injection_duration: float = None
     """The duration of the injection phase of the stage."""
     rest_duration: float = None
@@ -356,8 +333,8 @@ class StageDefinition:
 
     product_injection_rate: Union[float, str] = 0.0
     """Either a constant rate of product injection or a file with an injection schedule, by default 0."""
-    product_water_content: float = None
-    """The volume-percent water within the product; a value of None turns this option off."""
+    # product_water_content: float = None
+    # """The volume-percent water within the product; a value of None turns this option off."""
     product_injection_depth: float = None
     """The depth below surface/:term:`ZDP` where the product injection string -- or casing or chimney bottom -- is positioned; a value 0 or None sets this to the roof of the cavern."""
     product_production_depth: float = None
@@ -385,14 +362,15 @@ class StageDefinition:
         if not isinstance(defaults, dict):
             raise TypeError("defaults must be a dictionary")
         for k, v in defaults.items():
-            if k not in self.valid_default_keys:
+            k2 = k.strip().replace("-", "_").replace(" ", "_").replace(".", "_")
+            if k2 not in self.valid_default_keys:
                 logger.warning(
                     "Ignoring non-defaultable or unknown setting {} = {}".format(
                         k, repr(v)
                     )
                 )
-            elif getattr(self, k) is None:
-                setattr(self, k, v)
+            elif getattr(self, k2) is None:
+                setattr(self, k2, v)
 
     def __setattr__(self, name, value):
         if isinstance(value, str) and value.strip() == "":
@@ -425,7 +403,7 @@ class StageDefinition:
         super().__setattr__(name, value)
 
     @classmethod
-    def from_dict(cls, opts: dict) -> "StageDefinition":
+    def from_dict(cls, opts: dict, defaults=None) -> "StageDefinition":
         """Create a new object from a dictionary of options.
 
         This method differs from the __init__ constructor by automatically
@@ -445,9 +423,10 @@ class StageDefinition:
         StageDefinition
             the new stage
         """
+
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
-        return cls(**new_opts)
+        return cls(**new_opts, defaults=defaults)
 
     def to_dict(self, keep_empty: bool = False):
         """Convert the object's data to a dictionary of options.
@@ -469,6 +448,7 @@ class StageDefinition:
         dict
             the options dictionary
         """
+
         ret = dict()
         _rename_with_dash(asdict(self), ret)
         keys = list(ret.keys())
@@ -489,8 +469,10 @@ class StageDefinition:
             if there are missing or misconfigured options
         ValueError
             if timing options are invalid
+
         """
-        if self.solver_timestep <= 0:
+
+        if self.solver_timestep and self.solver_timestep <= 0:
             raise ValueError("Timestep must be greater than 0 hours")
         if self.injection_duration <= 0:
             raise ValueError("Injection duration must be greater than 0 hours")
@@ -498,19 +480,23 @@ class StageDefinition:
             raise ValueError("Rest duration must be positive")
 
         # Validate appropriate initial conditions settings
-        if self.set_initial_conditions and (
-            self.set_cavern_sg is None or self.brine_interface_depth is None
+        if self.set_initial_conditions and self.set_cavern_sg is None:
+            logger.warn(
+                "Setting the initial conditions without setting cavern sg -- cavern sg will be set to fully saturated brine"
+            )
+            self.set_cavern_sg = 10.0
+        elif (
+            not self.set_initial_conditions
+            and self.set_cavern_sg is not None
+            and self.set_cavern_sg >= 1.0
         ):
-            raise TypeError(
-                "An initial stage must have both set_cavern_sg and set_interface_level."
-            )
-        elif not self.set_initial_conditions and self.set_cavern_sg:
             # raise TypeError(
-            warnings.warn(
-                "Setting the starting cavern sg ought to use 'set_initial_conditions' to be set to True"
+            logger.warn(
+                "Setting the starting cavern sg requires set_initial_conditions to be set to True -- setting to 0.0"
             )
+            self.set_cavern_sg = 0.0
         elif not self.set_initial_conditions and self.brine_interface_depth:
-            warnings.warn(
+            logger.warn(
                 "Make sure you meant to reset the interface level; use 0.0 or None to continue from the last stage."
             )
 
@@ -622,18 +608,12 @@ class StageDefinition:
                 )
             )
 
-        # Product injection depth an rate validation
-        if (
-            self.simulation_mode
-            in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
-            and self.product_injection_depth is None
-        ):
-            self.product_injection_depth = 0.0
-            warnings.warn(
-                "Missing 'product_injection_depth' options for {} simulation mode. Setting to 0.0".format(
-                    self.simulation_mode.name
-                )
-            )
+        # Product injection depth and rate validation
+        # if (
+        #     self.simulation_mode in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
+        #     and self.product_injection_depth is None
+        # ):
+        #     self.product_injection_depth = 0.0
         if (
             self.simulation_mode
             in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
@@ -645,16 +625,40 @@ class StageDefinition:
                 )
             )
 
-    def _to_cstage(self) -> _ext.CStage:
+    def _to_cstage(self, defaults=None) -> _ext.CStage:
         """Create a CStage object for the C++ interface.
         This method is protected because, in general, it is better not to
         try to operate directly on the C++ stage object.
         """
+
         self.validate()
         stage = _ext.CStage()
+        if defaults is None:
+            defaults = dict()
+        stage.timestep = (
+            self.solver_timestep
+            if self.solver_timestep
+            else defaults.get("solver_timestep", 0.1)
+        )
         stage.title = self.title
         stage.mode = _ext.CRunMode(int(self.simulation_mode))
-        stage.print_interval = self.save_frequency
+        if isinstance(self.save_frequency, str):
+            if self.save_frequency == "hourly":
+                stage.print_interval = int(np.round(1 / stage.timestep))
+            elif self.save_frequency == "daily":
+                stage.print_interval = int(np.round(24.0 / stage.timestep))
+            elif self.save_frequency == "bystage":
+                stage.print_interval = int(
+                    np.round(
+                        (self.injection_duration + self.rest_duration) / stage.timestep
+                    )
+                )
+        elif self.save_frequency is not None:
+            stage.print_interval = self.save_frequency
+        else:
+            stage.print_interval = defaults.get(
+                "solver_timestep", int(np.round(24.0 / stage.timestep))
+            )
         stage.subsequent = 0 if self.set_initial_conditions else 1
         stage.rest_duration = self.rest_duration
         stage.stop_value = (
@@ -689,7 +693,9 @@ class StageDefinition:
         stage.injection_fluid_sg = self.brine_injection_sg
         stage.cavern_sg = (
             0.0
-            if not self.set_initial_conditions or self.set_cavern_sg is None
+            if not self.set_initial_conditions
+            or self.set_cavern_sg is None
+            or self.set_cavern_sg < 1.0
             else self.set_cavern_sg
         )
         stage.timestep = self.solver_timestep
@@ -724,15 +730,9 @@ class Scenario:
     """The standoff distance of the lowest brine interface depth."""
     insolubles_ratio: float = 0.04
     """The volume ratio of insoluble material within the salt."""
-    dissolution_factor: float = 1.0
-    """**warning** modify the dissolution factor by a certain amount; leave this as 1.0."""
-    coallescing_wells: int = 1
-    """**warning** number of coallescing wells for cavern development modeling; leave as 1 for completed caverns."""
-    well_separation: float = 0.0
-    """**warning** the separation distance between wells for cavern development modeling."""
     units: Units = Units.FT_IN_BBL
     """The units used in describing the scenario."""
-    defaults: Dict[str, Union[int, float]] = field(default_factory=dict)
+    defaults: Dict[str, Union[int, float, str]] = field(default_factory=dict)
     """Default values for a subset of stage attributes, see :attr:`StageDefinition.valid_default_keys`."""
     advanced: AdvancedOptions = field(default_factory=AdvancedOptions)
     """Advanced and/or uncommonly used options"""
@@ -744,6 +744,7 @@ class Scenario:
         automatically converted from strings or integers and stages and
         advanced options are converted to the appropriate classes if a
         dictionary is passed."""
+
         if isinstance(value, str) and value.strip() == "":
             value = None
         if name == "geometry_format" and not isinstance(value, GeometryFormat):
@@ -773,16 +774,21 @@ class Scenario:
                 value = AdvancedOptions.from_dict(value)
             else:
                 raise TypeError("advanced cannot be a {}".format(type(value)))
-        # elif name == "stages" and (not isinstance(value, list) or value is None):
-        #     raise TypeError("stages cannot be a {}".format(type(value)))
         elif name == "stages":
             if not hasattr(self, "stages") or value is None:
                 value = list()
             elif not hasattr(self, name) or self.stages is None:
                 converted_stages = list()
-                for stage in value:
+                for ct, stage in enumerate(value):
                     if isinstance(stage, dict):
-                        stage = StageDefinition(**stage, defaults=self.defaults)
+                        if (
+                            "set-initial-conditions" in stage
+                            or "set_initial_conditions" in stage
+                        ):
+                            pass
+                        else:
+                            stage["set-initial-conditions"] = ct == 0
+                        stage = StageDefinition.from_dict(stage, defaults=self.defaults)
                     converted_stages.append(stage)
                 value = converted_stages
             else:
@@ -810,6 +816,7 @@ class Scenario:
         StageDefinition
             the new stage
         """
+
         new_opts = dict()
         _rename_with_underscore(opts, new_opts)
         return cls(**new_opts)
@@ -834,6 +841,7 @@ class Scenario:
         dict
             the options dictionary
         """
+
         ret = dict()
         _rename_with_dash(asdict(self), ret)
         ret["advanced"] = self.advanced.to_dict(keep_empty)
@@ -842,7 +850,15 @@ class Scenario:
         del ret["stages"]
         ret["stages"] = list()
         for stage in self.stages:
-            ret["stages"].append(stage.to_dict(keep_empty))
+            stg_dict = stage.to_dict(keep_empty)
+            for k in ret["defaults"].keys():
+                if (
+                    k in stg_dict
+                    and k in ret["defaults"]
+                    and stg_dict[k] == ret["defaults"][k]
+                ):
+                    del stg_dict[k]
+            ret["stages"].append(stg_dict)
         keys = list(ret.keys())
         for k in keys:
             if ret[k] is None:
@@ -871,6 +887,7 @@ class Scenario:
             new stage created from the keyword arguments. It will have been
             added into the stage list in the proper position.
         """
+
         defaults = kwargs.pop("defaults", self.defaults)
         stage = StageDefinition(defaults=defaults, **kwargs)
         if pos is None:
@@ -879,7 +896,13 @@ class Scenario:
             self.stages.insert(pos, stage)
         return stage
 
-    def new_simulation(self, prefix="temp", verbosity=0) -> "Simulator":
+    def new_simulation(
+        self,
+        prefix="temp",
+        verbosity=0,
+        generate_tst_file=True,
+        generate_out_file=False,
+    ) -> "Simulator":
         """Create a new :class:`Simulator` object.
 
         Parameters
@@ -888,75 +911,99 @@ class Scenario:
             The prefix to use when creating output files, by default temp.
         verbosity : int
             A verbosity level to pass to the C++ model, by default 0.
+        generate_tst_file : bool, optional
+            Generate an old-style .TST file, by default True
+        generate_out_file : bool, optional
+            Generate an old-style .OUT file, by default False
         """
-        return Simulator(self, prefix, verbosity)
 
-    def _to_cmodel(self, prefix="temp"):
+        return Simulator(self, prefix, verbosity, generate_tst_file, generate_out_file)
+
+    def _to_cscenario(self):
         """Create a C++ model object; in general, this should only be called internally."""
-        cmodel = _ext.CModel(prefix)
-        cmodel._set_dissolution_factor(self.dissolution_factor)
-        cmodel._set_fraction_insol(self.insolubles_ratio)
-        cmodel._set_num_cells(self.num_cells)
-        cmodel._set_cavern_height(self.cavern_height)
-        cmodel._set_floor_depth(self.floor_depth)
-        cmodel._geometry_format = _ext.CGeometryFormat(int(self.geometry_format))
+
+        cscenario = _ext.CScenario()
+        cscenario.fraction_insolubles = self.insolubles_ratio
+        cscenario.floor_depth = self.floor_depth
+        cscenario.geometry_format = _ext.CGeometryFormat(int(self.geometry_format))
+        cscenario.num_cells = self.num_cells
+        cscenario.ullage_standoff = self.ullage_standoff
+        cscenario.cavern_height = self.cavern_height
+
+        # Use defaults for all advanced settings unless they have been changed
+        if self.advanced.coallescing_wells is not None:
+            cscenario.coallescing_wells = self.advanced.coallescing_wells
+
+        if self.advanced.well_separation is not None:
+            cscenario.well_separation = self.advanced.well_separation
+
         if self.advanced.absolute_error is not None:
-            cmodel._set_solver_abserr(self.advanced.absolute_error)
+            cscenario.absolute_error = self.advanced.absolute_error
+
         if self.advanced.diffusion_beta is not None:
-            cmodel._set_diffusion_beta(self.advanced.diffusion_beta)
+            cscenario.diffusion_beta = self.advanced.diffusion_beta
+
         if self.advanced.dissolution_factor is not None:
-            cmodel._set_dissolution_factor(self.advanced.dissolution_factor)
+            cscenario.dissolution_factor = self.advanced.dissolution_factor
+
         if self.advanced.eddy_coefficient is not None:
-            cmodel._set_diffusion_D_0(self.advanced.eddy_coefficient)
+            cscenario.eddy_coefficient = self.advanced.eddy_coefficient
+
         if self.advanced.entrainment_coeff is not None:
-            cmodel._set_entrainment_alpha(self.advanced.entrainment_coeff)
+            cscenario.entrainment_coeff = self.advanced.entrainment_coeff
+
         if self.advanced.jet_model_version is not None:
-            cmodel._set_jet_model_version(self.advanced.jet_model_version)
-        # if self.advanced.max_brine_sg is not None:
-        #     cmodel._salt.set_saturated_sg(self.advanced.max_brine_sg)
+            cscenario.jet_model_version = self.advanced.jet_model_version
+
+        if self.advanced.max_brine_sg is not None:
+            cscenario.max_brine_sg = self.advanced.max_brine_sg
+
         if self.advanced.molecular_diffusion is not None:
-            cmodel._set_diffusion_D_mol(self.advanced.molecular_diffusion)
+            cscenario.molecular_diffusion = self.advanced.molecular_diffusion
+
         if self.advanced.plume_model_version is not None:
-            cmodel._set_plume_model_version(self.advanced.plume_model_version)
+            cscenario.plume_model_version = self.advanced.plume_model_version
+
         if self.advanced.relative_error is not None:
-            cmodel._set_solver_relerr(self.advanced.relative_error)
-        # if self.advanced.solid_density is not None:
-        #     cmodel._salt.set_solid_density(self.advanced.solid_density)
+            cscenario.relative_error = self.advanced.relative_error
+
+        if self.advanced.solid_density is not None:
+            cscenario.solid_density = self.advanced.solid_density
+
         if self.advanced.temperature_model_version is not None:
-            cmodel._set_temperature_model_version(
+            cscenario.temperature_model_version = (
                 self.advanced.temperature_model_version
             )
+
+        # TODO: This needs to be far more robust
         if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
             self.geometry_data, str
         ):
-            radii = list()
+            radii = list([0])  # Have to pad the data by 1
             with open(self.geometry_data, "r") as fin:
                 for line in fin.readlines():
                     if len(line.strip()) > 0:
                         radii.append(float(line.strip()))
-            cmodel._radius_vector = radii
+            cscenario.radius_vector = radii
         elif isinstance(self.geometry_data, dict):
             if "radii" in self.geometry_data:
                 tmp = self.geometry_data["radii"].copy()
                 tmp.insert(0, 0)
-                cmodel._radius_vector = tmp
+                cscenario.radius_vector = tmp
             if "depths" in self.geometry_data:
                 tmp = self.geometry_data["depths"]
                 tmp.insert(0, 0)
-                cmodel._depth_vector = tmp
+                cscenario.depth_vector = tmp
             if "volumes" in self.geometry_data:
                 tmp = self.geometry_data["volumes"]
                 tmp.insert(0, 0)
-                cmodel._volume_vector = tmp
+                cscenario.volume_vector = tmp
         for stage_num, stage in enumerate(self.stages):
             if stage_num == 0:
                 stage.set_initial_conditions = True
-            cstage = stage._to_cstage()
-            cstage.num_coallescing = self.coallescing_wells
-            cstage.ullage_standoff = self.ullage_standoff
-            cstage.coallescing_well_separation = self.well_separation
-            cmodel.add_stage(cstage)
-        return cmodel
+            cstage = stage._to_cstage(defaults=self.defaults)
+            cscenario.add_stage(cstage)
+        return cscenario
 
 
 class StepwiseIterator:
@@ -1003,52 +1050,28 @@ class Simulator:
         The scenario to run
     prefix : str, optional
         The output file prefix to use, by default "temp"
-
-
-    Examples
-    --------
-    The simulator can be created using context manager style "with-as"
-    statements to automatically close the C++ model when the run is completed.
-    This can be accomplished by directly creating the simulator object
-    from the class or by using the :meth:`~Scenario.new_simulation` method.
-
-    *Running in batch mode without context management*
-
-    .. code:: python
-
-        sim = sansmic.Simulator(scenario, prefix='run13')
-        sim.open()
-        sim.run_sim()
-        sim.close()
-        res13 = sim.results
-
-
-    *Run in batch mode with context management*
-
-    .. code:: python
-
-        with scenario.new_simulation('run14') as sim:
-            sim.run_sim()
-        res14 = sim.results
-
-
-    *Run in stepwise mode with context management*
-
-    .. code:: python
-
-        with scenario.new_simulation('run15') as sim:
-            for stage, step in sim.steps:
-                pass
-        res15 = sim.results
-
+    vebosity : int, optional
+        The verbosity level for console output, by default 0
+    generate_tst_file : bool, optional
+        Generate an old-style .TST file, by default True
+    generate_out_file : bool, optional
+        Generate an old-style .OUT file, by default False
     """
 
     def __init__(
-        self, scenario: Union[Scenario, _ext.CModel], prefix="temp", verbosity=0
+        self,
+        scenario: Union[Scenario, _ext.CModel],
+        prefix="temp",
+        verbosity=0,
+        generate_tst_file=True,
+        generate_out_file=False,
     ):
         self._scenario = None
         self._prefix = prefix
         self._cmodel = None
+        self._verbosity = verbosity
+        self._b_use_tstfile = generate_tst_file
+        self._b_use_outfile = generate_out_file
         if isinstance(scenario, Scenario):
             self._scenario = scenario
         else:
@@ -1062,6 +1085,9 @@ class Simulator:
 
     def __enter__(self):
         self.open(self._prefix)
+        self._cmodel.set_verbosity_level(self._verbosity)
+        self._cmodel.generate_tst_file(self._b_use_tstfile)
+        self._cmodel.generate_out_file(self._b_use_outfile)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1069,19 +1095,8 @@ class Simulator:
 
     @property
     def steps(self) -> StepwiseIterator:
-        """Provides an iterator that will run each step of each stage in turn.
+        """Provides an iterator that will run each step of each stage in turn."""
 
-        Examples
-        --------
-        .. code:: python
-
-            # Generate and step through the model
-            with scenario.new_simulation('run14') as sim:
-                for stage, step in sim.steps:
-                    pass
-            results = sim.results
-
-        """
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         if self.__stepwise is not None:
@@ -1102,11 +1117,13 @@ class Simulator:
     @property
     def is_open(self) -> bool:
         """Is this simulator attached to a C++ SANSMIC model?"""
+
         return self._is_open
 
     @property
     def current_stage(self) -> int:
         """The current stage of the simulation"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel._get_current_stage()
@@ -1114,6 +1131,7 @@ class Simulator:
     @property
     def current_time(self) -> float:
         """The current time (within the stage) of the simulation"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel._get_current_time()
@@ -1121,29 +1139,32 @@ class Simulator:
     @property
     def current_volume(self) -> float:
         """The current simulated cavern volume"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel._get_current_volume()
 
     @property
-    def is_running(self):
+    def is_running(self) -> bool:
         """Is the simulation mid-stage?"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel.is_running()
 
     @property
-    def num_stages(self):
+    def num_stages(self) -> int:
         """The total number of stages that have been defined"""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         return self._cmodel.num_stages()
 
     def _initialize(self):
         """Initialize the simulation (for iterators)"""
+
         if self._is_initialized:
             raise RuntimeError("The simulation has already been initialized")
-        self._cmodel.initialize()
         self._cmodel.open_outfiles(False)
         self._is_initialized = True
         self._has_run = False
@@ -1151,11 +1172,13 @@ class Simulator:
 
     def _run_step(self):
         """Run the next timestep in the specified stage."""
+
         step_num = self._cmodel.run_next_step()
         return step_num
 
     def _finalize(self):
         """Finalize the simulation (for iterators)"""
+
         if self._is_finalized:
             raise RuntimeError("The simulation has already been finalized")
         self._cmodel.close_outfiles()
@@ -1171,6 +1194,7 @@ class Simulator:
             The output filename prefix to use, by default None which
             uses the value specified when the Simulator was created.
         """
+
         if self._is_open or self._cmodel is not None:
             raise RuntimeError("The simulation is already open")
         if prefix is None:
@@ -1178,12 +1202,15 @@ class Simulator:
         else:
             self._prefix = prefix
         if self._cmodel is None and self._scenario is not None:
-            self._cmodel = self._scenario._to_cmodel(prefix)
+            cscenario = self._scenario._to_cscenario()
+            self._cmodel = _ext.CModel(prefix)
+            self._cmodel.configure(cscenario)
         self.__results = None
         self._is_open = True
 
     def close(self):
         """Close and garbage collect the C++ model object."""
+
         if not self._is_finalized and self._is_initialized:
             self._finalize()
         data = self._cmodel._get_results()
@@ -1197,6 +1224,7 @@ class Simulator:
 
     def run_sim(self):
         """Run the complete simulation; requires the Simulator to have been opened first."""
+
         if self._cmodel is None:
             raise RuntimeError("The simulation is not open")
         if self.__stepwise is not None:
@@ -1210,6 +1238,7 @@ class Simulator:
 
     def get_current_state(self) -> "Results":
         """Get the current state of the model as a single-timestep results object."""
+
         if not self._is_open or self._cmodel is None:
             raise RuntimeError("The simulation has not been started")
         data = self._cmodel._get_current_state()
@@ -1219,6 +1248,7 @@ class Simulator:
     @property
     def results(self) -> "Results":
         """The results for an entire simulation."""
+
         if not self._has_run and self.__results is None:
             warnings.warn(
                 "Simulation incomplete - use get_current_state to get partial results"
@@ -1238,185 +1268,453 @@ class Results:
     """
 
     def __init__(self, data: _ext.CResults) -> None:
-        self._data = data
-        self.z = pd.Series(data.z_0, name="depth")
-        """The depth (:term:`MD`) of the bottom of each cell"""
-        self.h = pd.Series(data.h_0, name="height")
-        """The height above the original :term:`TD` of the bottom of each cell"""
-        self.r_0 = pd.Series(data.r_0, name="radius")
-        """The initial radius of each node"""
-        self.t = pd.Series(data.t, name="time")
-        """The times when data were saved"""
-        self.step = pd.Series(data.step, name="step")
-        """The steps when the data were saved"""
-        # self.summary.set_index(self.t, inplace=True, drop=True)
-        self.r = pd.DataFrame(data.r, columns=self.z).T.sort_index(ascending=True)
-        """The radius of each node with respect to time"""
-        self.dr = pd.DataFrame(data.dr_0, columns=self.z).T.sort_index(ascending=True)
-        """The change in radius :term:`wrt` time"""
-        self.sg = pd.DataFrame(data.sg, columns=self.z).T.sort_index(ascending=True)
-        """The specific gravity of brine in the cell :term:`wrt` time"""
-        self.theta = pd.DataFrame(data.theta, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The angle of cell wall :term:`wrt` time"""
-        self.Q_inj = pd.DataFrame(data.Q_inj, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The instantaneous injection rate at each time"""
-        self.V = pd.DataFrame(data.V, columns=self.z).T.sort_index(ascending=True)
-        """The volume of each cell through time"""
-        self.f_dis = pd.DataFrame(data.f_dis, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The modified dissolution factor :term:`wrt` time"""
-        self.f_flag = pd.DataFrame(data.f_flag, columns=self.z, dtype=int).T.sort_index(
-            ascending=True
-        )
-        """The dissolution status variable indicating if dissolution is occuring."""
-        self.xincl = pd.DataFrame(data.xincl, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The inclination of the cell wall"""
-        self.amd = pd.DataFrame(data.amd, columns=self.z).T.sort_index(ascending=True)
-        """Temporary variable for debugging"""
-        self.D_coeff = pd.DataFrame(data.D_coeff, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The calculated effective diffusion coefficient"""
-        self.dC_dz = pd.DataFrame(data.dC_dz, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The change in concentration with respect to depth in each cell at each time"""
-        self.C_old = pd.DataFrame(data.C_old, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The previous concentration in the cell"""
-        self.C_new = pd.DataFrame(data.C_new, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The current concentration in the cell"""
-        self.dC_dt = pd.DataFrame(data.dC, columns=self.z).T.sort_index(ascending=True)
-        """The change in concentration with respect to time, related to the rate of dissolution"""
-        self.dr_dt = pd.DataFrame(data.dr, columns=self.z).T.sort_index(ascending=True)
-        """The change in radius with respect to time"""
-        self.C_plm = pd.DataFrame(data.C_plm, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The concentration within the injection plume"""
-        self.u_plm = pd.DataFrame(data.u_plm, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The velocity of the fluid in the injection plume"""
-        self.r_plm = pd.DataFrame(data.r_plm, columns=self.z).T.sort_index(
-            ascending=True
-        )
-        """The radius of the injection plume"""
-        self.summary = pd.DataFrame.from_dict(
-            {
-                "t_h": self.t,
-                "t_d": self.t / 24.0,
-                "step": data.step,
-                "stage": data.stage,
-                "phase": data.phase,
-                "i_inj": data.injCell,
-                "i_prod": data.prodCell,
-                "i_plume": data.plumCell,
-                "i_obi": data.obiCell,
-                "err_ode": data.err,
-                "z_inj": data.z_inj,
-                "z_prod": data.z_prod,
-                "z_plume": data.z_plm,
-                "z_obi": data.z_obi,
-                "z_insol": data.z_insol,
-                "h_insol": data.h_insol,
-                "l_jet": data.l_jet,
-                "u_jet": data.u_jet,
-                "r_jet": data.r_jet,
-                "V_inj": data.V_injTot,
-                "V_fill": data.V_fillTot,
-                "V_cav": data.V_cavTot,
-                "V_insol": data.V_insolTot,
-                "V_vented": data.V_insolVent,
-                "Q_out": data.Q_out,
-                "sg_out": data.sg_out,
-                "sg_ave": data.sg_cavAve,
-                "dt_h": data.dt,
-            },
-        )
-        """
-        The cavern-wide data summary from the simulation. Contains the following elements:
+        self.df_t_1D: pd.DataFrame = None
+        """Results that are 1D indexed in the D(time) domain."""
+        self.df_z_1D: pd.DataFrame = None
+        """Results that are 1D indexed in the D(space) domain."""
+        self.df_t_z_2D: pd.DataFrame = None
+        """Results that are 2D indexed in the D(time, space) domain."""
 
-        .. rubric:: summary DataFrame columns
+        if data is None:
+            return
+        t = pd.Series(data.t, name="time")
+        r = pd.DataFrame(data.r)
+        dr = pd.DataFrame(data.dr_0)
+        sg = pd.DataFrame(data.sg)
+        theta = pd.DataFrame(data.theta)
+        Q_inj = pd.DataFrame(data.Q_inj)
+        V = pd.DataFrame(data.V)
+        f_dis = pd.DataFrame(data.f_dis)
+        f_flag = pd.DataFrame(data.f_flag, dtype=int)
+        xincl = pd.DataFrame(data.xincl)
+        amd = pd.DataFrame(data.amd)
+        D_coeff = pd.DataFrame(data.D_coeff)
+        dC_dz = pd.DataFrame(data.dC_dz)
+        C_old = pd.DataFrame(data.C_old)
+        C_new = pd.DataFrame(data.C_new)
+        dC_dt = pd.DataFrame(data.dC)
+        dr_dt = pd.DataFrame(data.dr)
+        C_plm = pd.DataFrame(data.C_plm)
+        u_plm = pd.DataFrame(data.u_plm)
+        r_plm = pd.DataFrame(data.r_plm)
 
-        t_h
-            the time in hours
-        t_d
-            the time in days
-        step
-            the step number
-        stage
-            the stage number
-        phase
-            the leaching phase, where 1 is active and 0 is passive
-        i_inj
-            the cell where injection is occurring
-        i_prod
-            the cell where production is occurring
-        i_plume
-            the plume stagnation cell index
-        i_obi
-            the OBI cell index
-        err_ode
-            the ODE convergence value (closer to 1.0 is better)
-        z_inj
-            the injection depth
-        z_prod
-            the production depth
-        z_plume
-            the plume stagnation depth
-        z_obi
-            the OBI depth
-        z_insol
-            the depth to the top of the insoluble pile
-        h_insol
-            the height of the insolubles above the original TD
-        l_jet
-            the jet length
-        u_jet
-            the jet velocity
-        r_jet
-            the jet radius
-        V_inj
-            the cumulative injection volume
-        V_fill
-            the cumulative fill volume
-        V_cav
-            the total cavern volume
-        V_insol
-            the volume of insolubles that have fallen
-        V_vented
-            the volume of insolubles that were sucked out with the brine (ordinary and leach/fill modes only)
-        Q_out
-            the instantaneous outflow in bbl/d
-        sg_out
-            the instantaneous outflow specific gravity
-        sg_ave
-            the average cavern brine concentration
-        dt_h
-            the timestep size
+        self.df_z_1D = pd.DataFrame.from_dict(
+            dict(
+                z=data.z_0,
+                h=data.h_0,
+                r=data.r_0,
+            )
+        )
+        self.df_z_1D.index.set_names(["node_idx"], inplace=True)
 
-        """
+        self.df_t_1D = pd.DataFrame.from_dict(
+            dict(
+                t_h=t,
+                t_d=t / 24.0,
+                step=data.step,
+                stage=data.stage,
+                phase=data.phase,
+                i_inj=data.injCell,
+                i_prod=data.prodCell,
+                i_plume=data.plumCell,
+                i_obi=data.obiCell,
+                err_ode=data.err,
+                z_inj=data.z_inj,
+                z_prod=data.z_prod,
+                z_plume=data.z_plm,
+                z_obi=data.z_obi,
+                z_insol=data.z_insol,
+                h_insol=data.h_insol,
+                l_jet=data.l_jet,
+                u_jet=data.u_jet,
+                r_jet=data.r_jet,
+                V_inj=data.V_injTot,
+                V_fill=data.V_fillTot,
+                V_cav=data.V_cavTot,
+                V_insol=data.V_insolTot,
+                V_vented=data.V_insolVent,
+                Q_out=data.Q_out,
+                sg_out=data.sg_out,
+                sg_ave=data.sg_cavAve,
+                dt_h=data.dt,
+            ),
+        )
+        self.df_t_1D.index.set_names(["save_idx"], inplace=True)
 
-    def __repr__(self):
+        self.df_t_z_2D = pd.DataFrame.from_dict(
+            dict(
+                r=r.stack(),
+                dr=dr.stack(),
+                dr_dt=dr_dt.stack(),
+                theta=theta.stack(),
+                xincl=xincl.stack(),
+                V=V.stack(),
+                sg=sg.stack(),
+                dC_dt=dC_dt.stack(),
+                dC_dz=dC_dz.stack(),
+                f_flag=f_flag.stack(),
+                f_dis=f_dis.stack(),
+                D_coeff=D_coeff.stack(),
+                r_plm=r_plm.stack(),
+                u_plm=u_plm.stack(),
+                C_plm=C_plm.stack(),
+                Q_inj=Q_inj.stack(),
+            )
+        )
+        self.df_t_z_2D.index.set_names(["save_idx", "node_idx"], inplace=True)
+
+    def __repr__(self) -> str:
         return "<Results: from {:.3g} to {:.3g} d ({:d} stages)>".format(
-            self.t.iloc[0] / 24.0,
-            self.t.iloc[-1] / 24.0,
-            max(self.summary.stage) - min(self.summary.stage) + 1,
+            self.df_t_1D.t_d.iloc[0],
+            self.df_t_1D.t_d.iloc[-1],
+            max(self.df_t_1D.stage) - min(self.df_t_1D.stage) + 1,
         )
+
+    @property
+    def time(self) -> pd.Series:
+        """Time domain: time in days, by timestep"""
+        return self.df_t_1D.t_d
+
+    @property
+    def injection_cell(self) -> pd.Series:
+        """The injection cell, by timestep"""
+        return self.df_t_1D.i_inj
+
+    @property
+    def production_cell(self) -> pd.Series:
+        """The production cell, by timestep"""
+        return self.df_t_1D.i_prod
+
+    @property
+    def plume_stagnation_cell(self) -> pd.Series:
+        """The plume stagnation cell, by timestep"""
+        return self.df_t_1D.i_plume
+
+    @property
+    def interface_cell(self) -> pd.Series:
+        """The brine interface cell, by timestep"""
+        return self.df_t_1D.i_obi
+
+    @property
+    def ode_convergence(self) -> pd.Series:
+        """The ODE convergence factor, by timestep"""
+        return self.df_t_1D.err_ode
+
+    @property
+    def injection_depth(self) -> pd.Series:
+        """The water/brine injection depth, by timestep"""
+        return self.df_t_1D.z_inj
+
+    @property
+    def production_depth(self) -> pd.Series:
+        """The depth of brine production, by timestep"""
+        return self.df_t_1D.z_prod
+
+    @property
+    def plume_stagnation_depth(self) -> pd.Series:
+        """The plume stagnation depth, by timestep"""
+        return self.df_t_1D.z_plm
+
+    @property
+    def interface_depth(self) -> pd.Series:
+        """The brine interface depth, by timestep"""
+        return self.df_t_1D.z_obi
+
+    @property
+    def cavern_total_depth(self) -> pd.Series:
+        """The depth to the new cavern TD, by timestep"""
+        return self.df_t_1D.z_insol
+
+    @property
+    def insoluble_material_height(self) -> pd.Series:
+        """The height of the insoluble materials deposited, by timestep"""
+        return self.df_t_1D.h_insol
+
+    @property
+    def jet_length(self) -> pd.Series:
+        """The length of the injection fluid jet's penetration below EOT, by timestep"""
+        return self.df_t_1D.l_jet
+
+    @property
+    def jet_velocity(self) -> pd.Series:
+        """The velocity of the injection fluid, by timestep"""
+        return self.df_t_1D.u_jet
+
+    @property
+    def jet_radius(self) -> pd.Series:
+        """The radius of the injection fluid jet and starting plume radius, by timestep"""
+        return self.df_t_1D.r_jet
+
+    @property
+    def cumulative_injection_volume(self) -> pd.Series:
+        """Total injected water/brine volume, by timestep"""
+        return self.df_t_1D.V_inj
+
+    @property
+    def cumulative_fill_volume(self) -> pd.Series:
+        """Total product fill volume, by timestep"""
+        return self.df_t_1D.V_fill
+
+    @property
+    def cavern_volume(self) -> pd.Series:
+        """Total cavern volume, by timestep"""
+        return self.df_t_1D.V_cav
+
+    @property
+    def cumulative_insoluble_material_volume(self) -> pd.Series:
+        """Total volume of insoluble materials deposited, by timestep"""
+        return self.df_t_1D.V_insol
+
+    @property
+    def cumulative_insoluble_material_vented(self) -> pd.Series:
+        """Total volume of insoluble materials vented, by timestep"""
+        return self.df_t_1D.V_vented
+
+    @property
+    def brine_production_rate(self) -> pd.Series:
+        """Instantaneous brine production rate, by timestep"""
+        return self.df_t_1D.Q_out
+
+    @property
+    def brine_production_sg(self) -> pd.Series:
+        """Instantaneous brine production cell sg, by timestep"""
+        return self.df_t_1D.sg_out
+
+    @property
+    def cavern_average_brine_sg(self) -> pd.Series:
+        """Instantaneous average cavern brine sg, by timestep"""
+        return self.df_t_1D.sg_ave
+
+    @property
+    def depths(self) -> pd.Series:
+        """Vertical domain: depths, by node"""
+        return self.df_z_1D.z
+
+    @property
+    def node_heights(self) -> pd.Series:
+        """Vertical domain: heights above initial TD, by node"""
+        return self.df_z_1D.h
+
+    @property
+    def hours(self) -> pd.Series:
+        """Time domain: time in hours, by timestep"""
+        return self.df_t_1D.t_h
+
+    @property
+    def step_size(self) -> pd.Series:
+        """Simulation step size, by timestep"""
+        return self.df_t_1D.dt
+
+    @property
+    def step_number(self) -> pd.Series:
+        """Simulation step number, by timestep"""
+        return self.df_t_1D.step
+
+    @property
+    def stage_number(self) -> pd.Series:
+        """Simulation stage number, by timestep"""
+        return self.df_t_1D.stage
+
+    @property
+    def injection_phase(self) -> pd.Series:
+        """Simulation injection(1) or static(0) phase, by timestep"""
+        return self.df_t_1D.phase
+
+    @property
+    def radius(self) -> pd.DataFrame:
+        """Cavern radius, by node and timestep"""
+        return self.df_t_z_2D.r.unstack().T
+
+    @property
+    def change_in_radius(self) -> pd.DataFrame:
+        """Change in cavern radius since previous time, by node and timestep"""
+        return self.df_t_z_2D.dr.unstack().T
+
+    @property
+    def rate_of_change_in_radius(self) -> pd.DataFrame:
+        """Rate of change in cavern radius, by node and timestep"""
+        return self.df_t_z_2D.dr_dt.unstack().T
+
+    @property
+    def wall_angle(self) -> pd.DataFrame:
+        """Dissolution wall angle, by node and timestep"""
+        return self.df_t_z_2D.theta.unstack().T
+
+    @property
+    def wall_factor(self) -> pd.DataFrame:
+        """Dissolution wall factor, by node and timestep"""
+        return self.df_t_z_2D.xincl.unstack().T
+
+    @property
+    def cell_volume(self) -> pd.DataFrame:
+        """Cell volume above node, by node and timestep"""
+        return self.df_t_z_2D.V.unstack().T
+
+    @property
+    def plume_radius(self) -> pd.DataFrame:
+        """Plume radius at node depth, by node and timestep"""
+        return self.df_t_z_2D.r_plm.unstack().T
+
+    @property
+    def plume_velocity(self) -> pd.DataFrame:
+        """Plume velocity at node depth, by node and timestep"""
+        return self.df_t_z_2D.u_plm.unstack().T
+
+    @property
+    def plume_sg(self) -> pd.DataFrame:
+        """Plume concentration(sg) at node depth, by node and timestep"""
+        return self.df_t_z_2D.C_plm.unstack().T
+
+    @property
+    def cell_injection_rate(self) -> pd.DataFrame:
+        """Injection rate within cell above node, by node and timestep"""
+        return self.df_t_z_2D.Q_inj.unstack().T
+
+    @property
+    def cell_sg(self) -> pd.DataFrame:
+        """Concentration(sg) in cell above node, by node and timestep"""
+        return self.df_t_z_2D.sg.unstack().T
+
+    @property
+    def rate_of_change_in_sg(self) -> pd.DataFrame:
+        """Rate of change in concentration in cell above node, by node and timestep"""
+        return self.df_t_z_2D.dC_dt.unstack().T
+
+    @property
+    def vertical_diffusion_rate(self) -> pd.DataFrame:
+        """Vertical change in concentration across node, by node and timestep"""
+        return self.df_t_z_2D.dC_dz.unstack().T
+
+    @property
+    def state_indicator(self) -> pd.DataFrame:
+        """Dissolution state flag, by node and timestep"""
+        return self.df_t_z_2D.f_flag.unstack().T
+
+    @property
+    def effective_dissolution_factor(self) -> pd.DataFrame:
+        """Effective dissolution factor at node, by node and timestep"""
+        return self.df_t_z_2D.f_dis.unstack().T
+
+    @property
+    def effective_diffusion_coefficient(self) -> pd.DataFrame:
+        """Effective diffusion coefficient at node, by node and timestep"""
+        return self.df_t_z_2D.D_coeff.unstack().T
+
+    def to_dict(self) -> dict:
+        """Convert the results object to a dictionary format."""
+        ret = dict()
+        for k in ["df_t_1D", "df_z_1D", "df_t_z_2D"]:
+            ret[k] = getattr(self, k).to_dict("tight")
+        return ret
+
+    @classmethod
+    def from_dict(cls, d) -> "Results":
+        """Create a new object from a tight dictionary representation."""
+        new = cls(None)
+        for k in ["df_t_1D", "df_z_1D", "df_t_z_2D"]:
+            setattr(new, k, pd.DataFrame.from_dict(d[k], orient="tight"))
+        return new
+
+    def to_hdf(
+        self,
+        filename: str,
+        *,
+        compression: str = "gzip",
+        compression_opts: int = 9,
+        shuffle: bool = True,
+        fletcher32: bool = True,
+        **kwargs,
+    ):
+        """Write results to an HDF5 file.
+
+        Parameters
+        ----------
+        filename : str
+            A filename with extension ".h5", or filename prefix without extension, to write to
+
+        Keyword Arguments
+        -----------------
+        compression : str
+            The HDF5 compression filter library to use, by default 'gzip'
+        compression_opts : int
+            The compression level to use, by default 9 (highest)
+        shuffle : bool
+            Whether to use the shuffle filter, by default True
+        fletcher32 : bool
+            Whether to use checksum filter, by default True
+        kwargs : additional keyword arguments
+            Any additional arguments to be passed to the :mod:`h5py` module ``create_dataset`` call.
+
+        """
+
+        if isinstance(h5py, ImportError):
+            raise RuntimeError("Optional dependency not installed: h5py") from h5py
+        if not filename.lower().endswith(".h5"):
+            filename = filename + ".h5"
+        with h5py.File(filename, "w") as f:
+            f.create_dataset(
+                "df_t_1D",
+                data=self.df_t_1D.to_records(),
+                dtype=[(k, v) for (k, v) in self.df_t_1D.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "df_z_1D",
+                data=self.df_z_1D.to_records(),
+                dtype=[(k, v) for (k, v) in self.df_z_1D.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+            f.create_dataset(
+                "df_t_z_2D",
+                data=self.df_t_z_2D.to_records(),
+                dtype=[(k, v) for (k, v) in self.df_t_z_2D.dtypes.items()],
+                compression=compression,
+                compression_opts=compression_opts,
+                shuffle=shuffle,
+                fletcher32=fletcher32,
+                **kwargs,
+            )
+
+    @classmethod
+    def from_hdf(cls, filename: str) -> "Results":
+        """Read results from an HDF5 file.
+
+        Parameters
+        ----------
+        filename : str
+            A filename with extension ".h5", or filename prefix without extension, to read from.
+
+        """
+
+        results = cls(None)
+        if isinstance(h5py, ImportError):
+            raise RuntimeError("Optional dependency not installed: h5py") from h5py
+        if not filename.lower().endswith(".h5"):
+            filename = filename + ".h5"
+        with h5py.File(filename, "r") as f:
+            results.df_t_1D = pd.DataFrame(
+                np.array(f["df_t_1D"], dtype=f["df_t_1D"].dtype).view(np.recarray)
+            )
+            results.df_z_1D = pd.DataFrame(
+                np.array(f["df_z_1D"], dtype=f["df_z_1D"].dtype).view(np.recarray)
+            )
+            results.df_t_z_2D = pd.DataFrame(
+                np.array(f["df_t_z_2D"], dtype=f["df_t_z_2D"].dtype).view(np.recarray)
+            )
+        return results
 
 
 class _OutDataBlock:
+    """Useful for processing old SANSMIC .out files"""
+
     def __init__(self):
         self.t = None
         self.dt = None
@@ -1471,6 +1769,8 @@ class _OutDataBlock:
 
 
 class _OutputData(_OutDataBlock):
+    """Useful for processing old SANSMIC .out files"""
+
     def __init__(self):
         super().__init__()
         self.timeTotal = None
@@ -1480,10 +1780,3 @@ class _OutputData(_OutDataBlock):
         self.V_injTot = None
         self.V_fillTot = None
         self.sg_cavAve = None
-
-
-if not has_ext:
-    _ext.CGeometryFormat = GeometryFormat
-    _ext.CRunMode = SimulationMode
-    _ext.CModel = Scenario
-    _ext.CStage = StageDefinition

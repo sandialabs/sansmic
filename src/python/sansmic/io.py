@@ -17,7 +17,13 @@ from dataclasses import fields
 from enum import IntEnum
 
 import numpy as np
+import pandas as pd
 import yaml
+
+try:
+    import h5py
+except ImportError as e:
+    h5py = e
 
 from .model import (
     GeometryFormat,
@@ -53,7 +59,7 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
     Raises
     ------
     RuntimeError
-        if there is an unrecognized option and ``strict`` is True or if there are no
+        if there is an unrecognized option and ``strict`` is True, or if there are no
         stages defined.
     """
     logger.debug(
@@ -82,59 +88,10 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
         logger.error("Error reading scenario file {}".format(config_file))
         raise
 
-    # Do error checking and remove extra fields so that the Scenario's __init__
-    # does not have an exception
-    scenario_fields = [f.name for f in fields(Scenario)]
-    stage_fields = [f.name for f in fields(StageDefinition)]
-    remove = list()
-    for key in data.keys():
-        if key not in scenario_fields:
-            if strict:
-                logger.error(
-                    'Unrecognized option "{}" in scenario file options. Exiting'.format(
-                        key
-                    )
-                )
-                raise RuntimeError(
-                    'Unrecognized option "{}" in scenario file options'.format(key)
-                )
-            elif warn:
-                logger.warn(
-                    'Unrecognized option "{}" in scenario file options. Ignoring and continuing.'.format(
-                        key
-                    )
-                )
-            remove.append(key)
-    for key in remove:
-        data.pop(key)
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
         raise RuntimeError("No stages provided.")
-    for ct, stage in enumerate(data["stages"]):
-        remove = list()
-        for key in stage.keys():
-            if key not in stage_fields:
-                if strict:
-                    logger.error(
-                        'Unrecognized option "{}" in scenario file, stage {}. Exiting.'.format(
-                            key, ct
-                        )
-                    )
-                    raise RuntimeError(
-                        'Unrecognized option "{}" in scenario file, stage {}'.format(
-                            key, ct
-                        )
-                    )
-                elif warn:
-                    warnings.warn(
-                        'Unrecognized option "{}" in scenario file, stage {}. Ignoring and continuing.'.format(
-                            key, ct
-                        )
-                    )
-                remove.append(key)
-        for key in remove:
-            stage.pop(key)
-    return Scenario.from_dict(**data)
+    return Scenario.from_dict(data)
 
 
 def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
@@ -386,14 +343,14 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
         ):
             del s["stop-condition"]
             del s["stop-value"]
-        if scenario.stages[ct].set_initial_conditions is False:
+        if scenario.stages[ct].set_initial_conditions is False and ct > 0:
             s["set-cavern-sg"] = None
-            s["set-interface-level"] = None
+            s["brine-interface-depth"] = None
             s["set-initial-conditions"] = None
-        elif scenario.stages[ct].set_initial_conditions is None:
+        elif scenario.stages[ct].set_initial_conditions is None and ct > 0:
             s["set-cavern-sg"] = None
-            if not s["set-interface-level"] and redundant:
-                s["set-interface-level"] = 0
+            if not s.get("brine-interface-depth", None) and redundant:
+                s["brine-interface-depth"] = 0
         if s.get("simulation-mode", None) == SimulationMode.WITHDRAWAL:
             s["product-injection-rate"] = None
         keys = [k for k in s.keys()]
@@ -647,3 +604,133 @@ def read_classic_out_ddl(file_prefix):
 
     res = Results(combo)
     return res
+
+
+def read_tst(file_prefix: str):
+    """Read a .tst output file into a DataFrame.
+
+    Parameters
+    ----------
+    file_prefix : str
+        Filename without extension.
+    """
+    Q_fill = list()
+    t = list()
+    V_cavTot = list()
+    err = list()
+    sg_out = list()
+    sg_cavAve = list()
+    V_insolTot = list()
+    z_insol = list()
+    z_obi = list()
+    V_insolVent = list()
+    V_ullage = list()
+    V_usable = list()
+    Q_inj = list()
+    Q_fill = list()
+    V_injTot = list()
+    V_fillTot = list()
+    with open(file_prefix + ".tst", "r") as fout:
+        for line in fout.readlines():
+            words = line.split()
+            if len(words) == 0:
+                continue
+            if words[0] in ["#", "t", "(d)", "File=", "TIME", "Days", "---", "==="]:
+                continue
+            t.append(float(words[0]))
+            V_cavTot.append(float(words[1]))
+            err.append(float(words[2]))
+            sg_out.append(float(words[3]))
+            sg_cavAve.append(float(words[4]))
+            V_insolTot.append(float(words[5]))
+            z_insol.append(float(words[6]))
+            z_obi.append(float(words[7]))
+            V_insolVent.append(float(words[8]))
+            V_ullage.append(float(words[9]))
+            V_usable.append(float(words[10]))
+            Q_inj.append(float(words[11]))
+            V_injTot.append(float(words[12]))
+            Q_fill.append(float(words[13]))
+            V_fillTot.append(float(words[14]))
+    return pd.DataFrame.from_dict(
+        dict(
+            t_d=t,
+            V_cav=V_cavTot,
+            err_ode=err,
+            sg_out=sg_out,
+            sg_ave=sg_cavAve,
+            V_insol=V_insolVent,
+            z_insol=z_insol,
+            z_obi=z_obi,
+            V_vented=V_insolVent,
+            Q_inj=Q_inj,
+            Q_fill=Q_fill,
+            V_inj=V_injTot,
+            V_fill=V_fillTot,
+        )
+    )
+
+
+def write_hdf(results: Results, filename: str, **kwargs):
+    """Write results to an HDF5 file.
+
+    Parameters
+    ----------
+    results : Results
+        The results object to write
+    filename : str
+        The filename to write the results to.
+
+    Keyword Arguments
+    -----------------
+    kwargs : additional keyword arguments
+        See :meth:`~sansmic.model.Results.to_hdf` for keyword arguments.
+
+    """
+    results.to_hdf(filename)
+
+
+def read_hdf(filename: str) -> Results:
+    """Read results from an HDF5 file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read the results from.
+
+    """
+    results = Results.from_hdf(filename)
+    return results
+
+
+def write_json(results: Results, filename: str, **kwargs):
+    """Write results to a JSON file.
+
+    Parameters
+    ----------
+    results : Results
+        The results object to write
+    filename : str
+        The filename to write the results to.
+
+    Keyword Arguments
+    -----------------
+    kwargs : additional keyword arguments
+        See :meth:`json.dump` for valid keyword arguments
+
+    """
+    with open(filename, "w") as f:
+        json.dump(results.to_dict(), f, **kwargs)
+
+
+def read_json(filename: str):
+    """Read results from a JSON file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read the results from.
+    """
+    with open(filename, "r") as f:
+        d = json.load(f)
+    return Results.from_dict(d)

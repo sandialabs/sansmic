@@ -7,28 +7,14 @@ from glob import glob
 from setuptools import find_packages, setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "1.0.0b2"
+__version__ = "1.0.0"
 
 here = path.abspath(path.dirname(__file__))
-
-# Get the long description from the README file
-# with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-#     long_description = f.read()
-
-smoke_tests_only = True
-
-if smoke_tests_only:
-    sources = [
-        "src/ext_modules/libsansmic/smoke.cxx",
-        "src/ext_modules/libsansmic/libsansmic.cpp",
-    ]
-else:
-    sources = sorted(glob("src/ext_modules/libsansmic/*.cpp"))
 
 ext_modules = [
     Pybind11Extension(
         "sansmic.libsansmic",
-        sources=sources,
+        sources=sorted(glob("src/ext_modules/libsansmic/*.cpp")),
         cxx_std=17,
         # Example: passing in the version to the compiled code
         define_macros=[
