@@ -60,27 +60,27 @@ class Units(IntEnum):
     M_CM_M3 = 3
     """meter/centimeter/cubic meter"""
 
-    @property
+    @classmethod
     def inch(self):
         """1 in ≔ 0.0254 m"""
         return Fraction(254, 10000)
 
-    @property
+    @classmethod
     def foot(self):
         """1 ft ≔ 0.3048 m"""
         return Fraction(3048, 10000)
 
-    @property
+    @classmethod
     def cubic_foot(self):
         """1 ft³ == 0.028316846592 m³"""
         return Fraction(3048**3, 10000**3)
 
-    @property
+    @classmethod
     def barrel(self):
         """1 bbl == 0.158987294928 m³"""
         return Fraction(42 * 231 * 254, 10000**3)
 
-    @property
+    @classmethod
     def centimeter(self):
         """1 cm ≔ 0.01 m"""
         return Fraction(1, 100)

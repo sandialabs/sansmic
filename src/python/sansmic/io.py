@@ -659,7 +659,7 @@ def read_tst(file_prefix: str):
             err_ode=err,
             sg_out=sg_out,
             sg_ave=sg_cavAve,
-            V_insol=V_insolVent,
+            V_insol=V_insolTot,
             z_insol=z_insol,
             z_obi=z_obi,
             V_vented=V_insolVent,

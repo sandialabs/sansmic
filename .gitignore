@@ -167,3 +167,4 @@ _local/
 
 docs/apidocs/pymodule/**
 docs/apidocs/clibrary/**
+DEPLOY.bat
