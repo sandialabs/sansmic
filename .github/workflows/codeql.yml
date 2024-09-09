@@ -86,8 +86,8 @@ jobs:
           'your code, for example:'
         echo '  make bootstrap'
         echo '  make release'
+        python -m pip install pybind11 setuptools
         python setup.py build_ext
-        exit 1
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
