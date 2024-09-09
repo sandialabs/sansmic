@@ -11,10 +11,15 @@
 import json
 import logging
 import os
-import tomllib
+import sys
 import warnings
 from dataclasses import fields
 from enum import IntEnum
+
+if sys.version_info[1] < 11:
+    import tomli as tomllib
+else:
+    import tomllib
 
 import numpy as np
 import pandas as pd
