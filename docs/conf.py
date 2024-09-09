@@ -149,7 +149,7 @@ if doxygen_installed:
     breathe_domain_by_extension = {"hpp": "cpp"}
     breathe_projects_source = {
         "libsansmic": (
-            "../src/ext_modules/libsansmic",
+            "",
             glob.glob("../src/ext_modules/libsansmic/*"),
         )
     }

@@ -335,7 +335,7 @@ def convert():
     args = parser.parse_args()
     infile = args.infile
     logger.debug("Running sansmic-convert")
-    model = sio.read_scenario(infile, warn=not args.quiet)
+    model = sio.read_scenario(infile)
     logger.debug("Successfully created scenario from {}".format(infile))
     sio.write_scenario(model, args.outfile, redundant=args.full)
     logger.debug("Successfully wrote scenario to {}".format(args.outfile))

@@ -2,3 +2,7 @@ numpy
 pandas
 pyyaml
 pre-commit
+pytest
+pytest-cov
+black
+pybind11

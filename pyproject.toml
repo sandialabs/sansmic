@@ -29,7 +29,7 @@ classifiers = [
 [project.optional-dependencies]
 formats = ['h5py', 'openpyxl', 'tabulate']
 docs = ['Sphinx', 'pydata-sphinx-theme', 'sphinx_design', 'sphinxcontrib-bibtex', 'breathe', 'exhale', 'sphinx-argparse']
-test = ['unittest']
+test = ['unittest', 'pytest', 'pytest-cov', 'black']
 dev = ['pre-commit', 'pyproject_hooks', 'black', 'pybind11']
 
 [project.urls]

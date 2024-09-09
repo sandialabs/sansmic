@@ -653,11 +653,13 @@ class StageDefinition:
                         (self.injection_duration + self.rest_duration) / stage.timestep
                     )
                 )
-        elif self.save_frequency is not None:
-            stage.print_interval = self.save_frequency
+            else:
+                stage.print_interval = int(self.save_frequency)
+        elif isinstance(self.save_frequency, (int, float)):
+            stage.print_interval = int(self.save_frequency)
         else:
             stage.print_interval = defaults.get(
-                "solver_timestep", int(np.round(24.0 / stage.timestep))
+                "save_frequency", int(np.round(24.0 / stage.timestep))
             )
         stage.subsequent = 0 if self.set_initial_conditions else 1
         stage.rest_duration = self.rest_duration
