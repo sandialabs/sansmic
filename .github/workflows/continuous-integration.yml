@@ -39,7 +39,12 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements.txt
-          python3 -m pip install tomllib
+          if [${{ matrix.version }} == "3.9"]
+            python3 -m pip install tomli
+          fi
+          if [${{ matrix.version }} == "3.10"]
+            python3 -m pip install tomli
+          fi
 
       - name: Test install
         run: python3 -m pip install .
