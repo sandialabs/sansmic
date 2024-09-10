@@ -44,7 +44,9 @@ from .model import (
 logger = logging.getLogger("sansmic")
 
 
-def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
+def read_scenario(
+    config_file: str, warn=True, strict=False, *, format=None
+) -> Scenario:
     """Load a sansmic scenario file.
 
     Parameters
@@ -73,16 +75,16 @@ def read_scenario(config_file: str, warn=True, strict=False) -> Scenario:
         )
     )
     try:
-        if config_file.lower().endswith(".json"):
+        if config_file.lower().endswith(".json") or format == "json":
             with open(config_file, "r") as fin:
                 data = json.load(fin)
-        elif config_file.lower().endswith(".yaml"):
+        elif config_file.lower().endswith(".yaml") or format == "yaml":
             with open(config_file, "r") as fin:
                 data = yaml.safe_load(fin)
-        elif config_file.lower().endswith(".toml"):
+        elif config_file.lower().endswith(".toml") or format == "toml":
             with open(config_file, "rb") as fin:
                 data = tomllib.load(fin)
-        elif config_file.lower().endswith(".dat"):
+        elif config_file.lower().endswith(".dat") or format == "dat":
             with open(config_file, "r") as fin:
                 data = read_dat(fin)
             return data
@@ -326,7 +328,7 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
     return scenario
 
 
-def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
+def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format=None):
     """Write a new-style SANSMIC scenario file (preferred extension is .toml)"""
     sdict = scenario.to_dict(redundant)
     keys = [k for k in sdict.keys()]
@@ -377,11 +379,8 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
         if not redundant and ct == 0 and "set-initial-conditions" in s:
             del s["set-initial-conditions"]
     name, ext = os.path.splitext(filename)
-    if not ext:
-        filename = filename + ".toml"
-        ext = ".toml"
     with open(filename, "w") as fout:
-        if ext.lower() == ".toml":
+        if ext.lower() == ".toml" or format == "toml":
             for k, v in sdict.items():
                 if k in ["stages", "defaults", "advanced"]:
                     continue
@@ -429,14 +428,14 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False):
                     elif isinstance(v, IntEnum):
                         v = repr(v.name.lower().replace("_", "-"))
                     fout.write("{} = {}\n".format(k, v))
-        elif ext.lower() == ".json":
+        elif ext.lower() == ".json" or format == "json":
             json.dump(sdict, fout)
-        elif ext.lower() == ".yaml":
+        elif ext.lower() == ".yaml" or format == "yaml":
             yaml.dump(sdict, fout)
         else:
             logger.critical(
-                'Unknown file extension {}. Valid extensions are "toml", "yaml" and "json" or none.'.format(
-                    ext
+                'Unknown file extension ({}) and invalid format ({}). Valid extensions/formats are "toml", "yaml" and "json".'.format(
+                    ext, format
                 )
             )
             raise RuntimeError("Unknown file format for scenario output")

@@ -13,12 +13,12 @@ testdir = dirname(abspath(str(__file__)))
 
 class TestRegression(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.nameF = "baseline"
-        self.datF = join(testdir, self.nameF + ".dat")
-        self.tstF = sansmic.io.read_tst(join(testdir, self.nameF))
-        self.resF = sansmic.io.read_classic_out_ddl(join(testdir, self.nameF))
-        self.namePy = "regression"
+    def setUpClass(cls):
+        cls.nameF = "baseline"
+        cls.datF = join(testdir, cls.nameF + ".dat")
+        cls.tstF = sansmic.io.read_tst(join(testdir, cls.nameF))
+        cls.resF = sansmic.io.read_classic_out_ddl(join(testdir, cls.nameF))
+        cls.namePy = "regression"
 
     def runTest(self):
         model = sansmic.read_scenario(self.datF)

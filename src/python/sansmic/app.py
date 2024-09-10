@@ -234,7 +234,7 @@ def main(args=None, ret=False):
                 int(round(t_stage[ct] / dt_stage[ct])) for ct in range(n_stages)
             ]
             n_steps = sum(stage_sizes)
-            p_freq = model.stages[last_stage].save_frequency
+            p_freq = day_size[0]
             print(
                 "Running sansmic scenario: {}".format(
                     datafile if not model.title else model.title
@@ -265,7 +265,7 @@ def main(args=None, ret=False):
                         else:
                             last_stage = stage
                             last_step = step
-                            p_freq = model.stages[last_stage].save_frequency
+                            p_freq = day_size[stage]
                             if args.verbose >= 2:
                                 progress.update(
                                     task_S,
