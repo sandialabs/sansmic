@@ -21,7 +21,7 @@ from os.path import splitext
 from numpy import round
 from pip._vendor.rich.progress import Progress
 from sansmic import __version__
-from sansmic import io as sio
+import sansmic.io
 
 try:
     import h5py
@@ -60,7 +60,7 @@ def _main_parser(default_hdf5=None):
     parser.add_argument(
         "datafile",
         metavar="INPUTFILE",
-        help="the SANSMIC input file to use; if extension is '.dat', --toml is implied",
+        help="the SANSMIC input file to use; if extensansmic.ion is '.dat', --toml is implied",
     )
 
     outp = parser.add_argument_group(
@@ -203,7 +203,7 @@ def main(args=None, ret=False):
     prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
     verbosity = _get_verbosity(args)
     logger.debug("Running sansmic with {}".format(args))
-    model = sio.read_scenario(datafile, warn=not args.quiet)
+    model = sansmic.io.read_scenario(datafile, warn=not args.quiet)
     logger.info("Successfully created scenario from {}".format(datafile))
     if (args.toml is None and args.prefix is not None) or datafile.lower().endswith(
         ".dat"
@@ -212,7 +212,7 @@ def main(args=None, ret=False):
     elif args.toml is None and args.prefix is None:
         args.toml = False
     if args.toml:
-        sio.write_scenario(model, prefix + ".toml")
+        sansmic.io.write_scenario(model, prefix + ".toml")
     logger.debug("Running simulation")
     with model.new_simulation(prefix, verbosity, args.tst, args.old_out) as sim:
         logger.debug("Created new simulation")
@@ -296,9 +296,9 @@ def main(args=None, ret=False):
             )
         )
     if args.hdf:
-        sio.write_hdf(res, prefix + ".h5")
+        sansmic.io.write_hdf(res, prefix + ".h5")
     if args.json:
-        sio.write_json(res, prefix + ".json")
+        sansmic.io.write_json(res, prefix + ".json")
     logger.debug("Sansmic complete")
     if ret:
         return res
@@ -315,7 +315,7 @@ def _convert_parser():
     parser.add_argument(
         "outfile",
         metavar="NEW_FILE",
-        help="the new scenario file to create [extension choices: .toml, .json, .yaml]",
+        help="the new scenario file to create [extensansmic.ion choices: .toml, .json, .yaml]",
         default=None,
     )
     parser.add_argument(
@@ -335,7 +335,7 @@ def convert():
     args = parser.parse_args()
     infile = args.infile
     logger.debug("Running sansmic-convert")
-    model = sio.read_scenario(infile)
+    model = sansmic.io.read_scenario(infile)
     logger.debug("Successfully created scenario from {}".format(infile))
-    sio.write_scenario(model, args.outfile, redundant=args.full)
+    sansmic.io.write_scenario(model, args.outfile, redundant=args.full)
     logger.debug("Successfully wrote scenario to {}".format(args.outfile))

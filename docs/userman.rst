@@ -1,24 +1,13 @@
 User Guide
 ==========
 
-.. only:: html
-
-    .. toctree::
-        :hidden:
-
-        nomenclature
-
 .. toctree::
+    :maxdepth: 1
+    :hidden:
 
     um/intro
     um/getting-started
+    um/running-sansmic
     um/scenarios
     references
-
-
-.. only:: latex
-
-    .. toctree::
-        :hidden:
-
-        nomenclature
+    nomenclature

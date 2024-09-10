@@ -2,8 +2,8 @@ Getting started
 ===============
 Please note, sansmic does not have a graphical user interface (GUI). This means
 that to run sansmic, you will need a command prompt or terminal of some sort,
-or you can run sansmic from within python or jupyter/jupyterlab.
-
+or you can run sansmic from within python or a Jupyter notebook. (Setting up
+Jupyter is beyond the scope of this guide, please see https://jupyter.org/).
 
 
 Installing sansmic
@@ -16,43 +16,98 @@ other Unix-like systems, the authors are going to assume you already have and us
 python on your system.
 
 Once python is installed, open up a Command Prompt, Console, or xterm window, and install
-sansmic using the ``pip`` command.
+sansmic using the ``pip`` command. This will download and install the latest version of sansmic
+and the two (or three) required packages for sansmic to your python installation. [#]_
 
 .. code:: bash
 
-    python -m pip install sansmic
+    python3 -m pip install sansmic
 
 
-This will download and install the latest version of sansmic and the required packages
-for sansmic to your python installation.
+That's it! You can test if sansmic installed property by trying the command
+
+.. code:: bash
+
+   sansmic --help
 
 
-Running sansmic
----------------
-There are two commands that can be run from the command line, sansmic_ and sansmic-convert_.
+If the installation was successful, it should print out a help screen, and you can
+start running sansmic. By default, sansmic will output results to Comma Separated Values
+(CSV) formatted files which should be readable by any data processing or spreadsheet
+software. If this is all you want to do, you can skip forward to the next chapter.
 
 
-``sansmic``
------------
 
-.. argparse::
-   :module: sansmic.app
-   :func: _main_parser
-   :prog: sansmic
+Advanced installation options
+-----------------------------
+Because python is a modular programming language, not every installation has, or wants
+to have, every python package installed that sansmic *could* make use of. With input
+and output formats, specifically, some users may want some functionality and not others.
 
 
-``sansmic-convert``
--------------------
+Input and output formats
+~~~~~~~~~~~~~~~~~~~~~~~~
+The following packages make additional file formats available to sansmic. You can
+install all of them by installing using pip extras notation.
 
-.. argparse::
-   :module: sansmic.app
-   :func: _convert_parser
-   :prog: sansmic-convert
+.. code:: bash
+
+   python3 -m pip install sansmic[formats]
+
+
+* either ``pyyaml`` or ``ruamel.yaml`` - use YAML formatted scenario configuration files.
+* ``h5py`` - use HDF5 (Heirarchical Data Format version 5) files for saving results.
+* ``openpyxl`` - save results in Microsoft Excel (xlsx) formatted files.
+* ``tabulate`` - print results to the screen in Markdown (MD) format, which is prettier.
+* ``lasio`` - use geometry data from a LAS formatted text file.
+
+
+Building sansmic
+~~~~~~~~~~~~~~~~
+If you are building sansmic from source (a likelihood for \*nix and some Mac users),
+you will need the following packages, but pip *should* download them for you. You
+also need a C++ compiler and python header libraries.
+
+* ``setuptools`` - provides the build backend for the package.
+* ``pybind11`` - required header libraries that make the C++ libsansmic library compilable.
 
 
 For developers
---------------
-The sansmic package is a mixture of C++ and python code, so you will need to have a
-C++ compiler installed if you plan on modifying any of the C++ code. If not, then
-you can get away without having one and using the distributed binary library with
-the wheel.
+~~~~~~~~~~~~~~~
+Rather than repeat the gory details of setting up sansmic for development,
+please see the ``CONTRIBUTING.md`` file in the git repository
+(https://github.com/sandialabs/sansmic).
+
+
+Building documentation
+~~~~~~~~~~~~~~~~~~~~~~
+You have already found the documentation since you are reading this! But, if you want to
+make it available offline, or in another format, there are some additional packages you
+will need, and you will need the **Doxygen** program (https://www.doxygen.nl).
+After you get Doxygen, you can get the necessary python packages by using the "docs"
+pip extras marker.
+
+.. code:: bash
+
+   python3 -m pip install sansmic[docs]
+
+The libraries this will install (if you don't already have them) are:
+
+* ``Sphinx`` - the main documentation engine sansmic.
+* ``sphinx_design`` - layout options package, required by pydata-sphinx-theme.
+* ``pydata-sphinx-``theme - the theme used for the sansmic documentation.
+* ``sphinxcontrib-bibtex`` - use better bibliographic citations.
+* ``sphinx-argparse`` - generate program help automatically.
+* ``breathe`` - process doxygen output files.
+* ``exhale`` - automate the doxygen+breathe process.
+
+
+
+.. only:: html
+
+   .. rubric:: Notes
+
+.. [#] There are two packages that are always required to run sansmic, numpy and pandas.
+   If your Python version is less than 3.11, sansmic will also require - and pip will
+   automatically install - the tomli package for toml support, which is already included
+   in Python v3.11+.

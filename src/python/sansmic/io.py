@@ -23,7 +23,16 @@ else:
 
 import numpy as np
 import pandas as pd
-import yaml
+
+try:
+    import yaml
+except ImportError as e:
+    try:
+        import ruamel.yaml as _yaml
+
+        yaml = _yaml.YAML
+    except ImportError:
+        yaml = e
 
 try:
     import h5py
