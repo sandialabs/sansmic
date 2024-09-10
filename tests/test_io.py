@@ -16,7 +16,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Set up temporary directory
-        cls.tempdir = tempfile.TemporaryDirectory(delete=False)
+        cls.tempdir = tempfile.TemporaryDirectory()
         cls.tempdirname = cls.tempdir.name
         # cls.tempdirname = abspath('tests')
 
