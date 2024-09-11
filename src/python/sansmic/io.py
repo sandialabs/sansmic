@@ -760,16 +760,46 @@ def write_csv_results(results: Results, prefix: str):
         Write results files in CSV formats.
     """
     with open(prefix + "-summary.csv", "w") as f:
-        results.df_t_1D.to_csv(f)
+        results.df_t_1D.to_csv(f, lineterminator="\n", index=False)
     with open(prefix + "-radius.csv", "w") as f:
-        results.radius.to_csv(f)
+        df = results.radius
+        df.index = results.depths
+        df = df.T
+        df.index = results.time
+        df = df.T
+        df.to_csv(f, lineterminator="\n")
     with open(prefix + "-density.csv", "w") as f:
-        results.cell_sg.to_csv(f)
+        df = results.cell_sg
+        df.index = results.depths
+        df = df.T
+        df.index = results.time
+        df = df.T
+        df.to_csv(f, lineterminator="\n")
     with open(prefix + "-wall-angle.csv", "w") as f:
-        results.wall_angle.to_csv(f)
+        df = results.wall_angle
+        df.index = results.depths
+        df = df.T
+        df.index = results.time
+        df = df.T
+        df.to_csv(f, lineterminator="\n")
     with open(prefix + "-dr_dt.csv", "w") as f:
-        results.rate_of_change_in_radius.to_csv(f)
+        df = results.rate_of_change_in_radius
+        df.index = results.depths
+        df = df.T
+        df.index = results.time
+        df = df.T
+        df.to_csv(f, lineterminator="\n")
     with open(prefix + "-dC_dt.csv", "w") as f:
-        results.rate_of_change_in_sg.to_csv(f)
+        df = results.rate_of_change_in_sg
+        df.index = results.depths
+        df = df.T
+        df.index = results.time
+        df = df.T
+        df.to_csv(f, lineterminator="\n")
     with open(prefix + "-dC_dz.csv", "w") as f:
-        results.vertical_diffusion_rate.to_csv(f)
+        df = results.vertical_diffusion_rate
+        df.index = results.depths
+        df = df.T
+        df.index = results.time
+        df = df.T
+        df.to_csv(f, lineterminator="\n")
