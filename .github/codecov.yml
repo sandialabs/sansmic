@@ -3,14 +3,14 @@ coverage:
     project:
       default:
         # basic
-        target: auto
+        target: 50%
         threshold: 5
         base: auto
         flags:
           - "unit"
         paths:
           - "src/"
-          - "!tests/"
+          - "tests/"
         # advanced settings
         # branches:
         #   - main
