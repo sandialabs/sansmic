@@ -747,3 +747,29 @@ def read_json(filename: str):
     with open(filename, "r") as f:
         d = json.load(f)
     return Results.from_dict(d)
+
+
+def write_csv_results(results: Results, prefix: str):
+    """Write results to CSV files.
+
+    Parameters
+    ----------
+    results : Results
+        The results to write out.
+    prefix : str
+        Write results files in CSV formats.
+    """
+    with open(prefix + "-summary.csv", "w") as f:
+        results.df_t_1D.to_csv(f)
+    with open(prefix + "-radius.csv", "w") as f:
+        results.radius.to_csv(f)
+    with open(prefix + "-density.csv", "w") as f:
+        results.cell_sg.to_csv(f)
+    with open(prefix + "-wall-angle.csv", "w") as f:
+        results.wall_angle.to_csv(f)
+    with open(prefix + "-dr_dt.csv", "w") as f:
+        results.rate_of_change_in_radius.to_csv(f)
+    with open(prefix + "-dC_dt.csv", "w") as f:
+        results.rate_of_change_in_sg.to_csv(f)
+    with open(prefix + "-dC_dz.csv", "w") as f:
+        results.vertical_diffusion_rate.to_csv(f)

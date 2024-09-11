@@ -80,7 +80,24 @@ def _main_parser(default_hdf5=None):
 
     wwo = outp.add_mutually_exclusive_group()
     wwo.add_argument(
-        "--toml", default=None, action="store_true", help="Create a TOML scenario file."
+        "--csv",
+        default=True,
+        action="store_true",
+        help="Create CSV results files.",
+    )
+    wwo.add_argument(
+        "--no-csv",
+        dest="csv",
+        action="store_false",
+        help="Don't create CSV results files.",
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--toml",
+        default=None,
+        action="store_true",
+        help="Create a TOML scenario file.",
     )
     wwo.add_argument(
         "--no-toml",
@@ -299,6 +316,8 @@ def main(args=None, ret=False):
         sansmic.io.write_hdf(res, prefix + ".h5")
     if args.json:
         sansmic.io.write_json(res, prefix + ".json")
+    if args.csv:
+        sansmic.io.write_csv_results(res, prefix)
     logger.debug("Sansmic complete")
     if ret:
         return res
