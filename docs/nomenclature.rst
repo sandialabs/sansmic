@@ -103,64 +103,66 @@ symbols are used in this documentation.
         :term:`zero-depth point`
 
     bbl
-        :term:`barrel` (oil)
-
-    bbl oil
-        :term:`barrel`, oil
+        (unit symbol) :term:`barrel`, oil barrel
 
     ft
-    ift
-        :term:`foot` (international)
+        (unit symbol) :term:`foot`, international foot
 
     in
-    in.
-        :term:`inch`
+        (unit symbol) :term:`inch`, standard inch
 
     Mbbl
-        one thousand :term:`barrels<barrel>` (10³ bbl)
+        (unit symbol) one **thousand** :term:`barrels<barrel>` (= 10³ bbl)
 
         **NOTE:** this is a :term:`U.S. customary<customary units>` prefixed symbol;
         this is *not* a "mega-barrel" and is not using the SI "mega-" prefix.
+        **Do not** use this notation with SI units.
 
-    MMbbl
-        one million :term:`barrels<barrel>` (10⁶ bbl)
+    MMbb
+        (unit symbol) one **million** :term:`barrels<barrel>` (= 10⁶ bbl)
 
-        **NOTE:** this is a :term:`U.S. customary<customary units>` prefixed symbol;
-        this is *not* a "mega-barrel" and is not using the SI "mega-" prefix.
+        **NOTE:** this is a :term:`U.S. customary<customary units>` prefixed symbol - **do not** use
+        this notation with SI units.
 
     °F
-    degF
-        :term:`degree Fahrenheit`
+        (unit symbol) :term:`degree Fahrenheit`
 
     lb
-        :term:`pound` (avoirdupois)
+        (unit symbol) :term:`pound`, avoirdupois pound
 
     lbf
-        :term:`pound-force`
+        (unit symbol) :term:`pound-force`
 
     psi
-        :term:`pound-force per square inch`; technically, the proper symbol is "lbf/in²"
+    lbf/in²
+        (unit symbol) :term:`pound-force per square inch`
+
+    GUI
+        graphical user interface
 
     TOML
-        `[Tom's Obvious Minimal Language] <https://toml.io/>`_ (file format)
+        (file format) `[Tom's Obvious Minimal Language] <https://toml.io/>`_
 
     YAML
-        `YAML Ain't Markup Language <https://yaml.org/>`_ (file format)
+        (file format) `YAML Ain't Markup Language <https://yaml.org/>`_
 
     JSON
-        `JavaScript Object Notation <https://www.json.org/>`_ (file format)
+        (file format) `JavaScript Object Notation <https://www.json.org/>`_
 
     CSV
-        Comma Separated Values (file format)
+        (file format) Comma Separated Values
 
-    HDF
     HDF5
-        `Heirarchical Data Format (v5) <https://docs.hdfgroup.org/hdf5/v1_14/index.html>`_ (file format)
+        (file format) `Heirarchical Data Format v5 <https://docs.hdfgroup.org/hdf5/v1_14/index.html>`_
 
     LAS
-        Log ASCII Standard (file format) [see the `lasio <https://pypi.org/project/lasio/>` documentation]
+        (file format) `Log ASCII Standard <https://www.usgs.gov/programs/national-geological-and-geophysical-data-preservation-program/las-format>`_
 
+    MarkDown
+        (file format) `MarkDown <https://github.com/skills/communicate-using-markdown>`_
 
+    reStructuredText
+        (file format) `reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
 
 
 .. _glossary:
@@ -171,10 +173,10 @@ Glossary
 .. glossary::
     :sorted:
 
-    SANSMIC : Software
+    SANSMIC : Software code
         Sandia Solution Mining Code
 
-    SALT77 : Software
+    SALT : Software code
         :term:`SMRI` solution mining code
 
     customary units
@@ -183,7 +185,10 @@ Glossary
         still in use are nearly all based on the English :term:`foot` in some way. However,
         :term:`U.S. Customary units` *are not the same as Imperial units,* and referring to them
         that way is a recipe for confusion :cite:`NIST-HB-44`.
+
         Note that U.S. Customary units are also *not the same* as now-deprecated :term:`U.S. Survey units`.
+
+        *See:* `NIST Handbook 44 appendices B and C <https://www.nist.gov/pml/owm/nist-handbook-44-current-edition>`_.
 
     U.S. Customary units
         The International :term:`customary units` plus additional units that are U.S. specific, such as the
@@ -191,47 +196,46 @@ Glossary
         defined in terms of U.S. Customary units (1 barrel = 42 U.S. gallons).
         Note that U.S. Customary units are also *not the same* as now-deprecated :term:`U.S. Survey units`.
 
-        *See also:* NIST Handbook 44 :cite:`NIST-HB-44`.
+        *See:* `NIST Handbook 44 appendices B and C <https://www.nist.gov/pml/owm/nist-handbook-44-current-edition>`_.
 
     U.S. Survey units
         **DEPRECATED** The old (pre-2022) U.S. Survey units are based on the foot of the late 1800s. This foot was
         renamed the "U.S. Survey Foot" in 1959, when the :term:`international foot` became the standard
-        "foot" in the United States. In 2022, the U.S. Government
-        deprecated the U.S. Survey Foot and its derived units. All survey
-        units (acre, chain, etc.) are now defined in terms of the international foot.
+        "foot" in the United States  :cite:`NIST-HB-44`. In 2022, the U.S. Government
+        deprecated the U.S. Survey Foot and its derived units  :cite:`NIST-HB-44`. All survey
+        units (acre, chain, etc.) are now defined in terms of the international foot :cite:`NIST-HB-44`.
 
         When referring to historical measurements, and
         using the deprecated units, the unit should be prefixed with the letter "s" (e.g., sft and sac instead
-        of ft and ac). They should no longer be used when creating new documents or new measurements.
+        of ft and ac)  :cite:`NIST-HB-44`. They should no longer be used when creating new documents or new measurements.
         The "survey foot" and "survey mile" are now the preferred terms for the old U.S. Survey
-        Foot and U.S. Survey Mile with unit symbols "sft" and "smi", not "usft" or "usmi".
+        Foot and U.S. Survey Mile with unit symbols "sft" and "smi", not "usft" or "usmi" :cite:`NIST-HB-44`.
 
-        *See also:* NIST Handbook 44 :cite:`NIST-HB-44`.
-
+        *See:* `NIST Handbook 44 appendices B and C <https://www.nist.gov/pml/owm/nist-handbook-44-current-edition>`_.
 
     barrel
     barrels
     oil barrel
         U.S. and petroleum industry unit of volume. The oil barrel is equal to 42 U.S. liquid gallons, which are
         in turn defined as exactly 231 cubic inches. Thus, the oil barrel is equal to 9702 cubic inches or
-        539/96 cubic feet (9702/1728 == 539/96).
+        539/96 cubic feet (9702/1728 == 539/96) :cite:`NIST-HB-44`.
         The unit symbol is ":term:`bbl`" or "bbl oil".
 
     foot
     feet
     international foot
-        :term:`Customary unit<customary units>` of length, defined as exactly 0.3048 meters.
-        The unit symbols ":term:`ft`" and ":term:`ift`" are both acceptable and interchangable.
+        :term:`Customary unit<customary units>` of length, defined as exactly 0.3048 meters :cite:`NIST-HB-44`.
+        The unit symbols ":term:`ft`" and "ift" are both acceptable and interchangable :cite:`NIST-HB-44`.
 
     inch
     inches
-        :term:`Customary unit<customary units>` of length, defined as exactly 0.0254 meters (12 in = 1 :term:`ft`).
-        Unit symbol is ":term:`in`" or ":term:`in.`" (only if using "in" would be misunderstood as the English word "in").
+        :term:`Customary unit<customary units>` of length, defined as exactly 0.0254 meters (12 in = 1 :term:`ft`) :cite:`NIST-HB-44`.
+        Unit symbol is ":term:`in`" :cite:`NIST-HB-44`.
 
     degree Fahrenheit
         :term:`Customary unit<customary units>` of temperature. A change of one degree Fahrenheit is exactly
-        equal to a change of 5/9 degree Celsius. The unit symbol is ":term:`°F`" or ":term:`degF`" (if limited
-        to alphanumeric characters). Conversion is done using the following
+        equal to a change of 5/9 degree Celsius. The unit symbol is ":term:`°F`" or "degF" if limited
+        to alphanumeric characters :cite:`NIST-HB-44`. Conversion is done using the following
         formula.
 
         .. math::
@@ -242,19 +246,19 @@ Glossary
     pounds
     pound avoirdupois
         :term:`Customary unit<customary units>` of mass. One pound avoirdupois is defined as exactly 0.45359237
-        kilograms. The unit symbol is ":term:`lb`" or "lb avdp" (to differentiate it from some other pound).
+        kilograms  :cite:`NIST-HB-44`. The unit symbol is ":term:`lb`" or "lb avdp" (to differentiate it from some other pound) :cite:`NIST-HB-44`.
 
     pound-force
     pounds-force
         :term:`Customary unit<customary units>` of force, equal to one :term:`pound` accelerated at
-        standard gravity (gₙ ≡ 9.80665 m/s²). One pound-force is exactly equal to 4.4482216152605 newtons.
-        The unit symbol is ":term:`lbf`".
+        standard gravity (gₙ ≡ 9.80665 m/s²). One pound-force is exactly equal to 4.4482216152605 newtons
+        The unit symbol is ":term:`lbf`" :cite:`NIST-HB-44`.
 
     pound-force per square inch
     pounds-force per square inch
         A :term:`customary unit<customary units>` of pressure. The technical unit symbol is "lbf/in²",
         but the symbol ":term:`psi`" is more commonly used; "PSI" is an abbreviation appropriate for
-        text, but should not be used as a unit symbol. The PSI does not have an exact decimal representation,
+        text, but should not be used as a unit symbol :cite:`NIST-HB-44`. The PSI does not have an exact decimal representation,
         though it can be written exactly as a fraction. 1 psi is approximately equal to 6894.757 pascal.
 
     zero-depth point
@@ -262,7 +266,7 @@ Glossary
 
         .. math::
 
-            z_\mathrm{ZDP} := 0.0
+            z_\mathrm{zdp} := 0.0
 
         for :term:`measured depth` (:term:`MD`) values. This should not change over time once a well
         has been completed.
@@ -274,8 +278,8 @@ Glossary
 
 
 
-Conversion factors
-------------------
+U.S. Customary Units
+--------------------
 It is assumed that any user is familiar with :term:`SI` units; however,
 for those that want the most up-to-date information, NIST-SP-330 provides the U.S.
 English-laguage version of the official SI definition. :cite:`NIST-SP-330`
@@ -294,9 +298,9 @@ Government. :cite:`NIST-HB-44`
         +----------------+----------------------------------+
         | USC unit       | Definition (in SI units)         |
         +================+==================================+
-        | :term:`ft`     | ≝ 0.3048 m                       |
+        | :term:`ft`     | := 0.3048 m                      |
         +----------------+----------------------------------+
-        | :term:`in`     | ≝ 2.54 cm                        |
+        | :term:`in`     | := 2.54 cm                       |
         +----------------+----------------------------------+
         | in²            | ≡ 6.4516 cm²                     |
         +----------------+----------------------------------+
@@ -304,7 +308,7 @@ Government. :cite:`NIST-HB-44`
         +----------------+----------------------------------+
         | :term:`Mbbl`/d | ≡ 158.987294938 m³/d             |
         +----------------+----------------------------------+
-        | :term:`lb`     | ≝ 0.45359237 kg                  |
+        | :term:`lb`     | := 0.45359237 kg                 |
         +----------------+----------------------------------+
         | :term:`lbf`    | ≡ 4.4482216152605 N              |
         +----------------+----------------------------------+
@@ -312,7 +316,7 @@ Government. :cite:`NIST-HB-44`
         |                |                                  |
         |                | ≡ (44482216152605 / 6451600) kPa |
         |                |                                  |
-        |                | ≅ 6.894757 kPa                   |
+        |                | ≈ 6.894757 kPa                   |
         +----------------+----------------------------------+
         | :term:`sg`     | = 1000 kg/m³                     |
         +----------------+----------------------------------+

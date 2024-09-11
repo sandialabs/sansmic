@@ -44,7 +44,6 @@ Citing sansmic
 Indices and tables
 ------------------
 
-* :ref:`references`
 * :ref:`nomenclature`
 * :ref:`genindex`
 * :ref:`modindex`

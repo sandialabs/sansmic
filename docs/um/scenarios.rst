@@ -7,8 +7,8 @@ defined programmatically, using :class:`~sansmic.model.Scenario`,
 :class:`~sansmic.model.AdvancedOptions`,
 and :class:`~sansmic.model.StageDefinition` objects, or through
 a dictionary representation of these classes.
-The pereferred file format for a scenario file is TOML [1]_,
-although JSON [2]_ and YAML [3]_ will be parsed if the proper
+The pereferred file format for a scenario file is :term:`TOML`,
+although :term:`JSON`, and :term:`YAML` will be parsed if the proper
 extension is used. All configuration examples will be provided in
 TOML format.
 
@@ -195,7 +195,7 @@ Scenario options
         "infer"
             The format will be inferred from the fields provided in the dictionary
             which must be one of the standard fields defined in :confval:`geometry-data`.
-            If a file is specified, it must be in TOML [1]_, JSON [3]_, or YAML [2]_ format..
+            If a file is specified, it must be in TOML, JSON, or YAML format.
 
         <dictionary>
             Will allow importing a file using :mod:`pandas` or :mod:`lasio`. If a piece
@@ -288,6 +288,7 @@ Scenario options
         casing and tubing radii are specified in centimeters; volumes
         and flow rates are defined in cubic meters and cubic meters/day,
         respectively.
+
 
 .. confval:: [defaults]
 
@@ -625,10 +626,3 @@ number of stages. A stage **requires** a title key.
 
     The value for the stop condition, which is either a *height* above
     the floor or a volume in *barrels.*
-
-
-
-
-.. [1] TOML: [Tom's Obvious Minimal Language]. https://toml.io/
-.. [2] YAML: YAML Ain't Markup Language. https://yaml.org/
-.. [3] JSON: JavaScript Object Notation. https://www.json.org/

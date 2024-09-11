@@ -1,6 +1,6 @@
 Getting started
 ===============
-Please note, sansmic does not have a graphical user interface (GUI). This means
+Please note, sansmic does not have a graphical user interface (:term:`GUI`). This means
 that to run sansmic, you will need a command prompt or terminal of some sort,
 or you can run sansmic from within python or a Jupyter notebook. (Setting up
 Jupyter is beyond the scope of this guide, please see https://jupyter.org/).
@@ -33,9 +33,9 @@ That's it! You can test if sansmic installed property by trying the command
 
 If the installation was successful, it should print out a help screen, and you can
 start running sansmic. By default, sansmic will output results to Comma Separated Values
-(CSV) formatted files which should be readable by any data processing or spreadsheet
-software. If this is all you want to do, you can skip forward to the next chapter.
-
+(:term:`CSV`) formatted files, that are readable by any data processing or spreadsheet
+software, or :term:`JSON` files, which can be read in by numpy and pandas, among other
+packages. (If this is all you want to do, you can skip forward to the next chapter!)
 
 
 Advanced installation options
@@ -55,11 +55,11 @@ install all of them by installing using pip extras notation.
    python3 -m pip install sansmic[formats]
 
 
-* either ``pyyaml`` or ``ruamel.yaml`` - use YAML formatted scenario configuration files.
-* ``h5py`` - use HDF5 (Heirarchical Data Format version 5) files for saving results.
-* ``openpyxl`` - save results in Microsoft Excel (xlsx) formatted files.
-* ``tabulate`` - print results to the screen in Markdown (MD) format, which is prettier.
-* ``lasio`` - use geometry data from a LAS formatted text file.
+* either ``pyyaml`` or ``ruamel.yaml`` - use :term:`YAML` (.yaml) formatted scenario configuration files.
+* ``h5py`` - use :term:`HDF5` (.h5) data files for saving results.
+* ``openpyxl`` - save results in Microsoft Excel (.xlsx) formatted files.
+* ``tabulate`` - print results to the screen in Markdown (.md) format, which is prettier.
+* ``lasio`` - use geometry data from a :term:`LAS` (.las) formatted text file.
 
 
 Building sansmic
@@ -91,16 +91,16 @@ pip extras marker.
 
    python3 -m pip install sansmic[docs]
 
+
 The libraries this will install (if you don't already have them) are:
 
 * ``Sphinx`` - the main documentation engine sansmic.
 * ``sphinx_design`` - layout options package, required by pydata-sphinx-theme.
-* ``pydata-sphinx-``theme - the theme used for the sansmic documentation.
+* ``pydata-sphinx-theme`` - the theme used for the sansmic documentation.
 * ``sphinxcontrib-bibtex`` - use better bibliographic citations.
 * ``sphinx-argparse`` - generate program help automatically.
 * ``breathe`` - process doxygen output files.
 * ``exhale`` - automate the doxygen+breathe process.
-
 
 
 .. only:: html

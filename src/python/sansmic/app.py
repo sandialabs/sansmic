@@ -48,8 +48,8 @@ def _get_verbosity(args):
     return args.verbose
 
 
-def _main_parser(default_hdf5=None):
-    if default_hdf5 is None:
+def _main_parser(defaults=False):
+    if not defaults:
         kwargs = dict(default=None)
     else:
         kwargs = dict()
@@ -65,10 +65,7 @@ def _main_parser(default_hdf5=None):
 
     outp = parser.add_argument_group(
         "Output options",
-        """Default options:  ``{}  {}  --tst  --no-old-out``""".format(
-            "--hdf" if default_hdf5 or default_hdf5 is None else "--no-hdf",
-            "--json" if not default_hdf5 and default_hdf5 is not None else "--no-json",
-        ),
+        """Default options:  ``--csv  --tst  --no-hdf  --no-json  --no-old-out``""",
     )
     outp.add_argument(
         "-o",
@@ -76,20 +73,6 @@ def _main_parser(default_hdf5=None):
         dest="prefix",
         help="change output file prefix; if used, --toml is implied",
         default=None,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--csv",
-        default=True,
-        action="store_true",
-        help="Create CSV results files.",
-    )
-    wwo.add_argument(
-        "--no-csv",
-        dest="csv",
-        action="store_false",
-        help="Don't create CSV results files.",
     )
 
     wwo = outp.add_mutually_exclusive_group()
@@ -109,8 +92,23 @@ def _main_parser(default_hdf5=None):
 
     wwo = outp.add_mutually_exclusive_group()
     wwo.add_argument(
+        "--csv",
+        action="store_true",
+        default=True if defaults else None,
+        help="Create CSV results files.",
+    )
+    wwo.add_argument(
+        "--no-csv",
+        dest="csv",
+        action="store_false",
+        help="Don't create CSV results files.",
+        **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
         "--hdf",
-        default=default_hdf5,
+        default=False if defaults else None,
         action="store_true",
         help="Create an HDF5 formatted results file.",
     )
@@ -125,7 +123,7 @@ def _main_parser(default_hdf5=None):
     wwo = outp.add_mutually_exclusive_group()
     wwo.add_argument(
         "--json",
-        default=not default_hdf5 if default_hdf5 is not None else None,
+        default=False if defaults else None,
         action="store_true",
         help="Create a JSON formatted results file.",
     )
@@ -140,7 +138,7 @@ def _main_parser(default_hdf5=None):
     wwo = outp.add_mutually_exclusive_group()
     wwo.add_argument(
         "--tst",
-        default=True,
+        default=True if defaults else None,
         action="store_true",
         help="Create a daily summary TST text file.",
     )
@@ -149,6 +147,7 @@ def _main_parser(default_hdf5=None):
         dest="tst",
         action="store_false",
         help="Don't create a TST summary file.",
+        **kwargs,
     )
 
     wwo = outp.add_mutually_exclusive_group()
@@ -156,7 +155,7 @@ def _main_parser(default_hdf5=None):
         "--old-out",
         dest="old_out",
         action="store_true",
-        default=False,
+        default=False if defaults else None,
         help="Create an old-style SANSMIC OUT file.",
     )
     wwo.add_argument(
@@ -164,6 +163,7 @@ def _main_parser(default_hdf5=None):
         dest="old_out",
         action="store_false",
         help="Don't create an old-style OUT file.",
+        **kwargs,
     )
 
     outp = parser.add_argument_group(
@@ -211,10 +211,10 @@ def main(args=None, ret=False):
 
     """
     if ret or args is not None:
-        default_hdf5 = False
+        defaults = False
     else:
-        default_hdf5 = not isinstance(h5py, Exception)
-    parser = _main_parser(default_hdf5)
+        defaults = True
+    parser = _main_parser(defaults)
     args = parser.parse_args(args=args)
     datafile = args.datafile
     prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
