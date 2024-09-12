@@ -104,6 +104,15 @@ class TestApplication(unittest.TestCase):
             ],
             ret=True,
         )
+
+        res6 = sansmic.app.main(
+            args=[
+                self.withdrawal_dat,
+                "--debug",
+            ],
+            ret=True,
+        )
+
         self.assertIsNotNone(res1)
         self.assertIsNone(res2)
 
@@ -131,6 +140,10 @@ class TestApplication(unittest.TestCase):
         self.assertTrue((res0.df_t_1D == res5.df_t_1D).all().all())
         self.assertTrue((res0.df_z_1D == res5.df_z_1D).all().all())
         self.assertTrue((res0.df_t_z_2D == res5.df_t_z_2D).all().all())
+
+        self.assertTrue((res0.df_t_1D == res6.df_t_1D).all().all())
+        self.assertTrue((res0.df_z_1D == res6.df_z_1D).all().all())
+        self.assertTrue((res0.df_t_z_2D == res6.df_t_z_2D).all().all())
 
     def test_convert_app(self):
         """Test the 'sansmic-convert' command line application."""
@@ -263,33 +276,13 @@ class TestApplication(unittest.TestCase):
 2
 2
 1.0   0.05   4000.   4000.
+Stage 2
+100 1   240 0   0   120    1   0   0
+1000.   32.0    1000.0  100.0   20.0
+240000.0
+4.925   5.3750  4.925   5.3750
+1.03    1.2019
+0.1     24
+0.0 0.0 0.0
 END
-"""
-
-    _WITHDRAWAL_TOML = """num-cells = 100
-geometry-data.radii = [10.0, 50.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 90.0, 80.0, 50.0, 33.0, 10.0, 4.0, 2.0, 2.0, 2.0, 2.0, 2.0]
-geometry-format = 'radius-list'
-cavern-height = 1000.0
-floor-depth = 4000.0
-ullage-standoff = 20.0
-insolubles-ratio = 0.05
-units = 'ft-in-bbl'
-
-[[stages]]
-title = 'Withdrawal leach'
-simulation-mode = 'withdrawal'
-solver-timestep = 0.1
-save-frequency = 240
-injection-duration = 72.0
-rest-duration = 1440.0
-inner-tbg-inside-diam = 9.85
-inner-tbg-outside-diam = 10.75
-outer-csg-inside-diam = 9.85
-outer-csg-outside-diam = 10.75
-brine-injection-sg = 1.03
-brine-injection-depth = 32.0
-brine-production-depth = 1000.0
-brine-injection-rate = 240000.0
-set-cavern-sg = 1.2019
-brine-interface-depth = 100.0
 """
