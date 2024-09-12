@@ -367,8 +367,6 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
             s["set-cavern-sg"] = None
             if not s.get("brine-interface-depth", None) and redundant:
                 s["brine-interface-depth"] = 0
-        if s.get("simulation-mode", None) == SimulationMode.WITHDRAWAL:
-            s["product-injection-rate"] = None
         keys = [k for k in s.keys()]
         for k in keys:
             if (
@@ -619,7 +617,7 @@ def read_classic_out_ddl(file_prefix):
     return res
 
 
-def read_tst(file_prefix: str):
+def read_tst_file(file_prefix: str):
     """Read a .tst output file into a DataFrame.
 
     Parameters
@@ -684,7 +682,7 @@ def read_tst(file_prefix: str):
     )
 
 
-def write_hdf(results: Results, filename: str, **kwargs):
+def write_hdf_results(results: Results, filename: str, **kwargs):
     """Write results to an HDF5 file.
 
     Parameters
@@ -703,7 +701,7 @@ def write_hdf(results: Results, filename: str, **kwargs):
     results.to_hdf(filename)
 
 
-def read_hdf(filename: str) -> Results:
+def read_hdf_results(filename: str) -> Results:
     """Read results from an HDF5 file.
 
     Parameters
@@ -716,7 +714,7 @@ def read_hdf(filename: str) -> Results:
     return results
 
 
-def write_json(results: Results, filename: str, **kwargs):
+def write_json_results(results: Results, filename: str, **kwargs):
     """Write results to a JSON file.
 
     Parameters
@@ -736,7 +734,7 @@ def write_json(results: Results, filename: str, **kwargs):
         json.dump(results.to_dict(), f, **kwargs)
 
 
-def read_json(filename: str):
+def read_json_results(filename: str):
     """Read results from a JSON file.
 
     Parameters

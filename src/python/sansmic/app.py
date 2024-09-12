@@ -313,9 +313,9 @@ def main(args=None, ret=False):
             )
         )
     if args.hdf:
-        sansmic.io.write_hdf(res, prefix + ".h5")
+        sansmic.io.write_hdf_results(res, prefix + ".h5")
     if args.json:
-        sansmic.io.write_json(res, prefix + ".json")
+        sansmic.io.write_json_results(res, prefix + ".json")
     if args.csv:
         sansmic.io.write_csv_results(res, prefix)
     logger.debug("Sansmic complete")
@@ -347,11 +347,11 @@ def _convert_parser():
     return parser
 
 
-def convert():
+def convert(args=None):
     """Command line function to convert a scenario/dat to a new format."""
 
     parser = _convert_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
     infile = args.infile
     logger.debug("Running sansmic-convert")
     model = sansmic.io.read_scenario(infile)

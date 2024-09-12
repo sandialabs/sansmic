@@ -170,6 +170,11 @@ class AdvancedOptions:
     diffusion_beta: float = None  #  0.147
     """Diffusion beta coefficient; default is 0.147"""
 
+    def __setattr__(self, name, value):
+        if isinstance(value, str) and value.strip() == "":
+            value = None
+        super().__setattr__(name, value)
+
     @classmethod
     def from_dict(cls, opts: dict) -> "AdvancedOptions":
         """Create a new object from a dictionary of options.
