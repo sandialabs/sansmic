@@ -40,7 +40,10 @@ dev = [
     'pyproject_hooks',
     'black',
     'pybind11',
-    'unittest',
+    'pytest',
+    'pytest-cov',
+]
+tests = [
     'pytest',
     'pytest-cov',
     'h5py',
