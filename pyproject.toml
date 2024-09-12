@@ -43,6 +43,11 @@ dev = [
     'unittest',
     'pytest',
     'pytest-cov',
+    'h5py',
+    'openpyxl',
+    'tabulate',
+    'pyyaml',
+    'lasio',
 ]
 
 [project.urls]

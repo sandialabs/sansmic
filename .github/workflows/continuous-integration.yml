@@ -42,7 +42,7 @@ jobs:
           python3 -m pip install tomli
 
       - name: Test install
-        run: python3 -m pip install .
+        run: python3 -m pip install .[dev]
 
       - name: Test with pytest
         run: python3 -m pytest --cov=sansmic examples/ tests/
