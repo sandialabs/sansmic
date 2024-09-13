@@ -16,11 +16,6 @@ coverage:
         if_ci_failed: error #success, failure, error, ignore
         informational: false
         only_pulls: false
-      tests:  # declare a new status context "tests"
-        target: 100%  # we always want 100% coverage here
-        paths:
-          - "tests/"  # only include coverage in "tests/" folder
-        only_pulls: false
 
 comment:
   layout: "header, diff, components"  # show component info in the PR comment
@@ -34,11 +29,11 @@ component_management:
           - "!main"
   individual_components:
     - component_id: module_python
-      name: pysansmic
+      name: python code
       paths:
         - src/python/**
     - component_id: module_ext
-      name: sansmic++
+      name: C++ code
       paths:
         - src/ext_modules/**
     - component_id: module_tests
