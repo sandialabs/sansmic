@@ -6,14 +6,13 @@ coverage:
         target: auto
         threshold: 5
         base: auto
-        flags:
-          - "unit"
         paths:
           - "src/"
           - "tests/"
         # advanced settings
-        # branches:
-        #   - main
+        branches:
+          - main
+          - dev
         if_ci_failed: error #success, failure, error, ignore
         informational: false
         only_pulls: false
@@ -22,3 +21,27 @@ coverage:
         paths:
           - "tests/"  # only include coverage in "tests/" folder
         only_pulls: false
+
+comment:
+  layout: "header, diff, components"  # show component info in the PR comment
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!main"
+  individual_components:
+    - component_id: module_python
+      name: pysansmic
+      paths:
+        - src/python/**
+    - component_id: module_ext
+      name: sansmic++
+      paths:
+        - src/ext_modules/**
+    - component_id: module_tests
+      name: tests
+      paths:
+        - tests/**
