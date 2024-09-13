@@ -21,4 +21,4 @@ coverage:
         target: 100%  # we always want 100% coverage here
         paths:
           - "tests/"  # only include coverage in "tests/" folder
-        only_pulls: true
+        only_pulls: false

@@ -4,6 +4,7 @@ import glob
 import os
 import tempfile
 import unittest
+import subprocess
 from os.path import abspath, dirname, join
 
 import numpy as np
@@ -145,6 +146,13 @@ class TestApplication(unittest.TestCase):
         self.assertTrue((res0.df_z_1D == res6.df_z_1D).all().all())
         self.assertTrue((res0.df_t_z_2D == res6.df_t_z_2D).all().all())
 
+        with self.assertRaises(FileNotFoundError):
+            sansmic.app.main(
+                args=[
+                    "thisWontWork.TOML",
+                ],
+            )
+
     def test_convert_app(self):
         """Test the 'sansmic-convert' command line application."""
         scenario0 = sansmic.io.read_scenario(self.withdrawal_dat)
@@ -157,10 +165,33 @@ class TestApplication(unittest.TestCase):
         scenario2 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario2.title = ""
         self.maxDiff = None
-        print(scenario0.stages[0].product_injection_rate)
-        print(scenario1.stages[0].product_injection_rate)
-        print(scenario2.stages[0].product_injection_rate)
         self.assertDictEqual(scenario0.to_dict(), scenario2.to_dict())
+
+        with self.assertRaises(FileNotFoundError):
+            sansmic.app.convert(
+                args=["thisWontWork.TOML", "neither.will.this."],
+            )
+
+    def test_sansmic_cmd(self):
+        proc = subprocess.run(
+            [
+                "sansmic",
+                self.withdrawal_dat,
+                "-o",
+                join(self.tempdirname, "sansmic-call-test"),
+                "-v",
+            ],
+            capture_output=True,
+            # avoid having to explicitly encode
+            text=True,
+        )
+        data = proc.stdout
+        result = proc.returncode
+        self.assertTrue("Progress..." in data)
+        self.assertTrue("960000.0" in data)
+        self.assertEqual(
+            len(glob.glob(join(self.tempdirname, "sansmic-call-test*"))), 9
+        )
 
     @classmethod
     def tearDownClass(cls):

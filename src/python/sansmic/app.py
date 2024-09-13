@@ -210,26 +210,37 @@ def main(args=None, ret=False):
         Should the function return a results object, by default False.
 
     """
+    extra_args = args is not None
     if ret or args is not None:
         defaults = False
     else:
         defaults = True
     parser = _main_parser(defaults)
     args = parser.parse_args(args=args)
-    datafile = args.datafile
-    prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
-    verbosity = _get_verbosity(args)
-    logger.debug("Running sansmic with {}".format(args))
-    model = sansmic.io.read_scenario(datafile, warn=not args.quiet)
-    logger.info("Successfully created scenario from {}".format(datafile))
-    if (args.toml is None and args.prefix is not None) or datafile.lower().endswith(
-        ".dat"
-    ):
-        args.toml = True
-    elif args.toml is None and args.prefix is None:
-        args.toml = False
-    if args.toml:
-        sansmic.io.write_scenario(model, prefix + ".toml")
+
+    # Wrap the different sections in try/except blocks
+    try:
+        datafile = args.datafile
+        prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
+        verbosity = _get_verbosity(args)
+        logger.debug("Running sansmic with {}".format(args))
+        model = sansmic.io.read_scenario(datafile, warn=not args.quiet)
+        logger.info("Successfully created scenario from {}".format(datafile))
+        if not args.toml:
+            pass
+        elif (
+            args.toml is None and args.prefix is not None
+        ) or datafile.lower().endswith(".dat"):
+            args.toml = True
+        elif args.toml is None and args.prefix is None:
+            args.toml = False
+        if args.toml:
+            sansmic.io.write_scenario(model, prefix + ".toml")
+    except Exception as e:
+        if extra_args:
+            raise e
+        parser.error(str(e))
+
     logger.debug("Running simulation")
     with model.new_simulation(prefix, verbosity, args.tst, args.old_out) as sim:
         logger.debug("Created new simulation")
@@ -312,13 +323,22 @@ def main(args=None, ret=False):
                 index=False
             )
         )
-    if args.hdf:
-        sansmic.io.write_hdf_results(res, prefix + ".h5")
-    if args.json:
-        sansmic.io.write_json_results(res, prefix + ".json")
-    if args.csv:
-        sansmic.io.write_csv_results(res, prefix)
-    logger.debug("Sansmic complete")
+
+    # Wrap the outputs in a try/except block
+    try:
+        if args.csv:
+            sansmic.io.write_csv_results(res, prefix)
+        if args.json:
+            sansmic.io.write_json_results(res, prefix + ".json")
+        if args.hdf:
+            sansmic.io.write_hdf_results(res, prefix + ".h5")
+        logger.debug("Sansmic complete")
+    except Exception as e:
+        if extra_args:
+            raise e
+        logger.critical("Error while writing results - some results may be missing")
+        parser.error(str(e))
+
     if ret:
         return res
 
@@ -349,12 +369,17 @@ def _convert_parser():
 
 def convert(args=None):
     """Command line function to convert a scenario/dat to a new format."""
-
+    extra_args = args is not None
     parser = _convert_parser()
     args = parser.parse_args(args=args)
     infile = args.infile
     logger.debug("Running sansmic-convert")
-    model = sansmic.io.read_scenario(infile)
-    logger.debug("Successfully created scenario from {}".format(infile))
-    sansmic.io.write_scenario(model, args.outfile, redundant=args.full)
+    try:
+        model = sansmic.io.read_scenario(infile)
+        logger.debug("Successfully created scenario from {}".format(infile))
+        sansmic.io.write_scenario(model, args.outfile, redundant=args.full)
+    except Exception as e:
+        if extra_args:
+            raise e
+        parser.error(str(e))
     logger.debug("Successfully wrote scenario to {}".format(args.outfile))
