@@ -11,16 +11,15 @@ The SANSMIC main program.
 
 This submodule provides the hook for the command line programs ``sansmic``
 and ``sansmic-convert``.
-
 """
 
 import logging
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Action
 from os.path import splitext
+import sys
 
 from numpy import round
 from pip._vendor.rich.progress import Progress
-from sansmic import __version__
 import sansmic.io
 
 try:
@@ -30,6 +29,24 @@ except ImportError as e:
 
 logging.basicConfig()
 logger = logging.getLogger("sansmic")
+
+
+class LicenseAction(Action):
+    def __call__(default, parser, namespace, values, option_string=None):
+        if values != "bar":
+            from sansmic import __license__
+
+            print(__license__)
+            parser.exit(0)
+
+
+class CopyrightAction(Action):
+    def __call__(default, parser, namespace, values, option_string=None):
+        if values != "bar":
+            from sansmic import __copyright__
+
+            print(__copyright__)
+            parser.exit(0)
 
 
 def _get_verbosity(args):
@@ -49,13 +66,30 @@ def _get_verbosity(args):
 
 
 def _main_parser(defaults=False):
+    from sansmic import __version__
+
     if not defaults:
         kwargs = dict(default=None)
     else:
         kwargs = dict()
     parser = ArgumentParser(
-        prog="sansmic",
-        description=f"A solution mining code. v{__version__}",
+        prog=f"sansmic v.{__version__}",
+        description="Simulate leaching in an underground salt cavern due to ordinary solution mining, product withdrawal, or product fill.",
+        epilog=f"sansmic (c) 2024 NTESS. Use the --copyright or --license flags for full details.",
+    )
+    parser.add_argument(
+        "--copyright",
+        default=None,
+        nargs=0,
+        action=CopyrightAction,
+        help="Display full copyright details and exit.",
+    )
+    parser.add_argument(
+        "--license",
+        default=None,
+        nargs=0,
+        action=LicenseAction,
+        help="Display full license details and exit.",
     )
     parser.add_argument(
         "datafile",
@@ -344,9 +378,26 @@ def main(args=None, ret=False):
 
 
 def _convert_parser():
+    from sansmic import __version__
+
     parser = ArgumentParser(
-        prog="sansmic-convert",
-        description=f"Convert old SANSMIC DAT files to new sansmic scenario files. v{__version__}",
+        prog=f"sansmic-convert v.{__version__}",
+        description="Convert from an old-style DAT file to the new TOML format.",
+        epilog=f"sansmic (c) 2024 NTESS. Use the --copyright or --license flags for full details.",
+    )
+    parser.add_argument(
+        "--copyright",
+        default=None,
+        nargs=0,
+        action=CopyrightAction,
+        help="Display full copyright details and exit.",
+    )
+    parser.add_argument(
+        "--license",
+        default=None,
+        nargs=0,
+        action=LicenseAction,
+        help="Display full license details and exit.",
     )
     parser.add_argument(
         "infile", metavar="OLD_FILE", help="the SANSMIC input file to convert"
@@ -372,6 +423,16 @@ def convert(args=None):
     extra_args = args is not None
     parser = _convert_parser()
     args = parser.parse_args(args=args)
+    if args.license:
+        from sansmic import __license__
+
+        print(__license__)
+        parser.exit(0)
+    elif args.copyright:
+        from sansmic import __copyright__
+
+        print(__copyright__)
+        parser.exit(0)
     infile = args.infile
     logger.debug("Running sansmic-convert")
     try:

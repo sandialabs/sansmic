@@ -23,7 +23,7 @@ project = "sansmic"
 copyright = "2024 National Technology and Engineering Solutions of Sandia, LLC. Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software."
 author = "See AUTHORS.md"
 doxygen_installed = True  # determines whether or not to build the extension module documentation - doxygen must be installed for this to work
-
+version = "1.0.0-rc.1"
 
 # -- General configuration ---------------------------------------------------
 extensions = [

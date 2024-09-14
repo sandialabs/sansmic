@@ -49,7 +49,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.num_cells, 100)
         self.assertEqual(scenario.stages[0].simulation_mode, 2)
         self.assertIs(
-            scenario.stages[0].simulation_mode, sansmic.SimulationMode.LEACH_FILL
+            scenario.stages[0].simulation_mode, sansmic.model.SimulationMode.LEACH_FILL
         )
         self.assertEqual(scenario.stages[0].save_frequency, 240)
         self.assertTrue(scenario.stages[0].set_initial_conditions)
@@ -92,7 +92,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.num_cells, 100)
         self.assertEqual(scenario.stages[0].simulation_mode, 1)
         self.assertIs(
-            scenario.stages[0].simulation_mode, sansmic.SimulationMode.WITHDRAWAL
+            scenario.stages[0].simulation_mode, sansmic.model.SimulationMode.WITHDRAWAL
         )
         self.assertEqual(scenario.stages[0].save_frequency, 240)
         self.assertTrue(scenario.stages[0].set_initial_conditions)
@@ -135,7 +135,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.num_cells, 100)
         self.assertEqual(scenario.stages[0].simulation_mode, 0)
         self.assertIs(
-            scenario.stages[0].simulation_mode, sansmic.SimulationMode.ORDINARY
+            scenario.stages[0].simulation_mode, sansmic.model.SimulationMode.ORDINARY
         )
         self.assertEqual(scenario.stages[0].save_frequency, 240)
         self.assertTrue(scenario.stages[0].set_initial_conditions)
@@ -178,7 +178,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.num_cells, 100)
         self.assertEqual(scenario.stages[0].simulation_mode, 0)
         self.assertIs(
-            scenario.stages[0].simulation_mode, sansmic.SimulationMode.ORDINARY
+            scenario.stages[0].simulation_mode, sansmic.model.SimulationMode.ORDINARY
         )
         self.assertEqual(scenario.stages[0].save_frequency, 240)
         self.assertTrue(scenario.stages[0].set_initial_conditions)
@@ -216,7 +216,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.stages[1].title, "Ordinary leach stage 2")
         self.assertEqual(scenario.stages[1].simulation_mode, 0)
         self.assertIs(
-            scenario.stages[1].simulation_mode, sansmic.SimulationMode.ORDINARY
+            scenario.stages[1].simulation_mode, sansmic.model.SimulationMode.ORDINARY
         )
         self.assertEqual(scenario.stages[1].save_frequency, 240)
         self.assertFalse(scenario.stages[1].set_initial_conditions)
@@ -241,7 +241,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.stages[2].title, "Ordinary leach stage 3")
         self.assertEqual(scenario.stages[2].simulation_mode, 0)
         self.assertIs(
-            scenario.stages[2].simulation_mode, sansmic.SimulationMode.ORDINARY
+            scenario.stages[2].simulation_mode, sansmic.model.SimulationMode.ORDINARY
         )
         self.assertEqual(scenario.stages[2].save_frequency, 240)
         self.assertFalse(scenario.stages[2].set_initial_conditions)

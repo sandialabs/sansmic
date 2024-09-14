@@ -15,10 +15,6 @@
 #include <string>
 #include <vector>
 
-#ifndef VERSION_INFO
-#define VERSION_INFO "local"
-#endif
-
 #ifndef SANSMIC_H
 #define SANSMIC_H
 

@@ -21,8 +21,8 @@ class TestRegression(unittest.TestCase):
         cls.namePy = "regression"
 
     def runTest(self):
-        model = sansmic.read_scenario(self.datF)
-        sansmic.write_scenario(model, join(testdir, self.namePy + ".toml"))
+        model = sansmic.io.read_scenario(self.datF)
+        sansmic.io.write_scenario(model, join(testdir, self.namePy + ".toml"))
         with model.new_simulation(join(testdir, self.namePy)) as sim:
             sim.run_sim()
         resPy = sim.results

@@ -7,7 +7,7 @@ from glob import glob
 from setuptools import find_packages, setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "1.0.0b3"
+__version__ = "1.0.0-rc.1"
 
 here = path.abspath(path.dirname(__file__))
 
@@ -18,7 +18,7 @@ ext_modules = [
         cxx_std=17,
         # Example: passing in the version to the compiled code
         define_macros=[
-            ("VERSION_INFO", __version__),
+            ("VERSION_INFO", '"{}"'.format(__version__)),
         ],
     ),
 ]
