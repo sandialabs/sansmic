@@ -17,11 +17,16 @@ and ``sansmic-convert``.
 import logging
 from argparse import ArgumentParser
 from os.path import splitext
-from numpy import round
 
+from numpy import round
+from pip._vendor.rich.progress import Progress
 from sansmic import __version__
-from sansmic import io as sio
-from ._progress_bar import print_progress
+import sansmic.io
+
+try:
+    import h5py
+except ImportError as e:
+    h5py = e
 
 logging.basicConfig()
 logger = logging.getLogger("sansmic")
@@ -38,69 +43,206 @@ def _get_verbosity(args):
         level = logging.DEBUG
     logger.setLevel(level)
     if args.debug:
+        args.verbose = 3
         return 3
     return args.verbose
 
 
-def main():
-    """Command line function to run sansmic."""
+def _main_parser(defaults=False):
+    if not defaults:
+        kwargs = dict(default=None)
+    else:
+        kwargs = dict()
     parser = ArgumentParser(
         prog="sansmic",
         description=f"A solution mining code. v{__version__}",
     )
     parser.add_argument(
-        "datafile", metavar="INPUTFILE", help="the SANSMIC input file to use"
+        "datafile",
+        metavar="INPUTFILE",
+        help="the SANSMIC input file to use; if extensansmic.ion is '.dat', --toml is implied",
     )
+
     outp = parser.add_argument_group(
         "Output options",
-        """By default, only warnings will be output to the console, using
---quiet will turn these off. Using --verbose will change the behavior up to
-three times. 1: turn on logging INFO level output. 2: output a summary of
-results at the end of each stage, and use a progress bar. 3: output summary
-results every simulation day. Using --debug will set the logging level to
-DEBUG instead of INFO and automatically set verbosity to 3. These options
-are mutually exclusive.
-""",
+        """Default options:  ``--csv  --tst  --no-hdf  --no-json  --no-old-out``""",
     )
     outp.add_argument(
         "-o",
         "--output",
         dest="prefix",
-        help="change result files' prefix [default: from datafile]",
+        help="change output file prefix; if used, --toml is implied",
         default=None,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--toml",
+        default=None,
+        action="store_true",
+        help="Create a TOML scenario file.",
+    )
+    wwo.add_argument(
+        "--no-toml",
+        dest="toml",
+        action="store_false",
+        help="Don't create a TOML scenario file.",
+        **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--csv",
+        action="store_true",
+        default=True if defaults else None,
+        help="Create CSV results files.",
+    )
+    wwo.add_argument(
+        "--no-csv",
+        dest="csv",
+        action="store_false",
+        help="Don't create CSV results files.",
+        **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--hdf",
+        default=False if defaults else None,
+        action="store_true",
+        help="Create an HDF5 formatted results file.",
+    )
+    wwo.add_argument(
+        "--no-hdf",
+        dest="hdf",
+        action="store_false",
+        help="Don't create an HDF5 results file.",
+        **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--json",
+        default=False if defaults else None,
+        action="store_true",
+        help="Create a JSON formatted results file.",
+    )
+    wwo.add_argument(
+        "--no-json",
+        dest="json",
+        action="store_false",
+        help="Don't create a JSON results file.",
+        **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--tst",
+        default=True if defaults else None,
+        action="store_true",
+        help="Create a daily summary TST text file.",
+    )
+    wwo.add_argument(
+        "--no-tst",
+        dest="tst",
+        action="store_false",
+        help="Don't create a TST summary file.",
+        **kwargs,
+    )
+
+    wwo = outp.add_mutually_exclusive_group()
+    wwo.add_argument(
+        "--old-out",
+        dest="old_out",
+        action="store_true",
+        default=False if defaults else None,
+        help="Create an old-style SANSMIC OUT file.",
+    )
+    wwo.add_argument(
+        "--no-old-out",
+        dest="old_out",
+        action="store_false",
+        help="Don't create an old-style OUT file.",
+        **kwargs,
+    )
+
+    outp = parser.add_argument_group(
+        "Console/stdout/stderr reporting",
+        "The following options are mutually exclusive",
     )
     verb = outp.add_mutually_exclusive_group()
     verb.add_argument(
         "-v",
         "--verbose",
-        help="turn on info-level messages, increase the output verbosity up to 3 times",
+        help="increase reporting details",
         action="count",
         default=0,
     )
     verb.add_argument(
         "-q",
         "--quiet",
-        help="set log level to errors-only",
+        help="turn off runtime screen output",
         action="store_true",
         default=False,
     )
     verb.add_argument(
         "--debug",
-        help="turn on debug-level messages and set verbosity to 3",
+        help="turn on debug messages and set max verbosity",
         action="store_true",
         default=False,
     )
-    meth = parser.add_argument_group("Execution method")
-    meth = meth.add_mutually_exclusive_group()
-    args = parser.parse_args()
-    datafile = args.datafile
-    prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
-    verbosity = _get_verbosity(args)
-    logger.debug("Running sansmic with {}".format(args))
-    model = sio.read_scenario(datafile, warn=not args.quiet)
-    logger.info("Successfully created scenario from {}".format(datafile))
+    return parser
+
+
+def main(args=None, ret=False):
+    """Command line function to run sansmic.
+
+    If this function is run from somewhere other than the command line, then
+    arguments can be passed in to control execution as a list of strings.
+    The ``ret`` argument can be set to ``True`` to return the results when
+    using this as a function, also.
+
+    Parameters
+    ----------
+    args : argparse.Namespace or list[str]
+        Arguments as a list of strings that would be used on the command-line.
+    ret : bool
+        Should the function return a results object, by default False.
+
+    """
+    extra_args = args is not None
+    if ret or args is not None:
+        defaults = False
+    else:
+        defaults = True
+    parser = _main_parser(defaults)
+    args = parser.parse_args(args=args)
+
+    # Wrap the different sections in try/except blocks
+    try:
+        datafile = args.datafile
+        prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
+        verbosity = _get_verbosity(args)
+        logger.debug("Running sansmic with {}".format(args))
+        model = sansmic.io.read_scenario(datafile, warn=not args.quiet)
+        logger.info("Successfully created scenario from {}".format(datafile))
+        if not args.toml:
+            pass
+        elif (
+            args.toml is None and args.prefix is not None
+        ) or datafile.lower().endswith(".dat"):
+            args.toml = True
+        elif args.toml is None and args.prefix is None:
+            args.toml = False
+        if args.toml:
+            sansmic.io.write_scenario(model, prefix + ".toml")
+    except Exception as e:
+        if extra_args:
+            raise e
+        parser.error(str(e))
+
     logger.debug("Running simulation")
-    with model.new_simulation(prefix, verbosity) as sim:
+    with model.new_simulation(prefix, verbosity, args.tst, args.old_out) as sim:
         logger.debug("Created new simulation")
         if args.quiet or not args.verbose:
             logger.debug("Running in batch mode")
@@ -120,81 +262,88 @@ are mutually exclusive.
                 int(round(t_stage[ct] / dt_stage[ct])) for ct in range(n_stages)
             ]
             n_steps = sum(stage_sizes)
-            p_freq = model.stages[last_stage].save_frequency
+            p_freq = day_size[0]
             print(
                 "Running sansmic scenario: {}".format(
                     datafile if not model.title else model.title
                 )
             )
-            for stage, step in sim.steps:
-                if last_stage != stage:
-                    if stage >= len(model.stages):
-                        if args.verbose == 1:
-                            print_progress(
-                                n_steps,
-                                n_steps,
-                                prefix="Progress",
-                                suffix="Complete",
-                                length=60,
-                                decimals=1,
-                            )
-                        if args.verbose == 2:
-                            print_progress(
-                                stage_sizes[last_stage],
-                                stage_sizes[last_stage],
-                                prefix="Stage {:<2d}".format(last_stage + 1),
-                                suffix="Complete",
-                                length=60,
-                                decimals=1,
-                            )
-                            print("All stages complete.")
+            stage = 0
+            with Progress() as progress:
+                if args.verbose >= 1:
+                    task = progress.add_task("Progress...", total=n_steps)
+                if args.verbose >= 2:
+                    task_S = progress.add_task(
+                        "[red]Stage {}...".format(stage + 1), total=stage_sizes[stage]
+                    )
+                for stage, step in sim.steps:
+                    if last_stage != stage:
+                        if stage >= len(model.stages):
+                            if args.verbose >= 1:
+                                progress.update(
+                                    task,
+                                    completed=n_steps,
+                                )
+                            if args.verbose >= 2:
+                                progress.update(
+                                    task_S,
+                                    completed=n_steps,
+                                )
+                                print("All stages complete.")
+                        else:
+                            last_stage = stage
+                            last_step = step
+                            p_freq = day_size[stage]
+                            if args.verbose >= 2:
+                                progress.update(
+                                    task_S,
+                                    completed=n_steps,
+                                )
+                                task_S = progress.add_task(
+                                    "[red]Stage {}...".format(stage + 1),
+                                    total=stage_sizes[stage],
+                                )
                     else:
-                        last_stage = stage
-                        last_step = step
-                        p_freq = model.stages[last_stage].save_frequency
-                        if args.verbose == 2:
-                            print_progress(
-                                stage_sizes[last_stage],
-                                stage_sizes[last_stage],
-                                prefix="Stage {:<2d}".format(last_stage),
-                                suffix="Complete",
-                                length=60,
-                                decimals=1,
+                        if args.verbose >= 1 and (step - last_step) % p_freq == 0:
+                            progress.update(
+                                task,
+                                advance=p_freq,
                             )
-                elif args.verbose == 1 and (step - last_step) % p_freq == 0:
-                    print_progress(
-                        step,
-                        n_steps,
-                        prefix="Progress",
-                        suffix="Complete",
-                        length=60,
-                        decimals=1,
-                    )
-                elif args.verbose == 2 and (step - last_step) % p_freq == 0:
-                    print_progress(
-                        step - last_step,
-                        stage_sizes[last_stage],
-                        prefix="Stage {:<2d}".format(last_stage + 1),
-                        suffix="Complete",
-                        length=60,
-                        decimals=1,
-                    )
+                        if args.verbose >= 2 and (step - last_step) % p_freq == 0:
+                            progress.update(
+                                task_S,
+                                advance=p_freq,
+                            )
         logger.debug("Simulation complete")
     res = sim.results
     if not args.quiet:
-        print("Final results:")
+        print("Initial and final results:")
         print(
-            (res.summary.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_markdown(
+            (res.df_t_1D.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
                 index=False
             )
         )
-        summary = res.summary.to_markdown(index=False)
-        print(res.summary)
-    logger.debug("Sansmic complete")
+
+    # Wrap the outputs in a try/except block
+    try:
+        if args.csv:
+            sansmic.io.write_csv_results(res, prefix)
+        if args.json:
+            sansmic.io.write_json_results(res, prefix + ".json")
+        if args.hdf:
+            sansmic.io.write_hdf_results(res, prefix + ".h5")
+        logger.debug("Sansmic complete")
+    except Exception as e:
+        if extra_args:
+            raise e
+        logger.critical("Error while writing results - some results may be missing")
+        parser.error(str(e))
+
+    if ret:
+        return res
 
 
-def convert():
-    """Command line function to convert a scenario/dat to a new format."""
+def _convert_parser():
     parser = ArgumentParser(
         prog="sansmic-convert",
         description=f"Convert old SANSMIC DAT files to new sansmic scenario files. v{__version__}",
@@ -205,7 +354,7 @@ def convert():
     parser.add_argument(
         "outfile",
         metavar="NEW_FILE",
-        help="the new scenario file to create [extension choices: .toml, .json, .yaml]",
+        help="the new scenario file to create [extensansmic.ion choices: .toml, .json, .yaml]",
         default=None,
     )
     parser.add_argument(
@@ -215,40 +364,22 @@ def convert():
         default=False,
         help="Keep all entries, even if they are blank",
     )
-    verb = parser.add_argument_group(
-        "Output options",
-        """By default, only warnings will be output to the console
-        The following options are mutually exclusive.
-""",
-    )
-    verb = verb.add_mutually_exclusive_group()
-    verb.add_argument(
-        "-v",
-        "--verbose",
-        help="turn on info-level messages, increase the output verbosity up to 3 times",
-        action="count",
-        default=0,
-    )
-    verb.add_argument(
-        "-q",
-        "--quiet",
-        help="set log level to errors-only",
-        action="store_true",
-        default=False,
-    )
-    verb.add_argument(
-        "--debug",
-        help="turn on debug-level messages and set verbosity to 3",
-        action="store_true",
-        default=False,
-    )
-    args = parser.parse_args()
-    if args.debug and args.quiet:
-        parser.error("argument --debug: not allowed with argument -q/--quiet")
+    return parser
+
+
+def convert(args=None):
+    """Command line function to convert a scenario/dat to a new format."""
+    extra_args = args is not None
+    parser = _convert_parser()
+    args = parser.parse_args(args=args)
     infile = args.infile
-    verbosity = _get_verbosity(args)
     logger.debug("Running sansmic-convert")
-    model = sio.read_scenario(infile, warn=not args.quiet)
-    logger.debug("Successfully created scenario from {}".format(infile))
-    sio.write_scenario(model, args.outfile, redundant=args.full)
+    try:
+        model = sansmic.io.read_scenario(infile)
+        logger.debug("Successfully created scenario from {}".format(infile))
+        sansmic.io.write_scenario(model, args.outfile, redundant=args.full)
+    except Exception as e:
+        if extra_args:
+            raise e
+        parser.error(str(e))
     logger.debug("Successfully wrote scenario to {}".format(args.outfile))

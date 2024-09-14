@@ -266,7 +266,7 @@ T_degC_vec = array(
     dtype=float,
 )
 """
-Temperature (in degrees Celsius) data for sg vs wt\% for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
+Temperature (in degrees Celsius) data for sg vs wt-pct for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
 """
 
 wt_pct_max = array(
@@ -282,7 +282,7 @@ T_degC_max = array(
     dtype=float,
 )
 """
-Temperature (in degrees Celsius) data for sg vs wt\% for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
+Temperature (in degrees Celsius) data for sg vs wt pct for sodium chloride :cite:`kaufman60sodium,lide2000crc`.
 """
 
 sg_max = array(
