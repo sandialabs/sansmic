@@ -65,7 +65,7 @@ and
 
 to get help on how to run sansmic commands from the command line.
 For more detailed usage and API information, please see
-[our documentation][docs].
+[our documentation](https://sandialabs.github.io/sansmic/).
 
 
 ### License & Copyright
