@@ -220,9 +220,9 @@ html_theme_options = {
     "primary_sidebar_end": ["indices.html"],
     "show_toc_level": 2,
     "switcher": {
-        "json_url": "https://sandialabs.github.io/sansmic/latest/_static/switcher.json",
+        "json_url": "https://sandialabs.github.io/sansmic/main/_static/switcher.json",
         "version_match": version,
-    }
+    },
     # "secondary_sidebar_items": ["page-toc"], #["page-toc", "edit-this-page", "sourcelink"],
     "navbar_start": [
         "navbar-logo",
