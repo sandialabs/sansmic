@@ -6,7 +6,7 @@ on:
   push:
     branches: ["main"]
 
-  # Allows you to run this workflow manually from the Actions tab
+  release:
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -59,6 +59,8 @@ jobs:
     steps:
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          base_path: /sansmic/${{ github.ref_name }}
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

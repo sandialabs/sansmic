@@ -20,6 +20,43 @@ jobs:
     strategy:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          egress-policy: audit
+
+      - name: Check out the commit
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ~${{ matrix.version }}
+
+      - name: Install development dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install tomli
+
+      - name: Test install
+        run: python3 -m pip install .[tests]
+
+      - name: Test with pytest
+        run: python3 -m pytest --cov=sansmic --cov=tests examples/ tests/
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ubuntu-latest
+
+  oses:
+    strategy:
+      matrix:
+        version: ["3.12"]
         os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
     steps:
 
@@ -29,10 +66,10 @@ jobs:
           egress-policy: audit
 
       - name: Check out the commit
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ~${{ matrix.version }}
 
@@ -53,18 +90,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: ${{ matrix.os }}
-
-    #   - name: Check documentation coverage
-    #     run: |
-    #       make coverage
-    #       mv build/coverage/python.txt ../docs-coverage-report-${{ matrix.version }}.txt
-    #     working-directory: ./docs
-
-    #   - name: Archive documentation coverage results
-    #     uses: actions/upload-artifact@v3
-    #     with:
-    #       name: docs-coverage-report-${{ matrix.version }}
-    #       path: docs-coverage-report-${{ matrix.version }}.txt
 
       - name: Test uninstall
         run: python3 -m pip uninstall -y my-repository-name
