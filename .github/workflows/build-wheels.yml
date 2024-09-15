@@ -1,4 +1,4 @@
-name: release
+name: Build wheels (intermediate)
 
 on:
   workflow_dispatch:
@@ -20,18 +20,3 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         path: ./wheelhouse/*.whl
-
-  source:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: build the sdist
-        run: |
-          python -m pip install --upgrade build
-          python -m build --sdist
-      - uses: actions/upload-artifact@v4
-        with:
-          path: dist/*.tar.gz

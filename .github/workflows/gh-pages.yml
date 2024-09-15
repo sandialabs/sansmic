@@ -34,7 +34,7 @@ jobs:
           git branch
           git remote -v
       - uses: actions/setup-python@v5
-        with: 
+        with:
           python-version: '3.11'
       - name: Install package
         run: |
@@ -58,8 +58,8 @@ jobs:
     steps:
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          base_path: /sansmic/${{ github.ref_name }}
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          base_path: /sansmic/${{ github.ref_name }}

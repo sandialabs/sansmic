@@ -1,4 +1,4 @@
-name: release
+name: Build wheels and push to PyPI
 
 on:
   push:

@@ -8,11 +8,14 @@
 
 """SANSMIC package"""
 __version__ = "1.0.0-rc.1"
-__copyright__ = f"""sansmic ver. {__version__}
-Copyright (c) 2024 National Technology and Engineering Solutions of Sandia,
+__copyright__ = f"""Copyright (c) 2024 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 Government retains certain rights in this software."""
-__license__ = f"""Redistribution and use in source and binary forms, with or without
+__license__ = f"""BSD 3-Clause License
+
+{__copyright__}
+
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this

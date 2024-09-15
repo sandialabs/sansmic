@@ -31,22 +31,48 @@ logging.basicConfig()
 logger = logging.getLogger("sansmic")
 
 
-class LicenseAction(Action):
-    def __call__(default, parser, namespace, values, option_string=None):
-        if values != "bar":
-            from sansmic import __license__
+class AboutAction(Action):
+    """Argparse action to print out version, copyright and/or license information from the package __init__"""
 
+    def __call__(self, parser, namespace, values, option_string=None):
+        from sansmic import __license__, __copyright__, __version__
+
+        if option_string == "--license":
+            print("sansmic", __version__)
+            print()
             print(__license__)
-            parser.exit(0)
-
-
-class CopyrightAction(Action):
-    def __call__(default, parser, namespace, values, option_string=None):
-        if values != "bar":
-            from sansmic import __copyright__
-
+        elif option_string == "--copyright":
+            print("sansmic", __version__)
+            print()
             print(__copyright__)
-            parser.exit(0)
+        elif option_string == "--version":
+            print(parser.prog, __version__)
+        parser.exit(0)
+
+    @classmethod
+    def add_to_parser(cls, parser: ArgumentParser):
+        """Add the --version, --copyright and --license arguments to a parser."""
+        parser.add_argument(
+            "--version",
+            default=None,
+            nargs=0,
+            action=cls,
+            help="Display version number and exit.",
+        )
+        parser.add_argument(
+            "--copyright",
+            default=None,
+            nargs=0,
+            action=cls,
+            help="Display full copyright details and exit.",
+        )
+        parser.add_argument(
+            "--license",
+            default=False,
+            nargs=0,
+            action=cls,
+            help="Display full license details and exit.",
+        )
 
 
 def _get_verbosity(args):
@@ -73,24 +99,10 @@ def _main_parser(defaults=False):
     else:
         kwargs = dict()
     parser = ArgumentParser(
-        prog=f"sansmic v.{__version__}",
+        prog="sansmic",
         description="Simulate leaching in an underground salt cavern due to ordinary solution mining, product withdrawal, or product fill.",
-        epilog=f"sansmic (c) 2024 NTESS. Use the --copyright or --license flags for full details.",
     )
-    parser.add_argument(
-        "--copyright",
-        default=None,
-        nargs=0,
-        action=CopyrightAction,
-        help="Display full copyright details and exit.",
-    )
-    parser.add_argument(
-        "--license",
-        default=None,
-        nargs=0,
-        action=LicenseAction,
-        help="Display full license details and exit.",
-    )
+    AboutAction.add_to_parser(parser)
     parser.add_argument(
         "datafile",
         metavar="INPUTFILE",
@@ -385,20 +397,7 @@ def _convert_parser():
         description="Convert from an old-style DAT file to the new TOML format.",
         epilog=f"sansmic (c) 2024 NTESS. Use the --copyright or --license flags for full details.",
     )
-    parser.add_argument(
-        "--copyright",
-        default=None,
-        nargs=0,
-        action=CopyrightAction,
-        help="Display full copyright details and exit.",
-    )
-    parser.add_argument(
-        "--license",
-        default=None,
-        nargs=0,
-        action=LicenseAction,
-        help="Display full license details and exit.",
-    )
+    AboutAction.add_to_parser(parser)
     parser.add_argument(
         "infile", metavar="OLD_FILE", help="the SANSMIC input file to convert"
     )
@@ -423,16 +422,6 @@ def convert(args=None):
     extra_args = args is not None
     parser = _convert_parser()
     args = parser.parse_args(args=args)
-    if args.license:
-        from sansmic import __license__
-
-        print(__license__)
-        parser.exit(0)
-    elif args.copyright:
-        from sansmic import __copyright__
-
-        print(__copyright__)
-        parser.exit(0)
     infile = args.infile
     logger.debug("Running sansmic-convert")
     try:
