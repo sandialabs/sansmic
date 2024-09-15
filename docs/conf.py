@@ -18,12 +18,14 @@ from sphinx.writers.latex import LaTeXTranslator
 
 sys.path.insert(0, os.path.abspath("../src/python"))
 
+import sansmic
+
 # -- Project information and custom options ----------------------------------
 project = "sansmic"
 copyright = "2024 National Technology and Engineering Solutions of Sandia, LLC. Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software."
 author = "See AUTHORS.md"
 doxygen_installed = True  # determines whether or not to build the extension module documentation - doxygen must be installed for this to work
-version = "1.0.0-rc.1"
+version = sansmic.__version__.replace('-rc.', "rc")
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -217,10 +219,18 @@ html_theme_options = {
     "use_edit_page_button": False,
     "primary_sidebar_end": ["indices.html"],
     "show_toc_level": 2,
+    "switcher": {
+        "json_url": "https://sandialabs.github.io/sansmic/main/_static/switcher.json",
+        "version_match": version,
+    },
     # "secondary_sidebar_items": ["page-toc"], #["page-toc", "edit-this-page", "sourcelink"],
+    "navbar_start": [
+        "navbar-logo",
+        "version-switcher",
+    ],
     "navbar_end": [
-        "theme-switcher.html",
-        "navbar-icon-links.html",
+        "theme-switcher",
+        "navbar-icon-links",
     ],
     # "analytics": {"google_analytics_id": ""},
 }

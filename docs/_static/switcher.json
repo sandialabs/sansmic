@@ -1,0 +1,14 @@
+[
+    {
+        "name": "latest",
+        "version": "main",
+        "url": "https://sandialabs.github.io/sansmic/",
+        "preferred": true
+    },
+    {
+        "name": "v1.0.0-rc.1",
+        "version": "1.0.0rc1",
+        "url": "https://sandialabs.github.io/sansmic/1.0.0rc1/",
+        "preferred": true
+    }
+]
