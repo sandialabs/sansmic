@@ -53,7 +53,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: ubuntu-latest
 
-  oses:
+  OSes:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         version: ["3.12"]
