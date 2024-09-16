@@ -51,7 +51,7 @@ jobs:
 
   build-tagged:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    name: Build the documentation with Sphinx
+    name: Build tagged release documentation with Sphinx
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +80,7 @@ jobs:
   deploy:
     name: Deploy documentation to GitHub Pages
     needs: [build-main, build-tagged]
+    if: ${{ always() }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
