@@ -15,7 +15,7 @@ jobs:
 
       - uses: pypa/cibuildwheel@v2.21.0
         env:
-          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_REQUIRES: pytest h5py openpyxl
           CIBW_TEST_COMMAND: "pytest {project}/tests"
         #    ...
         # with:
