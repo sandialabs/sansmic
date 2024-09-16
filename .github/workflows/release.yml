@@ -1,39 +1,35 @@
-name: Build wheels and push to PyPI
+name: Build wheels
 
 on:
   push:
     tags:
       - '*'
+    branches:
+      - 'main'
 
 jobs:
-
-  wheels:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build wheels
-      uses: pypa/cibuildwheel@v2.11.1
-      env:
-        CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-*"
-        CIBW_SKIP: "*-win32 *-manylinux_i686 pp* *-musllinux*"
-    - uses: actions/upload-artifact@v4
-      with:
-        path: ./wheelhouse/*.whl
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
 
-  source:
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: build the sdist
-        run: |
-          python -m pip install --upgrade build
-          python -m build --sdist
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21.0
+        # env:
+        #   CIBW_SOME_OPTION: value
+        #    ...
+        # with:
+        #   package-dir: .
+        #   output-dir: wheelhouse
+        #   config-file: "{package}/pyproject.toml"
+
       - uses: actions/upload-artifact@v4
         with:
-          path: dist/*.tar.gz
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
