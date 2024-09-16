@@ -54,6 +54,7 @@ tests = [
 ]
 
 [project.urls]
+Documentation = "https://sandialabs.github.io/sansmic"
 Issues = "https://github.com/sandialabs/sansmic/issues"
 Repository = "https://github.com/sandialabs/sansmic.git"
 
@@ -66,7 +67,9 @@ requires = ["setuptools", "pybind11"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-skip = ["cp313-*", "pp*"]
+skip = ["cp313-*", "pp*", "*-win32", "*-manylinux_i686", "*-musllinux*"]
+test-extras = "tests"
+test-command = "pytest {project}/tests"
 
 [tool.setuptools.package-data]
 "sansmic" = ["src/python/sansmic/*.pyd"]
