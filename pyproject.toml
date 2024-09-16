@@ -54,6 +54,7 @@ tests = [
 ]
 
 [project.urls]
+Documentation = "https://sandialabs.github.io/sansmic"
 Issues = "https://github.com/sandialabs/sansmic/issues"
 Repository = "https://github.com/sandialabs/sansmic.git"
 
