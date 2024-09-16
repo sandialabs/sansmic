@@ -1,9 +1,7 @@
-name: Publish Python 🐍 distribution 📦 to TestPyPI
+name: Build and publish Python 🐍 distribution 📦 to PyPI
 
 on: 
   push:
-    branches:
-      - 'main'
     tags:
       - '*'
 
