@@ -1,15 +1,15 @@
-name: Build wheels
+name: Publish Python 🐍 distribution 📦 to TestPyPI
 
-on:
+on: 
   push:
-    tags:
-      - '*'
     branches:
       - 'main'
+    tags:
+      - '*'
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build distribution 📦 on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,10 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.0
-        # env:
-        #   CIBW_SOME_OPTION: value
+      - uses: pypa/cibuildwheel@v2.21.0
         #    ...
         # with:
         #   package-dir: .
@@ -33,3 +30,60 @@ jobs:
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
+
+  make_sdist:
+    name: Make SDist artifact 📦
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Optional, use if you use setuptools_scm
+        submodules: true  # Optional, use if you have submodules
+
+    - name: Build SDist
+      run: pipx run build --sdist
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-sdist
+        path: dist/*.tar.gz
+
+  upload_test:
+    name: >-
+      Publish Python 🐍 distribution 📦 to TestPyPI
+    needs: [build_wheels, make_sdist]
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/sansmic
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: cibw-*
+        path: dist
+        merge-multiple: true
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+  upload_all:
+    name: >-
+      Publish Python 🐍 distribution 📦 to PyPI
+    needs: [build_wheels, make_sdist, upload_test]
+    environment:
+      name: release
+      url: https://pypi.org/p/sansmic
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: cibw-*
+        path: dist
+        merge-multiple: true
+    - uses: pypa/gh-action-pypi-publish@release/v1
