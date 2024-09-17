@@ -398,7 +398,6 @@ int sansmic::Model::init_stage(void) {
     dt_min = dt;
 
     std::fill(C_cav.begin(), C_cav.end(), C_cav0);
-    std::cout << "First stage - C_cav0 = " << C_cav0 << endl;
     C_cav[n_nodes] = C_hat;
     C_cavAve = C_cav0;
 
