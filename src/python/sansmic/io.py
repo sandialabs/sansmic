@@ -304,11 +304,10 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                     )
                 )
                 raise TypeError("Invalid data in DAT file: RESETGEO not 0")
-            if not first and not bool(1 - int(subsequent)):
+            if not first and isinstance(cavern_sg, (float, int)) and cavern_sg > 1.0:
                 logger.warning(
-                    "The REPEAT option is supposed to turn off the cavern SG; initial cavern SG set to None."
+                    "The REPEAT option was supposed to turn off the cavern SG; it did not do so. sansmic is currently mimicing SANSMIC behavior and resetting the cavern brine to {} sg in stage {}. \n\nIf this is not what is intended, please manually remove the 'set-cavern-sg' entry from stages after stage 1. This behavior will change in future releases.".format(cavern_sg, len(scenario.stages)+1)
                 )
-                cavern_sg = 0.0
             stage.title = title
             stage.simulation_mode = SimulationMode(int(mode))
             stage.save_frequency = int(print_interval)
@@ -359,14 +358,6 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
         ):
             del s["stop-condition"]
             del s["stop-value"]
-        if scenario.stages[ct].set_initial_conditions is False and ct > 0:
-            s["set-cavern-sg"] = None
-            s["brine-interface-depth"] = None
-            s["set-initial-conditions"] = None
-        elif scenario.stages[ct].set_initial_conditions is None and ct > 0:
-            s["set-cavern-sg"] = None
-            if not s.get("brine-interface-depth", None) and redundant:
-                s["brine-interface-depth"] = 0
         keys = [k for k in s.keys()]
         for k in keys:
             if (

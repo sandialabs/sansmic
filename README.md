@@ -39,6 +39,9 @@ be okay with that :grin: )
 
 
 #### PyPI wheels
+[![pypi](https://img.shields.io/pypi/v/sansmic.svg?maxAge=3600)](https://pypi.org/project/sansmic/)
+[![Downloads](https://static.pepy.tech/badge/sansmic)](https://pepy.tech/project/sansmic)
+
 To install a pre-compiled version of sansmic, use the pip command
 
     python -m pip install sansmic
