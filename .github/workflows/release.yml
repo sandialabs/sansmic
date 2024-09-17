@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - uses: pypa/cibuildwheel@79b0dd328794e1180a7268444d46cdf12e1abd01 # v2.21.0
+      - uses: pypa/cibuildwheel@311f64987b902c5245b895fe5446f3a0ba8e3c0d # v2.21.0
         #    ...
         # with:
         #   package-dir: .
