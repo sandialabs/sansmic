@@ -368,7 +368,7 @@ class StageDefinition:
         for k, v in defaults.items():
             k2 = k.strip().replace("-", "_").replace(" ", "_").replace(".", "_")
             if k2 not in self.valid_default_keys:
-                logger.warning(
+                logger.warning(  # pragma: no cover
                     "Ignoring non-defaultable or unknown setting {} = {}".format(
                         k, repr(v)
                     )
@@ -485,7 +485,7 @@ class StageDefinition:
 
         # Validate appropriate initial conditions settings
         if self.set_initial_conditions and self.set_cavern_sg is None:
-            logger.warning(
+            logger.warning(  # pragma: no cover
                 "Setting the initial conditions without setting cavern sg -- cavern sg will be set to fully saturated brine"
             )
             self.set_cavern_sg = 10.0
@@ -495,12 +495,12 @@ class StageDefinition:
         #     and self.set_cavern_sg >= 1.0
         # ):
         #     # raise TypeError(
-        #     logger.warning(
+        #     logger.warning( # pragma: no cover
         #         "Setting the starting cavern sg requires set_initial_conditions to be set to True -- setting to 0.0"
         #     )
         #     self.set_cavern_sg = 0.0
         elif not self.set_initial_conditions and self.brine_interface_depth:
-            logger.warning(
+            logger.warning(  # pragma: no cover
                 "Make sure you meant to reset the interface level; use 0.0 or None to continue from the last stage."
             )
 
