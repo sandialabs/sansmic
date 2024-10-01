@@ -259,7 +259,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.stages[2].outer_csg_inside_diam / 2, 8.925)
         self.assertEqual(scenario.stages[2].outer_csg_outside_diam / 2, 9.375)
         self.assertEqual(scenario.stages[2].brine_injection_sg, 1.03)
-        self.assertIsNone(scenario.stages[2].set_cavern_sg)
+        self.assertEqual(scenario.stages[2].set_cavern_sg, 1.2019)
         self.assertEqual(scenario.stages[2].solver_timestep, 0.1)
         self.assertEqual(scenario.stages[2].injection_duration, 72)
         self.assertEqual(scenario.stages[2].product_injection_rate, 0.0)

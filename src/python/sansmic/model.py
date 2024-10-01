@@ -327,8 +327,7 @@ class StageDefinition:
     Automatically set to True for the first stage added to a model."""
     set_cavern_sg: float = None
     """Set the initial specific gravity for all brine-filled cells of the cavern to
-    this value. If set_initial_conditions is False and this is not None (or 0) an error
-    will be raised upon scenario validation."""
+    this value."""
     brine_interface_depth: float = None
     """Set the initial oil-brine interface or blanket level. By default None, which
     will link to the previous stage (as will a value of 0)."""
@@ -369,7 +368,7 @@ class StageDefinition:
         for k, v in defaults.items():
             k2 = k.strip().replace("-", "_").replace(" ", "_").replace(".", "_")
             if k2 not in self.valid_default_keys:
-                logger.warning(
+                logger.warning(  # pragma: no cover
                     "Ignoring non-defaultable or unknown setting {} = {}".format(
                         k, repr(v)
                     )
@@ -402,9 +401,9 @@ class StageDefinition:
                 TypeError("stop_condition cannot be of type {}".format(type(value)))
         elif name == "set_cavern_sg" and value is not None and value < 1.0:
             value = None
-        elif name == "set_initial_conditions" and value is False:
-            self.set_cavern_sg = None
-            self.brine_interface_depth = None
+        # elif name == "set_initial_conditions" and value is False:
+        #     self.set_cavern_sg = None
+        #     self.brine_interface_depth = None
         super().__setattr__(name, value)
 
     @classmethod
@@ -486,22 +485,22 @@ class StageDefinition:
 
         # Validate appropriate initial conditions settings
         if self.set_initial_conditions and self.set_cavern_sg is None:
-            logger.warn(
+            logger.warning(  # pragma: no cover
                 "Setting the initial conditions without setting cavern sg -- cavern sg will be set to fully saturated brine"
             )
             self.set_cavern_sg = 10.0
-        elif (
-            not self.set_initial_conditions
-            and self.set_cavern_sg is not None
-            and self.set_cavern_sg >= 1.0
-        ):
-            # raise TypeError(
-            logger.warn(
-                "Setting the starting cavern sg requires set_initial_conditions to be set to True -- setting to 0.0"
-            )
-            self.set_cavern_sg = 0.0
+        # elif (
+        #     not self.set_initial_conditions
+        #     and self.set_cavern_sg is not None
+        #     and self.set_cavern_sg >= 1.0
+        # ):
+        #     # raise TypeError(
+        #     logger.warning( # pragma: no cover
+        #         "Setting the starting cavern sg requires set_initial_conditions to be set to True -- setting to 0.0"
+        #     )
+        #     self.set_cavern_sg = 0.0
         elif not self.set_initial_conditions and self.brine_interface_depth:
-            logger.warn(
+            logger.warning(  # pragma: no cover
                 "Make sure you meant to reset the interface level; use 0.0 or None to continue from the last stage."
             )
 
@@ -698,13 +697,7 @@ class StageDefinition:
             else self.inner_tbg_outside_diam / 2.0
         )
         stage.injection_fluid_sg = self.brine_injection_sg
-        stage.cavern_sg = (
-            0.0
-            if not self.set_initial_conditions
-            or self.set_cavern_sg is None
-            or self.set_cavern_sg < 1.0
-            else self.set_cavern_sg
-        )
+        stage.cavern_sg = self.set_cavern_sg if self.set_cavern_sg is not None else 0.0
         stage.timestep = self.solver_timestep
         stage.injection_duration = self.injection_duration
         stage.fill_rate = (
