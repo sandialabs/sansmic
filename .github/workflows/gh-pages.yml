@@ -4,7 +4,10 @@ name: Deploy Sphinx documentation
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
+    branches:
+      - 'main'
+    tags:
+      - '*'
   release:
   workflow_dispatch:
 
