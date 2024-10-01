@@ -5,18 +5,51 @@ development :grinning:  Here's everything you need to know.
 
 
 
-## Contributor License Agreement
+## Developer Certificate of Origin / Contributor License Agreement
 
-By contributing to this software project, you are agreeing to the following
-terms and conditions for your contributions:
+By contributing to this software project, you are agreeing to the terms
+and conditions in the [Developer Certificate of Origin](https://developercertificate.org),
+included below.
 
-* You agree your contributions are submitted under the
-  [BSD 3-Clause License](LICENSE).
-* You represent you are authorized to make the contributions and grant the
-  license.  If your employer has rights to intellectual property that includes
-  your contributions, you represent that you have received permission to make
-  contributions and grant the required license on behalf of that employer.
+      Developer Certificate of Origin
+      Version 1.1
 
+      Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
+
+      Everyone is permitted to copy and distribute verbatim copies of this
+      license document, but changing it is not allowed.
+
+
+      Developer's Certificate of Origin 1.1
+
+      By making a contribution to this project, I certify that:
+
+      (a) The contribution was created in whole or in part by me and I
+          have the right to submit it under the open source license
+          indicated in the file; or
+
+      (b) The contribution is based upon previous work that, to the best
+          of my knowledge, is covered under an appropriate open source
+          license and I have the right under that license to submit that
+          work with modifications, whether created in whole or in part
+          by me, under the same open source license (unless I am
+          permitted to submit under a different license), as indicated
+          in the file; or
+
+      (c) The contribution was provided directly to me by some other
+          person who certified (a), (b) or (c) and I have not modified
+          it.
+
+      (d) I understand and agree that this project and the contribution
+          are public and that a record of the contribution (including all
+          personal information I submit with it, including my sign-off) is
+          maintained indefinitely and may be redistributed consistent with
+          this project or the open source license(s) involved.
+
+
+All pull requests must be **signed-off** by the contributor, indicating
+that the commits contained in the PR are consistent with the DCO.
+Use ``git commit -s ...`` to sign off on commits from the command line.
 
 
 ## Setting Up Your Environment
@@ -168,7 +201,7 @@ After installing the various extensions, you'll also want to customize your
     * **Vimrc:**  Enable:  Check.
   * Black
     * **Black:** Enable:  Check.
-   
+
 
 [hack]: https://github.com/gaplo917/Ligatured-Hack
 

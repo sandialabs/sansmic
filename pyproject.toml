@@ -3,7 +3,7 @@ name = "sansmic"
 description = "Sandia solution mining modeling software"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "1.0.0-rc.1"
+version = "1.0.0"
 authors = [
     { name = "National Technology & Engineering Solutions of Sandia, LLC (NTESS)" },
     { name = "SANSMIC Authors (see AUTHORS.md)" },
@@ -88,6 +88,7 @@ allow_zero_version = false
 repo_dir = "."
 no_git_verify = false
 tag_format = "v{version}"
+
 version_toml = [
     "pyproject.toml:project.version"
 ]
@@ -150,4 +151,4 @@ insecure = false
 
 [tool.semantic_release.publish]
 dist_glob_patterns = ["dist/*"]
-upload_to_vcs_release = true
+upload_to_vcs_release = false

@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: BSD-3-Clause.
 
 """SANSMIC package"""
-__version__ = "1.0.0-rc.1"
+__version__ = "1.0.0"
 __copyright__ = f"""Copyright (c) 2024 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 Government retains certain rights in this software."""
