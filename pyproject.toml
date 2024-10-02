@@ -51,6 +51,7 @@ tests = [
     'tabulate',
     'pyyaml',
     'lasio',
+    'nbmake',
 ]
 
 [project.urls]

@@ -25,56 +25,8 @@ jobs:
     strategy:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
-    steps:
-
-      - name: Harden Runner
-        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            api.codecov.io:443
-            api.github.com:443
-            cli.codecov.io:443
-            codecov.io:443
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
-            storage.googleapis.com:443
-            uploader.codecov.io:443
-      
-      - name: Check out the commit
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Set up Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        with:
-          python-version: ~${{ matrix.version }}
-
-      - name: Install development dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install tomli
-
-      - name: Test install
-        run: python3 -m pip install .[tests]
-
-      - name: Test with pytest
-        run: python3 -m pytest --cov=sansmic --cov=tests examples/ tests/
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: ubuntu-latest
-
-  OSes:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: ["3.12"]
         os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
+
     steps:
 
       - name: Harden Runner
@@ -92,7 +44,7 @@ jobs:
             pypi.org:443
             storage.googleapis.com:443
             uploader.codecov.io:443
-    
+
       - name: Check out the commit
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
@@ -102,16 +54,13 @@ jobs:
           python-version: ~${{ matrix.version }}
 
       - name: Install development dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install tomli
+        run: python3 -m pip install --upgrade pip
 
       - name: Test install
-        run: python3 -m pip install .[tests]
+        run: python3 -m pip install .[tests,formats]
 
       - name: Test with pytest
-        run: python3 -m pytest --cov=sansmic --cov=tests examples/ tests/
+        run: python3 -m pytest --nbmake --cov=sansmic --cov=tests examples/ tests/
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
@@ -120,18 +69,4 @@ jobs:
           flags: ${{ matrix.os }}
 
       - name: Test uninstall
-        run: python3 -m pip uninstall -y my-repository-name
-
-  # commits:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Harden Runner
-  #       uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
-  #       with:
-  #         egress-policy: audit
-
-  #     - name: Conventional Commits
-  #       uses: taskmedia/action-conventional-commits@9148865058f63a6cb560ff4bfd7d534505f43646 # v1.1.3
-  #       with:
-  #         types: >
-  #           build|chore|ci|docs|feat|fix|minor|patch|perf|style|refactor|test
+        run: python3 -m pip uninstall -y sansmic
