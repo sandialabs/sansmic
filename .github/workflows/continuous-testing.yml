@@ -1,0 +1,66 @@
+name: Continuous Integration - Rapid Test
+
+on:
+  push:
+    paths:
+      - src/**
+      - tests/**
+      - .github/workflows/continuous-testing.yml
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          disable-sudo: true
+          egress-policy: block
+          allowed-endpoints: >
+            api.codecov.io:443
+            api.github.com:443
+            cli.codecov.io:443
+            codecov.io:443
+            files.pythonhosted.org:443
+            github.com:443
+            pypi.org:443
+            storage.googleapis.com:443
+            uploader.codecov.io:443
+      
+      - name: Check out the commit
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up Python
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install development dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Test install
+        run: python3 -m pip install .[tests,formats]
+
+      - name: Test with pytest
+        run: |
+          echo '### Run tests' >> $GITHUB_STEP_SUMMARY
+          python3 -m pytest --no-cov-on-fail --disable-warnings -q --cov=sansmic --cov=tests --cov-report= --no-header --color=auto examples/ tests/ >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate coverage report
+        run: |
+          echo '### Coverage report' >> $GITHUB_STEP_SUMMARY
+          coverage report --fail-under=80 --format markdown >> $GITHUB_STEP_SUMMARY
+
+      - name: Test uninstall
+        run: python3 -m pip uninstall -y sansmic
