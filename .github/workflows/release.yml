@@ -5,7 +5,7 @@ on:
     branches:
       - 'main'
     tags:
-      - '*'
+      - '**'
 
 jobs:
   build_wheels:
@@ -61,7 +61,7 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'sandialabs/sansmic' }}  # only publish to PyPI on tag pushes
     needs: [build_wheels, make_sdist]
     environment:
       name: release
@@ -132,6 +132,7 @@ jobs:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
     needs: [build_wheels, make_sdist]
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'sandialabs/sansmic' }}
 
     environment:
       name: testpypi
