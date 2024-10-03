@@ -7,6 +7,9 @@ on:
     tags:
       - '**'
 
+permissions:
+  contents: read
+
 jobs:
   build_wheels:
     name: Build distribution 📦 on ${{ matrix.os }}
@@ -112,7 +115,7 @@ jobs:
         merge-multiple: true
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@897895f1e160c830e369f9779632ebc134688e1b # release/v1
-      with: 
+      with:
         attestations: true
         print-hash: true
 

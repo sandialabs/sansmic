@@ -35,7 +35,7 @@ jobs:
             pypi.org:443
             storage.googleapis.com:443
             uploader.codecov.io:443
-      
+
       - name: Check out the commit
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
@@ -47,7 +47,6 @@ jobs:
       - name: Install development dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
 
       - name: Test install
         run: python3 -m pip install .[tests,formats]
@@ -55,7 +54,9 @@ jobs:
       - name: Test with pytest
         run: |
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
-          python3 -m pytest --no-cov-on-fail --disable-warnings -q --cov=sansmic --cov=tests --cov-report= --no-header --color=auto examples/ tests/ >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --no-cov-on-fail --disable-warnings --cov=sansmic --cov=tests --cov-report= --no-header --color=auto examples/ tests/ >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Generate coverage report
         run: |

@@ -25,7 +25,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-formats = ['h5py', 'openpyxl', 'tabulate', 'pyyaml', 'lasio']
+formats = ['h5py', 'openpyxl', 'tabulate', 'pyyaml', 'lasio', 'matplotlib']
 docs = [
     'Sphinx',
     'pydata-sphinx-theme',
@@ -51,6 +51,8 @@ tests = [
     'tabulate',
     'pyyaml',
     'lasio',
+    'nbmake',
+    'matplotlib',
 ]
 
 [project.urls]
