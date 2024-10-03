@@ -7,3 +7,4 @@ pytest-cov
 black
 pybind11
 nbmake
+matplotlib
