@@ -27,6 +27,28 @@ classifiers = [
 [project.optional-dependencies]
 formats = ['h5py', 'openpyxl', 'tabulate', 'pyyaml', 'lasio']
 examples = ['nbmake', 'matplotlib']
+tests = ['pytest', 'pytest-cov']
+devel = [
+    'pyyaml',
+    'pre-commit',
+    'pyproject_hooks',
+    'pytest',
+    'pytest-cov',
+    'black',
+    'pybind11',
+    'nbmake',
+    'matplotlib',
+    'python-semantic-release',
+]
+docs = [
+    'Sphinx',
+    'pydata-sphinx-theme',
+    'sphinx_design',
+    'sphinxcontrib-bibtex',
+    'breathe',
+    'exhale',
+    'sphinx-argparse',
+]
 
 [project.urls]
 Documentation = "https://sandialabs.github.io/sansmic"
@@ -43,7 +65,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 skip = ["cp313-*", "pp*", "*-win32", "*-manylinux_i686", "*-musllinux*"]
-test-extras = "tests"
+test-extras = "tests,examples,formats"
 test-command = "pytest {project}/tests"
 
 [tool.setuptools.package-data]
@@ -64,9 +86,7 @@ repo_dir = "."
 no_git_verify = false
 tag_format = "v{version}"
 
-version_toml = [
-    "pyproject.toml:project.version"
-]
+version_toml = ["pyproject.toml:project.version"]
 version_variables = [
     "setup.py:__version__",
     "src/python/sansmic/__init__.py:__version__",
