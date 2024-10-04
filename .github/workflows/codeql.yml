@@ -59,7 +59,7 @@ jobs:
           objects.githubusercontent.com:443
           pypi.org:443
           uploads.github.com:443
-    
+
     - name: Checkout repository
       uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
@@ -85,8 +85,8 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        python -m pip install pybind11 setuptools
-        python setup.py build_ext
+        python3 -m pip install pybind11 setuptools
+        python3 setup.py build_ext
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.26.11

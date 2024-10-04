@@ -25,35 +25,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-formats = ['h5py', 'openpyxl', 'tabulate', 'pyyaml', 'lasio', 'matplotlib']
-docs = [
-    'Sphinx',
-    'pydata-sphinx-theme',
-    'sphinx_design',
-    'sphinxcontrib-bibtex',
-    'breathe',
-    'exhale',
-    'sphinx-argparse',
-]
-dev = [
-    'pre-commit',
-    'pyproject_hooks',
-    'black',
-    'pybind11',
-    'pytest',
-    'pytest-cov',
-]
-tests = [
-    'pytest',
-    'pytest-cov',
-    'h5py',
-    'openpyxl',
-    'tabulate',
-    'pyyaml',
-    'lasio',
-    'nbmake',
-    'matplotlib',
-]
+formats = ['h5py', 'openpyxl', 'tabulate', 'pyyaml', 'lasio']
+examples = ['nbmake', 'matplotlib']
 
 [project.urls]
 Documentation = "https://sandialabs.github.io/sansmic"
