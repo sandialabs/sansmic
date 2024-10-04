@@ -46,6 +46,7 @@ os.remove(os.path.join("_static", "switcher.json"))
 for tag in tags:
     os.environ["VERSION_INFO"] = repr(tag)
     subprocess.run(["git", "checkout", tag], shell=True)
+    subprocess.run(["git", "checkout", "main", "--", "conf.py"], shell=True)
     files = glob.glob("apidocs/*.rst")
     for f in files:
         os.remove(f)
