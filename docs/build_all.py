@@ -5,7 +5,8 @@
 
 import subprocess
 import json
-import os.path
+import os
+import glob
 
 git_tag = subprocess.run(
     ["git", "tag", "--list", "v*.*.*", "--sort=version:refname"],
@@ -38,6 +39,9 @@ for tag in tags:
     )
     os.environ["VERSION_INFO"] = repr(tag)
     subprocess.run(["git", "checkout", tag], shell=True)
+    files = glob.glob("apidocs/*.rst")
+    for f in files:
+        os.remove(f)
     subprocess.run(
         ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html", tag)],
         shell=True,
