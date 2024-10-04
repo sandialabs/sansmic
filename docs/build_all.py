@@ -24,10 +24,6 @@ versions = [
     }
 ]
 
-subprocess.run(
-    ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html")], shell=True
-)
-
 for tag in tags:
     versions.append(
         dict(
@@ -37,6 +33,17 @@ for tag in tags:
             preferred=False,
         )
     )
+
+with open(os.path.join("_static", "switcher.json"), "w") as fswitch:
+    json.dump(versions, fswitch)
+
+subprocess.run(
+    ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html")], shell=True
+)
+
+os.remove(os.path.join("_static", "switcher.json"))
+
+for tag in tags:
     os.environ["VERSION_INFO"] = repr(tag)
     subprocess.run(["git", "checkout", tag], shell=True)
     files = glob.glob("apidocs/*.rst")
@@ -46,6 +53,3 @@ for tag in tags:
         ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html", tag)],
         shell=True,
     )
-
-with open(os.path.join("_build", "html", "_static", "switcher.json"), "w") as fswitch:
-    json.dump(versions, fswitch)
