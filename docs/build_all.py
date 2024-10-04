@@ -8,9 +8,10 @@ import json
 import os.path
 
 git_tag = subprocess.run(
-    ["git", "tag", "--list", '"v*.*.*"', '--sort="version:refname"'],
+    ["git", "tag", "--list", "v*.*.*", "--sort=version:refname"],
     capture_output=True,
     text=True,
+    shell=True,
 )
 tags = git_tag.stdout.splitlines()
 versions = [
@@ -22,7 +23,9 @@ versions = [
     }
 ]
 
-subprocess.run(["sphinx-build", "-b", "html", ".", os.path.join("_build", "html")])
+subprocess.run(
+    ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html")], shell=True
+)
 
 for tag in tags:
     versions.append(
@@ -34,9 +37,10 @@ for tag in tags:
         )
     )
     os.environ["VERSION_INFO"] = repr(tag)
-    subprocess.run(["git", "checkout", tag])
+    subprocess.run(["git", "checkout", tag], shell=True)
     subprocess.run(
-        ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html", tag)]
+        ["sphinx-build", "-b", "html", ".", os.path.join("_build", "html", tag)],
+        shell=True,
     )
 
 with open(os.path.join("_build", "html", "_static", "switcher.json"), "w") as fswitch:
