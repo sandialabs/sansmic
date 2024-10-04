@@ -1,33 +1,30 @@
 # Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
 import os
 import sys
 import glob
-from sphinx.writers.latex import LaTeXTranslator
-
 
 sys.path.insert(0, os.path.abspath("../src/python"))
 
-import sansmic
+doxygen_installed = (
+    os.system("doxygen --version") == 0
+)  # doxygen must be installed for C++ docs
 
-# -- Project information and custom options ----------------------------------
+
+##############################################################################
+#    Sphinx core options                                                     #
+##############################################################################
+
+# -- Project information -----------------------------------------------------
 project = "sansmic"
 copyright = "2024 National Technology and Engineering Solutions of Sandia, LLC. Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software."
 author = "See AUTHORS.md"
-doxygen_installed = True  # determines whether or not to build the extension module documentation - doxygen must be installed for this to work
-version = sansmic.__version__.replace('-rc.', "rc")
+version = "latest"
+release = version
 
-# -- General configuration ---------------------------------------------------
+# -- Extensions to load -------------------------------------------------------
 extensions = [
     "breathe",
     "exhale",
@@ -40,48 +37,11 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.githubpages",
     "sphinx_design",
     "sphinxarg.ext",
     "sphinxcontrib.bibtex",
 ]
-
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-# source_suffix = ['.rst', '.md']
-source_suffix = {".rst": "restructuredtext"}
-
-# The encoding of source files.
-# source_encoding = 'utf-8-sig'
-
-# The master toctree document.
-master_doc = "index"
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "doxygen"]
-
-
-##############################################################################
-#    Sphinx extension options                                                #
-##############################################################################
-
-# -- General options ---------------------------------------------------------
-viewcode_import = True
-add_function_parentheses = True
-add_module_names = False
-python_display_short_literal_types = True
-toc_object_entries = True
-toc_object_entries_show_parents = "hide"
-
-
-# -- sphinx-bibtex (references) ----------------------------------------------
-bibtex_bibfiles = ["references.bib"]
-bibtex_default_style = "plain"
-bibtex_reference_style = "label"
 
 
 # -- Callout numbering -------------------------------------------------------
@@ -89,7 +49,61 @@ numfig = True
 numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Listing %s"}
 
 
-# -- Docstring parsing -------------------------------------------------------
+# -- Internationalization ----------------------------------------------------
+language = "en"
+
+
+# -- Markup options ----------------------------------------------------------
+
+
+# -- Options for Maths -------------------------------------------------------
+
+
+# -- Options for object signatures
+add_function_parentheses = True
+toc_object_entries = True
+toc_object_entries_show_parents = "hide"
+
+
+# -- Options for source files ------------------------------------------------
+
+# This pattern also affects html_static_path and html_extra_path.
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "doxygen"]
+
+# The master toctree document.
+master_doc = "index"
+
+# source_suffix = ['.rst', '.md']
+source_suffix = {".rst": "restructuredtext"}
+
+
+# -- Options for templating --------------------------------------------------
+
+# Add any paths that contain templates here, relative to this directory.
+templates_path = ["_templates"]
+
+
+##############################################################################
+#    Sphinx domain options                                                   #
+##############################################################################
+
+# -- Options for the Python domain -------------------------------------------
+add_module_names = False
+python_display_short_literal_types = True
+python_use_unqualified_type_names = True
+
+
+##############################################################################
+#    Sphinx extension options                                                #
+##############################################################################
+
+# -- sphinx-bibtex (references) ----------------------------------------------
+bibtex_bibfiles = ["references.bib"]
+bibtex_default_style = "plain"
+bibtex_reference_style = "label"
+
+
+# -- Docstring parsing (napoleon)---------------------------------------------
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
@@ -127,7 +141,6 @@ autosummary_generate_overwrite = True
 
 
 # -- Intersphinx -------------------------------------------------------------
-
 # If you have trouble with proxies, etc., download these manually and place in
 # the _local/ directory.
 intersphinx_mapping = {
@@ -193,7 +206,7 @@ if doxygen_installed:
 
 
 ##############################################################################
-#    Output format configuration                                             #
+#    Builder options                                                         #
 ##############################################################################
 
 # -- Options for HTML output -------------------------------------------------
@@ -204,7 +217,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",  # Label for this link
-            "url": "https://github.com/SandiaLabs/sansmic",  # required URL where the link will redirect
+            "url": "https://github.com/sandialabs/sansmic",  # required URL where the link will redirect
             "type": "fontawesome",  # The type of image to be used
             "icon": "fa-brands fa-github",  # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
         },
@@ -220,7 +233,7 @@ html_theme_options = {
     "primary_sidebar_end": ["indices.html"],
     "show_toc_level": 2,
     "switcher": {
-        "json_url": "https://sandialabs.github.io/sansmic/main/_static/switcher.json",
+        "json_url": "https://sandialabs.github.io/sansmic/_static/switcher.json",
         "version_match": version,
     },
     # "secondary_sidebar_items": ["page-toc"], #["page-toc", "edit-this-page", "sourcelink"],
@@ -235,18 +248,15 @@ html_theme_options = {
     # "analytics": {"google_analytics_id": ""},
 }
 
-# -- Options for LaTeX output -------------------------------------------------
 
+# -- Options for LaTeX output -------------------------------------------------
 latex_engine = "xelatex"
 latex_use_xindy = False
-
 latex_documents = [
     ("userman", "sansmic.tex", "User Guide for sansmic", "David Hart", "manual"),
 ]
-
 latex_toplevel_sectioning = "chapter"
 latex_domain_indices = False
-
 latex_elements = {
     "papersize": r"letterpaper",
     "pointsize": r"10pt",
