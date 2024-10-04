@@ -9,8 +9,6 @@ on:
       - src/**
     branches:
       - 'main'
-    tags:
-      - '*'
   release:
   workflow_dispatch:
 
@@ -28,7 +26,6 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     name: Build the documentation with Sphinx
     runs-on: ubuntu-latest
     steps:
@@ -63,8 +60,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          cd docs
-          python3 build_all.py
+          python3 build_docs.py
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

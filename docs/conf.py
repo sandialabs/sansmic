@@ -6,7 +6,8 @@ import os
 import sys
 import glob
 
-sys.path.insert(0, os.path.abspath("../src/python"))
+sys.path.insert(0, os.path.abspath(os.path.join("..", "src", "python")))
+import sansmic
 
 doxygen_installed = (
     os.system("doxygen --version") == 0
@@ -21,7 +22,7 @@ doxygen_installed = (
 project = "sansmic"
 copyright = "2024 National Technology and Engineering Solutions of Sandia, LLC. Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software."
 author = "See AUTHORS.md"
-version = "latest"
+version = os.environ.get("SANSMIC_SPHINX_VERSION", sansmic.__version__)
 release = version
 
 # -- Extensions to load -------------------------------------------------------
