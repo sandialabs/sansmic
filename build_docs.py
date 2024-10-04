@@ -9,7 +9,7 @@ import os
 import glob
 
 git_tag = subprocess.run(
-    ["git", "tag", "--list", "v*.*.*", "--sort=version:refname"],
+    " ".join(["git", "tag", "--list", "v*.*.*", "--sort=version:refname"]),
     capture_output=True,
     text=True,
     shell=True,
@@ -45,13 +45,15 @@ with open(
 my_env["SANSMIC_SPHINX_VERSION"] = "latest"
 
 subprocess.run(
-    [
-        "sphinx-build",
-        "-b",
-        "html",
-        os.path.abspath(os.path.join(".", "docs")),
-        os.path.abspath(os.path.join(".", "docs", "_build", "html")),
-    ],
+    " ".join(
+        [
+            "sphinx-build",
+            "-b",
+            "html",
+            "docs/",
+            "docs/_build/html",
+        ]
+    ),
     shell=True,
     env=my_env,
 )
@@ -61,22 +63,24 @@ os.remove(os.path.abspath(os.path.join(".", "docs", "_static", "switcher.json"))
 for tag in tags:
     os.environ["VERSION_INFO"] = repr(tag)
     my_env["SANSMIC_SPHINX_VERSION"] = tag
-    subprocess.run(["git", "checkout", tag], shell=True)
+    subprocess.run("git checkout " + tag, shell=True)
     subprocess.run(
-        ["git", "checkout", "main", "--", os.path.join(".", "docs", "conf.py")],
+        "git checkout main -- docs/conf.py",
         shell=True,
     )
     files = glob.glob("./docs/apidocs/*.rst")
     for f in files:
         os.remove(f)
     subprocess.run(
-        [
-            "sphinx-build",
-            "-b",
-            "html",
-            os.path.abspath(os.path.join(".", "docs")),
-            os.path.abspath(os.path.join(".", "docs", "_build", "html", tag)),
-        ],
+        " ".join(
+            [
+                "sphinx-build",
+                "-b",
+                "html",
+                "docs/",
+                "docs/_build/html/" + tag,
+            ]
+        ),
         shell=True,
         env=my_env,
     )
