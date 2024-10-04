@@ -12,9 +12,10 @@ updates:
     commit-message:
       prefix: "build"
     groups:
-      prod-dependencies:
+      production-dependencies:
         dependency-type: "production"
-        update-types: ['minor', 'patch']
+      development-dependencies:
+        dependency-type: "development"
 
   - package-ecosystem: github-actions
     directory: /
@@ -23,5 +24,7 @@ updates:
     commit-message:
       prefix: "ci"
     groups:
-      gh-dependencies:
-        applies-to: security-updates
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
