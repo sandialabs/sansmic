@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - '.github/**'
+      - '!.github/workflows/release.yml'
+      - 'docs/**'
+      - 'examples/**'
     tags:
       - '**'
 

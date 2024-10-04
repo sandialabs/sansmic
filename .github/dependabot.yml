@@ -12,10 +12,7 @@ updates:
     commit-message:
       prefix: "build"
     groups:
-      production-dependencies:
-        dependency-type: "production"
-      development-dependencies:
-        dependency-type: "development"
+      python-dependencies:
 
   - package-ecosystem: github-actions
     directory: /
@@ -24,7 +21,4 @@ updates:
     commit-message:
       prefix: "ci"
     groups:
-      production-dependencies:
-        dependency-type: "production"
-      development-dependencies:
-        dependency-type: "development"
+      actions-dependencies:
