@@ -1,6 +1,6 @@
-Sphinx==8.0.0
+Sphinx==8.0.2
 pydata-sphinx-theme==0.15.4
-sphinx_design==0.6.0
+sphinx_design==0.6.1
 sphinxcontrib-bibtex==2.6.3
 breathe==4.35.0
 exhale==0.3.7
