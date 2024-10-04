@@ -9,8 +9,19 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: "build"
+    groups:
+      prod-dependencies:
+        dependency-type: "production"
+        update-types: ['minor', 'patch']
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
+    commit-message:
+      prefix: "ci"
+    groups:
+      gh-dependencies:
+        applies-to: security-updates
