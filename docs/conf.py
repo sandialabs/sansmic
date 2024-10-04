@@ -215,6 +215,10 @@ html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 # html_sidebars = {"nomenclature": []}
 html_theme_options = {
+    "logo": {
+        "image_light": "_static/logo-light.png",
+        "image_dark": "_static/logo-dark.png",
+    },
     "icon_links": [
         {
             "name": "GitHub",  # Label for this link
