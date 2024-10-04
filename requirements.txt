@@ -1,4 +1,4 @@
-numpy==2.1.0
-pandas==2.2.0
-pybind11==2.13.0
-setuptools==75.1.0
+numpy
+pandas
+pybind11
+setuptools
