@@ -8,14 +8,17 @@ updates:
   - package-ecosystem: "pip" # See documentation for possible values
     directories:
       - "/" # Location of package manifests
-      - "docs/"
-      - "tests/"
+      - "/docs"
+      - "/tests"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "build"
     groups:
       python-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /
@@ -25,3 +28,6 @@ updates:
       prefix: "ci"
     groups:
       actions-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
