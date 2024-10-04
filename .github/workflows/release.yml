@@ -87,7 +87,7 @@ jobs:
         path: dist
         merge-multiple: true
     - name: Publish distribution 📦 to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@f7600683efdcb7656dec5b29656edb7bc586e597 # release/v1
       with:
         skip-existing: true
         print-hash: true
@@ -144,7 +144,7 @@ jobs:
         path: dist
         merge-multiple: true
     - name: Sign the dists with Sigstore
-      uses: sigstore/gh-action-sigstore-python@v3.0.0
+      uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0
       with:
         inputs: >-
           ./dist/*.tar.gz
