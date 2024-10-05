@@ -1,6 +1,8 @@
 ![Lines of code](https://sloc.xyz/github/sandialabs/sansmic/?category=code)
 [![codecov](https://codecov.io/github/sandialabs/sansmic/graph/badge.svg?token=oDeMIUHoqg)](https://codecov.io/github/sandialabs/sansmic)
+
 [![Continuous Integration - Full Test Target Suite](https://github.com/sandialabs/sansmic/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/sandialabs/sansmic/actions/workflows/continuous-integration.yml)
+[![Deploy Sphinx documentation](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml)
 
 [![pypi](https://img.shields.io/pypi/v/sansmic.svg?maxAge=3600)](https://pypi.org/project/sansmic/)
 [![Downloads](https://static.pepy.tech/badge/sansmic)](https://pepy.tech/project/sansmic)
