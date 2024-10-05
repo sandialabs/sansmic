@@ -250,7 +250,7 @@ html_theme_options = {
         "theme-switcher",
         "navbar-icon-links",
     ],
-    # "analytics": {"google_analytics_id": ""},
+    "analytics": {"google_analytics_id": "G-23TNKN36XM"},
 }
 
 
