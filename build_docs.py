@@ -68,6 +68,10 @@ for tag in tags:
         "git checkout main -- docs/conf.py",
         shell=True,
     )
+    subprocess.run(
+        "pip install --no-deps --force-reinstall --no-input --no-cache-dir -e .",
+        shell=True,
+    )
     files = glob.glob("./docs/apidocs/*.rst")
     for f in files:
         os.remove(f)
