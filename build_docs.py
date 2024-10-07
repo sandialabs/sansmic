@@ -54,11 +54,6 @@ for tag in tags:
 if not found_stable:
     found_stable = "main"
 
-with open(
-    os.path.abspath(os.path.join(".", "docs", "_static", "switcher.json")), "w"
-) as fswitch:
-    json.dump(versions, fswitch)
-
 tag = found_stable
 os.environ["VERSION_INFO"] = repr(tag)
 my_env["SANSMIC_SPHINX_VERSION"] = tag
@@ -79,8 +74,6 @@ subprocess.run(
     shell=True,
     env=my_env,
 )
-
-os.remove(os.path.abspath(os.path.join(".", "docs", "_static", "switcher.json")))
 
 tags.append("main")
 
@@ -104,3 +97,11 @@ for tag in tags:
         shell=True,
         env=my_env,
     )
+
+with open(
+    os.path.abspath(
+        os.path.join(".", "docs", "_build", "html", "_static", "switcher.json")
+    ),
+    "w",
+) as fswitch:
+    json.dump(versions, fswitch)
