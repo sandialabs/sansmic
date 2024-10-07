@@ -54,17 +54,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y doxygen graphviz
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt -r docs/requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r docs/requirements.txt
 
       - name: Build documentation
         run: |
-          python3 build_docs.py
+          python -m pip install -e .[formats]
+          sphinx-build -b html docs/ pages/
+
+      - name: Get previous documentation
+        run: |
+          python build_docs.py
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
-          path: 'docs/_build/html'
+          path: 'pages'
 
   deploy:
     name: Deploy documentation to GitHub Pages
