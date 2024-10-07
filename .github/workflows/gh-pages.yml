@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - .github/workflows/gh-pages.yml
+      - build_docs.py
       - docs/**
       - src/**
     branches:
