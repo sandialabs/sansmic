@@ -10,7 +10,7 @@ on:
       - 'docs/**'
       - 'examples/**'
     tags:
-      - '**'
+      - '*'
 
 permissions:
   contents: read

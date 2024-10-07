@@ -59,10 +59,13 @@ with open(
 ) as fswitch:
     json.dump(versions, fswitch)
 
-my_env["SANSMIC_SPHINX_VERSION"] = "main"
-
-os.remove(os.path.abspath(os.path.join(".", "docs", "_static", "switcher.json")))
-
+tag = found_stable
+os.environ["VERSION_INFO"] = repr(tag)
+my_env["SANSMIC_SPHINX_VERSION"] = tag
+files = glob.glob("./docs/apidocs/*.rst")
+for f in files:
+    os.remove(f)
+subprocess.run("git checkout " + tag, shell=True)
 subprocess.run(
     " ".join(
         [
@@ -70,12 +73,16 @@ subprocess.run(
             "-b",
             "html",
             "docs/",
-            "docs/_build/html/main",
+            "docs/_build/html",
         ]
     ),
     shell=True,
     env=my_env,
 )
+
+os.remove(os.path.abspath(os.path.join(".", "docs", "_static", "switcher.json")))
+
+tags.append("main")
 
 for tag in tags:
     os.environ["VERSION_INFO"] = repr(tag)
@@ -97,29 +104,3 @@ for tag in tags:
         shell=True,
         env=my_env,
     )
-
-with open(
-    os.path.abspath(os.path.join(".", "docs", "_static", "switcher.json")), "w"
-) as fswitch:
-    json.dump(versions, fswitch)
-
-tag = found_stable
-os.environ["VERSION_INFO"] = repr(tag)
-my_env["SANSMIC_SPHINX_VERSION"] = tag
-files = glob.glob("./docs/apidocs/*.rst")
-for f in files:
-    os.remove(f)
-subprocess.run("git checkout " + tag, shell=True)
-subprocess.run(
-    " ".join(
-        [
-            "sphinx-build",
-            "-b",
-            "html",
-            "docs/",
-            "docs/_build/html/",
-        ]
-    ),
-    shell=True,
-    env=my_env,
-)
