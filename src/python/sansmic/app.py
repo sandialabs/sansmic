@@ -78,6 +78,12 @@ def cli():
     show_default=True,
 )
 @click.option(
+    "--json/--no-json",
+    default=False,
+    help="Create a JSON output data file.",
+    show_default=True,
+)
+@click.option(
     "--oldout/--no-oldout",
     default=False,
     help="Create an old-style OUT file.",
@@ -123,7 +129,6 @@ def run(
     quiet=False,
     debug=False,
     json=False,
-    ret=False,
 ):
     from sansmic import __version__
 
@@ -253,8 +258,7 @@ def run(
         logger.critical("Error while writing results - some results may be missing")
         raise e
 
-    if ret:
-        return res
+    return res
 
 
 @click.command()
