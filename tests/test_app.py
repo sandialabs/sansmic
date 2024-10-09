@@ -2,11 +2,12 @@
 
 import glob
 import os
+import subprocess
 import tempfile
 import unittest
-import subprocess
 from os.path import abspath, dirname, join
 
+import click
 import numpy as np
 import pandas as pd
 import sansmic
@@ -39,78 +40,64 @@ class TestApplication(unittest.TestCase):
         with scenario.new_simulation() as sim:
             sim.run_sim()
         res0 = sim.results
-        res1 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "--no-toml",
-                "--no-csv",
-                "--no-json",
-                "--no-hdf",
-                "--no-tst",
-                "--no-old-out",
-            ],
+        res1 = sansmic.app.run.callback(
+            self.withdrawal_dat,
+            csv=False,
+            toml=False,
+            json=False,
+            hdf=False,
+            tst=False,
+            oldout=False,
             ret=True,
         )
-        res2 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "-o",
-                join(self.tempdirname, "app-test"),
-                "--toml",
-                "--csv",
-                "--json",
-                "--hdf",
-                "--tst",
-                "--old-out",
-            ],
+        res2 = sansmic.app.run.callback(
+            self.withdrawal_dat,
+            prefix=join(self.tempdirname, "app-test"),
+            csv=True,
+            toml=True,
+            json=True,
+            hdf=True,
+            tst=True,
+            oldout=True,
             ret=False,
         )
-        res3 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "--no-toml",
-                "--no-csv",
-                "--no-json",
-                "--no-hdf",
-                "--no-tst",
-                "--no-old-out",
-                "-v",
-            ],
+        res3 = sansmic.app.run.callback(
+            self.withdrawal_dat,
+            toml=False,
+            csv=False,
+            json=False,
+            hdf=False,
+            tst=False,
+            oldout=False,
+            verbose=1,
             ret=True,
         )
-        res4 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "--no-toml",
-                "--no-csv",
-                "--no-json",
-                "--no-hdf",
-                "--no-tst",
-                "--no-old-out",
-                "-v",
-                "-v",
-            ],
+        res4 = sansmic.app.run.callback(
+            self.withdrawal_dat,
+            toml=False,
+            csv=False,
+            json=False,
+            hdf=False,
+            tst=False,
+            oldout=False,
+            verbose=2,
             ret=True,
         )
-        res5 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "--no-toml",
-                "--no-csv",
-                "--no-json",
-                "--no-hdf",
-                "--no-tst",
-                "--no-old-out",
-                "-q",
-            ],
+        res5 = sansmic.app.run.callback(
+            self.withdrawal_dat,
+            toml=False,
+            csv=False,
+            json=False,
+            hdf=False,
+            tst=False,
+            oldout=False,
+            quiet=True,
             ret=True,
         )
 
-        res6 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "--debug",
-            ],
+        res6 = sansmic.app.run.callback(
+            self.withdrawal_dat,
+            debug=True,
             ret=True,
         )
 
@@ -157,20 +144,20 @@ class TestApplication(unittest.TestCase):
         """Test the 'sansmic-convert' command line application."""
         scenario0 = sansmic.io.read_scenario(self.withdrawal_dat)
         scenario0.title = ""
-        sansmic.app.convert(args=[self.withdrawal_dat, self.withdrawal_toml])
+        sansmic.app.convert.callback(self.withdrawal_dat, self.withdrawal_toml)
         scenario1 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario1.title = ""
         self.assertEqual(scenario0, scenario1)
-        sansmic.app.convert(args=[self.withdrawal_dat, self.withdrawal_toml, "--full"])
+        sansmic.app.convert.callback(
+            self.withdrawal_dat, self.withdrawal_toml, full=True
+        )
         scenario2 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario2.title = ""
         self.maxDiff = None
         self.assertDictEqual(scenario0.to_dict(), scenario2.to_dict())
 
-        with self.assertRaises(FileNotFoundError):
-            sansmic.app.convert(
-                args=["thisWontWork.TOML", "neither.will.this."],
-            )
+        with self.assertRaises((click.FileError, FileNotFoundError)):
+            sansmic.app.convert.callback("thisWontWork.TOML", "neither.will.this.")
 
     def test_sansmic_cmd(self):
         proc = subprocess.run(
@@ -189,8 +176,9 @@ class TestApplication(unittest.TestCase):
         result = proc.returncode
         self.assertTrue("Progress..." in data)
         self.assertTrue("960000.0" in data)
+        print(glob.glob(join(self.tempdirname, "sansmic-call-test*")))
         self.assertEqual(
-            len(glob.glob(join(self.tempdirname, "sansmic-call-test*"))), 9
+            len(glob.glob(join(self.tempdirname, "sansmic-call-test*"))), 10
         )
 
     @classmethod

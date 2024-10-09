@@ -40,7 +40,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.githubpages",
     "sphinx_design",
-    "sphinxarg.ext",
+    "sphinx_click",
     "sphinxcontrib.bibtex",
 ]
 

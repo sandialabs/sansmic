@@ -9,7 +9,7 @@ authors = [
     { name = "SANSMIC Authors (see AUTHORS.md)" },
 ]
 maintainers = [{ name = "David Hart", email = "david.hart@sandia.gov" }]
-dependencies = ["numpy", "pandas", 'tomli; python_version < "3.11"']
+dependencies = ["numpy", "pandas", 'tomli; python_version < "3.11"', "click"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD License",
@@ -47,7 +47,7 @@ docs = [
     'sphinxcontrib-bibtex',
     'breathe',
     'exhale',
-    'sphinx-argparse',
+    'sphinx-click',
 ]
 
 [project.urls]
@@ -56,7 +56,7 @@ Issues = "https://github.com/sandialabs/sansmic/issues"
 Repository = "https://github.com/sandialabs/sansmic.git"
 
 [project.scripts]
-sansmic = "sansmic.app:main"
+sansmic = "sansmic.app:run"
 sansmic-convert = "sansmic.app:convert"
 
 [build-system]
@@ -124,11 +124,11 @@ default = "semantic-release <semantic-release>"
 [tool.semantic_release.commit_parser_options]
 allowed_tags = [
     # Non-source code changes (no change to version; omit from CHANGELOG by default)
-    "build",    # Changes to build system or external dependencies (omit from CHANGELOG - manually add if needed)
-    "ci",       # Changes to CI configuration files and scripts (omit from CHANGELOG - manually add if needed)
-    "chore",    # Other changes that don't touch the source code (omit from CHANGELOG - manually add if needed)
+    "build", # Changes to build system or external dependencies (omit from CHANGELOG - manually add if needed)
+    "ci",    # Changes to CI configuration files and scripts (omit from CHANGELOG - manually add if needed)
+    "chore", # Other changes that don't touch the source code (omit from CHANGELOG - manually add if needed)
     # Changes to test suites (no change to version; include in CHANGELOG by default)
-    "test",     # Adding missing tests or correcting existing tests (does not change package code)
+    "test", # Adding missing tests or correcting existing tests (does not change package code)
     # Changes to source code (possible change to version; include in CHANGELOG by default)
     "fix",      # A bug fix (a patch-level version change)
     "perf",     # A code change that improves performance (at-least patch-level, possibly minor version change)
