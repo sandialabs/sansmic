@@ -2,11 +2,13 @@
 
 import glob
 import os
+import subprocess
 import tempfile
 import unittest
-import subprocess
 from os.path import abspath, dirname, join
 
+import click
+import click.testing
 import numpy as np
 import pandas as pd
 import sansmic
@@ -39,83 +41,78 @@ class TestApplication(unittest.TestCase):
         with scenario.new_simulation() as sim:
             sim.run_sim()
         res0 = sim.results
-        res1 = sansmic.app.main(
-            args=[
+        res1 = sansmic.app.run(
+            [
                 self.withdrawal_dat,
-                "--no-toml",
                 "--no-csv",
+                "--no-toml",
                 "--no-json",
                 "--no-hdf",
                 "--no-tst",
-                "--no-old-out",
+                "--no-oldout",
             ],
-            ret=True,
+            standalone_mode=False,
         )
-        res2 = sansmic.app.main(
-            args=[
+        res2 = sansmic.app.run(
+            [
                 self.withdrawal_dat,
-                "-o",
+                "--prefix",
                 join(self.tempdirname, "app-test"),
-                "--toml",
                 "--csv",
+                "--toml",
                 "--json",
                 "--hdf",
                 "--tst",
-                "--old-out",
+                "--oldout",
             ],
-            ret=False,
+            standalone_mode=False,
         )
-        res3 = sansmic.app.main(
-            args=[
+        res3 = sansmic.app.run(
+            [
+                self.withdrawal_dat,
+                "--no-csv",
+                "--no-hdf",
+                "--no-tst",
+                "-v",
+            ],
+            standalone_mode=False,
+        )
+        res4 = sansmic.app.run(
+            [
                 self.withdrawal_dat,
                 "--no-toml",
                 "--no-csv",
                 "--no-json",
                 "--no-hdf",
                 "--no-tst",
-                "--no-old-out",
-                "-v",
+                "--no-oldout",
+                "-vv",
             ],
-            ret=True,
+            standalone_mode=False,
         )
-        res4 = sansmic.app.main(
-            args=[
+        res5 = sansmic.app.run(
+            [
                 self.withdrawal_dat,
                 "--no-toml",
                 "--no-csv",
                 "--no-json",
                 "--no-hdf",
                 "--no-tst",
-                "--no-old-out",
-                "-v",
-                "-v",
-            ],
-            ret=True,
-        )
-        res5 = sansmic.app.main(
-            args=[
-                self.withdrawal_dat,
-                "--no-toml",
-                "--no-csv",
-                "--no-json",
-                "--no-hdf",
-                "--no-tst",
-                "--no-old-out",
+                "--no-oldout",
                 "-q",
             ],
-            ret=True,
+            standalone_mode=False,
         )
 
-        res6 = sansmic.app.main(
-            args=[
+        res6 = sansmic.app.run(
+            [
                 self.withdrawal_dat,
                 "--debug",
             ],
-            ret=True,
+            standalone_mode=False,
         )
 
         self.assertIsNotNone(res1)
-        self.assertIsNone(res2)
 
         self.assertEqual(len(glob.glob(join(self.tempdirname, "app-test.toml"))), 1)
         self.assertEqual(len(glob.glob(join(self.tempdirname, "app-test.log"))), 1)
@@ -146,30 +143,69 @@ class TestApplication(unittest.TestCase):
         self.assertTrue((res0.df_z_1D == res6.df_z_1D).all().all())
         self.assertTrue((res0.df_t_z_2D == res6.df_t_z_2D).all().all())
 
-        with self.assertRaises(FileNotFoundError):
-            sansmic.app.main(
-                args=[
+        with self.assertRaises(
+            (click.FileError, click.ClickException, FileNotFoundError)
+        ):
+            sansmic.app.run(
+                [
                     "thisWontWork.TOML",
                 ],
+                standalone_mode=False,
             )
+
+        with self.assertRaises(
+            (click.FileError, click.ClickException, FileNotFoundError)
+        ):
+            sansmic.app.run(
+                [
+                    self.withdrawal_dat,
+                    "-o",
+                    os.path.abspath(os.path.join("this", "is", "a", "fake.", "path")),
+                ],
+                standalone_mode=False,
+            )
+
+    def test_license(self):
+        """Test the license file echo"""
+        runner = click.testing.CliRunner()
+        results = runner.invoke(sansmic.app.run, ["--license"])
+        self.assertEqual(results.output.strip(), sansmic.__license__.strip())
+
+    def test_copyright(self):
+        """Test the license file echo"""
+        runner = click.testing.CliRunner()
+        results = runner.invoke(sansmic.app.run, ["--copyright"])
+        self.assertEqual(results.output.strip(), sansmic.__copyright__.strip())
+
+    def test_version(self):
+        """Test the license file echo"""
+        runner = click.testing.CliRunner()
+        results = runner.invoke(sansmic.app.run, ["--version"])
+        self.assertEqual(results.output.strip(), sansmic.__version__.strip())
 
     def test_convert_app(self):
         """Test the 'sansmic-convert' command line application."""
         scenario0 = sansmic.io.read_scenario(self.withdrawal_dat)
         scenario0.title = ""
-        sansmic.app.convert(args=[self.withdrawal_dat, self.withdrawal_toml])
+        sansmic.app.convert(
+            [self.withdrawal_dat, self.withdrawal_toml], standalone_mode=False
+        )
         scenario1 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario1.title = ""
         self.assertEqual(scenario0, scenario1)
-        sansmic.app.convert(args=[self.withdrawal_dat, self.withdrawal_toml, "--full"])
+        sansmic.app.convert(
+            [self.withdrawal_dat, self.withdrawal_toml, "--full"], standalone_mode=False
+        )
         scenario2 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario2.title = ""
         self.maxDiff = None
         self.assertDictEqual(scenario0.to_dict(), scenario2.to_dict())
 
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(
+            (click.FileError, click.ClickException, FileNotFoundError)
+        ):
             sansmic.app.convert(
-                args=["thisWontWork.TOML", "neither.will.this."],
+                ["thisWontWork.TOML", "neither.will.this."], standalone_mode=False
             )
 
     def test_sansmic_cmd(self):
@@ -189,8 +225,9 @@ class TestApplication(unittest.TestCase):
         result = proc.returncode
         self.assertTrue("Progress..." in data)
         self.assertTrue("960000.0" in data)
+        print(glob.glob(join(self.tempdirname, "sansmic-call-test*")))
         self.assertEqual(
-            len(glob.glob(join(self.tempdirname, "sansmic-call-test*"))), 9
+            len(glob.glob(join(self.tempdirname, "sansmic-call-test*"))), 10
         )
 
     @classmethod

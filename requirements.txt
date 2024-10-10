@@ -2,3 +2,4 @@ numpy==2.1.2
 pandas==2.2.3
 pybind11==2.13.6
 setuptools==75.1.0
+click==8.1.7
