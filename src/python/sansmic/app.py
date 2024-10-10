@@ -23,7 +23,7 @@ from numpy import round
 from pip._vendor.rich.progress import Progress
 import sansmic.io
 
-try:
+try:  # pragma: no cover
     import h5py
 except ImportError as e:
     h5py = e
@@ -32,12 +32,31 @@ logging.basicConfig()
 logger = logging.getLogger("sansmic")
 
 
-def print_license(ctx, param, value):
+def print_license(ctx: click.Context, param, value):
+    """
+    Print the license for sansmic.
+
+    This is a click option callback function.
+    """
     if not value or ctx.resilient_parsing:
         return
     from sansmic import __license__
 
     click.echo_via_pager(__license__)
+    ctx.exit()
+
+
+def print_copyright(ctx: click.Context, param, value):
+    """
+    Print the copyright for sansmic.
+
+    This is a click option callback function.
+    """
+    if not value or ctx.resilient_parsing:
+        return
+    from sansmic import __copyright__
+
+    click.echo_via_pager(__copyright__)
     ctx.exit()
 
 
@@ -115,6 +134,14 @@ def cli():
     expose_value=False,
     is_eager=True,
     help="Show license and exit.",
+)
+@click.option(
+    "--copyright",
+    is_flag=True,
+    callback=print_copyright,
+    expose_value=False,
+    is_eager=True,
+    help="Print copyright and exit.",
 )
 def run(
     scenario_file,
@@ -254,7 +281,7 @@ def run(
         if hdf:
             sansmic.io.write_hdf_results(res, prefix + ".h5")
         logger.debug("Sansmic complete")
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         logger.critical("Error while writing results - some results may be missing")
         raise e
 
@@ -279,6 +306,14 @@ def run(
     expose_value=False,
     is_eager=True,
     help="Show license and exit.",
+)
+@click.option(
+    "--copyright",
+    is_flag=True,
+    callback=print_copyright,
+    expose_value=False,
+    is_eager=True,
+    help="Print copyright and exit.",
 )
 def convert(dat_file, out_file=None, full=False):
     """Command line function to convert a scenario/dat to a new format."""

@@ -8,6 +8,7 @@ import unittest
 from os.path import abspath, dirname, join
 
 import click
+import click.testing
 import numpy as np
 import pandas as pd
 import sansmic
@@ -69,12 +70,9 @@ class TestApplication(unittest.TestCase):
         res3 = sansmic.app.run(
             [
                 self.withdrawal_dat,
-                "--no-toml",
                 "--no-csv",
-                "--no-json",
                 "--no-hdf",
                 "--no-tst",
-                "--no-oldout",
                 "-v",
             ],
             standalone_mode=False,
@@ -154,6 +152,36 @@ class TestApplication(unittest.TestCase):
                 ],
                 standalone_mode=False,
             )
+
+        with self.assertRaises(
+            (click.FileError, click.ClickException, FileNotFoundError)
+        ):
+            sansmic.app.run(
+                [
+                    self.withdrawal_dat,
+                    "-o",
+                    r"F:\\NotARealDirectory.\\ThisShouldBreak\\AnyWhere",
+                ],
+                standalone_mode=False,
+            )
+
+    def test_license(self):
+        """Test the license file echo"""
+        runner = click.testing.CliRunner()
+        results = runner.invoke(sansmic.app.run, ["--license"])
+        self.assertEqual(results.output.strip(), sansmic.__license__.strip())
+
+    def test_copyright(self):
+        """Test the license file echo"""
+        runner = click.testing.CliRunner()
+        results = runner.invoke(sansmic.app.run, ["--copyright"])
+        self.assertEqual(results.output.strip(), sansmic.__copyright__.strip())
+
+    def test_version(self):
+        """Test the license file echo"""
+        runner = click.testing.CliRunner()
+        results = runner.invoke(sansmic.app.run, ["--version"])
+        self.assertEqual(results.output.strip(), sansmic.__version__.strip())
 
     def test_convert_app(self):
         """Test the 'sansmic-convert' command line application."""
