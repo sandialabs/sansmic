@@ -5,21 +5,12 @@ The following include all available output options, but note that not all option
 available if you have not installed the appropriate packages (see Advanced Installation).
 
 
-``sansmic``
------------
-
-.. argparse::
-   :module: sansmic.app
-   :func: _main_parser
+.. _sansmic:
+.. click:: sansmic.app:run
    :prog: sansmic
 
 
 
-
-``sansmic-convert``
--------------------
-
-.. argparse::
-   :module: sansmic.app
-   :func: _convert_parser
+.. _sansmic-convert:
+.. click:: sansmic.app:convert
    :prog: sansmic-convert
