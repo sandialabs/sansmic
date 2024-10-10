@@ -160,7 +160,7 @@ class TestApplication(unittest.TestCase):
                 [
                     self.withdrawal_dat,
                     "-o",
-                    r"F:\\NotARealDirectory.\\ThisShouldBreak\\AnyWhere",
+                    os.path.abspath(os.path.join("this", "is", "a", "fake.", "path")),
                 ],
                 standalone_mode=False,
             )
