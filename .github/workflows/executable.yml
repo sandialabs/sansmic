@@ -1,6 +1,9 @@
 name: Standalone Executable
 
 on:
+  push:
+    branches:
+    - executable
   workflow_dispatch:
 
 permissions:
