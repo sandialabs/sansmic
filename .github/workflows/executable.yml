@@ -1,9 +1,7 @@
 name: Standalone Executable
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
 
 permissions:
   contents: read
