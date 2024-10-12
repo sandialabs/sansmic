@@ -18,11 +18,12 @@ from argparse import ArgumentParser, Action
 from os.path import splitext
 import sys
 
+import click
 from numpy import round
 from pip._vendor.rich.progress import Progress
 import sansmic.io
 
-try:
+try:  # pragma: no cover
     import h5py
 except ImportError as e:
     h5py = e
@@ -31,269 +32,170 @@ logging.basicConfig()
 logger = logging.getLogger("sansmic")
 
 
-class AboutAction(Action):
-    """Argparse action to print out version, copyright and/or license information from the package __init__"""
+def print_license(ctx: click.Context, param, value):
+    """
+    Print the license for sansmic.
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        from sansmic import __license__, __copyright__, __version__
+    This is a click option callback function.
+    """
+    if not value or ctx.resilient_parsing:
+        return
+    from sansmic import __license__
 
-        if option_string == "--license":
-            print("sansmic", __version__)
-            print()
-            print(__license__)
-        elif option_string == "--copyright":
-            print("sansmic", __version__)
-            print()
-            print(__copyright__)
-        elif option_string == "--version":
-            print(parser.prog, __version__)
-        parser.exit(0)
-
-    @classmethod
-    def add_to_parser(cls, parser: ArgumentParser):
-        """Add the --version, --copyright and --license arguments to a parser."""
-        parser.add_argument(
-            "--version",
-            default=None,
-            nargs=0,
-            action=cls,
-            help="Display version number and exit.",
-        )
-        parser.add_argument(
-            "--copyright",
-            default=None,
-            nargs=0,
-            action=cls,
-            help="Display full copyright details and exit.",
-        )
-        parser.add_argument(
-            "--license",
-            default=False,
-            nargs=0,
-            action=cls,
-            help="Display full license details and exit.",
-        )
+    click.echo_via_pager(__license__)
+    ctx.exit()
 
 
-def _get_verbosity(args):
-    """Set the logger level for sansmic."""
-    level = logging.WARNING
-    if args.verbose:
-        level = logging.INFO
-    elif args.quiet:
-        level = logging.ERROR
-    if args.debug:
-        level = logging.DEBUG
-    logger.setLevel(level)
-    if args.debug:
-        args.verbose = 3
-        return 3
-    return args.verbose
+def print_copyright(ctx: click.Context, param, value):
+    """
+    Print the copyright for sansmic.
+
+    This is a click option callback function.
+    """
+    if not value or ctx.resilient_parsing:
+        return
+    from sansmic import __copyright__
+
+    click.echo_via_pager(__copyright__)
+    ctx.exit()
 
 
-def _main_parser(defaults=False):
+@click.group()
+def cli():
+    pass
+
+
+@click.command()
+@click.argument("scenario_file", type=click.Path(exists=True))
+@click.option(
+    "-o",
+    "--prefix",
+    default=None,
+    help="Prefix for output files.  [default: from SCENARIO_FILE]",
+)
+@click.option(
+    "--toml/--no-toml",
+    default=None,
+    help="Create a TOML scenario file.  [default: iff SCENARIO_FILE is .DAT format or PREFIX is set]",
+)
+@click.option(
+    "--csv/--no-csv", default=True, help="Create CSV output files.", show_default=True
+)
+@click.option(
+    "--hdf/--no-hdf",
+    default=False,
+    help=(
+        "Create an HDF5 output file.  [default: no-hdf]"
+        if not isinstance(h5py, Exception)
+        else "[DISABLED: h5py not found]"
+    ),
+)
+@click.option(
+    "--tst/--no-tst",
+    default=True,
+    help="Create an old-style TST file.",
+    show_default=True,
+)
+@click.option(
+    "--json/--no-json",
+    default=False,
+    help="Create a JSON output data file.",
+    show_default=True,
+)
+@click.option(
+    "--oldout/--no-oldout",
+    default=False,
+    help="Create an old-style OUT file.",
+    show_default=True,
+)
+@click.option(
+    "-v", "--verbose", count=True, help="Increase log details.", show_default=True
+)
+@click.option(
+    "-q",
+    "--quiet",
+    is_flag=True,
+    default=False,
+    help="Suppress all screen output.",
+    show_default=True,
+)
+@click.option(
+    "--debug",
+    is_flag=True,
+    default=False,
+    help="Output debug information.",
+    show_default=True,
+)
+@click.version_option(package_name="sansmic", message="%(version)s")
+@click.option(
+    "--license",
+    is_flag=True,
+    callback=print_license,
+    expose_value=False,
+    is_eager=True,
+    help="Show license and exit.",
+)
+@click.option(
+    "--copyright",
+    is_flag=True,
+    callback=print_copyright,
+    expose_value=False,
+    is_eager=True,
+    help="Print copyright and exit.",
+)
+def run(
+    scenario_file,
+    *,
+    prefix=None,
+    toml=None,
+    csv=True,
+    hdf=False,
+    tst=True,
+    oldout=False,
+    verbose=0,
+    quiet=False,
+    debug=False,
+    json=False,
+):
     from sansmic import __version__
 
-    if not defaults:
-        kwargs = dict(default=None)
-    else:
-        kwargs = dict()
-    parser = ArgumentParser(
-        prog="sansmic",
-        description="Simulate leaching in an underground salt cavern due to ordinary solution mining, product withdrawal, or product fill.",
-    )
-    AboutAction.add_to_parser(parser)
-    parser.add_argument(
-        "datafile",
-        metavar="INPUTFILE",
-        help="the SANSMIC input file to use; if extensansmic.ion is '.dat', --toml is implied",
-    )
-
-    outp = parser.add_argument_group(
-        "Output options",
-        """Default options:  ``--csv  --tst  --no-hdf  --no-json  --no-old-out``""",
-    )
-    outp.add_argument(
-        "-o",
-        "--output",
-        dest="prefix",
-        help="change output file prefix; if used, --toml is implied",
-        default=None,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--toml",
-        default=None,
-        action="store_true",
-        help="Create a TOML scenario file.",
-    )
-    wwo.add_argument(
-        "--no-toml",
-        dest="toml",
-        action="store_false",
-        help="Don't create a TOML scenario file.",
-        **kwargs,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--csv",
-        action="store_true",
-        default=True if defaults else None,
-        help="Create CSV results files.",
-    )
-    wwo.add_argument(
-        "--no-csv",
-        dest="csv",
-        action="store_false",
-        help="Don't create CSV results files.",
-        **kwargs,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--hdf",
-        default=False if defaults else None,
-        action="store_true",
-        help="Create an HDF5 formatted results file.",
-    )
-    wwo.add_argument(
-        "--no-hdf",
-        dest="hdf",
-        action="store_false",
-        help="Don't create an HDF5 results file.",
-        **kwargs,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--json",
-        default=False if defaults else None,
-        action="store_true",
-        help="Create a JSON formatted results file.",
-    )
-    wwo.add_argument(
-        "--no-json",
-        dest="json",
-        action="store_false",
-        help="Don't create a JSON results file.",
-        **kwargs,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--tst",
-        default=True if defaults else None,
-        action="store_true",
-        help="Create a daily summary TST text file.",
-    )
-    wwo.add_argument(
-        "--no-tst",
-        dest="tst",
-        action="store_false",
-        help="Don't create a TST summary file.",
-        **kwargs,
-    )
-
-    wwo = outp.add_mutually_exclusive_group()
-    wwo.add_argument(
-        "--old-out",
-        dest="old_out",
-        action="store_true",
-        default=False if defaults else None,
-        help="Create an old-style SANSMIC OUT file.",
-    )
-    wwo.add_argument(
-        "--no-old-out",
-        dest="old_out",
-        action="store_false",
-        help="Don't create an old-style OUT file.",
-        **kwargs,
-    )
-
-    outp = parser.add_argument_group(
-        "Console/stdout/stderr reporting",
-        "The following options are mutually exclusive",
-    )
-    verb = outp.add_mutually_exclusive_group()
-    verb.add_argument(
-        "-v",
-        "--verbose",
-        help="increase reporting details",
-        action="count",
-        default=0,
-    )
-    verb.add_argument(
-        "-q",
-        "--quiet",
-        help="turn off runtime screen output",
-        action="store_true",
-        default=False,
-    )
-    verb.add_argument(
-        "--debug",
-        help="turn on debug messages and set max verbosity",
-        action="store_true",
-        default=False,
-    )
-    return parser
-
-
-def main(args=None, ret=False):
-    """Command line function to run sansmic.
-
-    If this function is run from somewhere other than the command line, then
-    arguments can be passed in to control execution as a list of strings.
-    The ``ret`` argument can be set to ``True`` to return the results when
-    using this as a function, also.
-
-    Parameters
-    ----------
-    args : argparse.Namespace or list[str]
-        Arguments as a list of strings that would be used on the command-line.
-    ret : bool
-        Should the function return a results object, by default False.
-
-    """
-    extra_args = args is not None
-    if ret or args is not None:
-        defaults = False
-    else:
-        defaults = True
-    parser = _main_parser(defaults)
-    args = parser.parse_args(args=args)
-
-    # Wrap the different sections in try/except blocks
+    if debug:
+        logger.setLevel(logging.DEBUG)
+        verbose = 3
+    elif verbose == 2:
+        logger.setLevel(logging.INFO)
+    elif quiet:
+        logger.setLevel(logging.ERROR)
     try:
-        datafile = args.datafile
-        prefix = splitext(datafile)[0] if args.prefix is None else args.prefix
-        verbosity = _get_verbosity(args)
-        logger.debug("Running sansmic with {}".format(args))
-        model = sansmic.io.read_scenario(datafile, warn=not args.quiet)
-        logger.info("Successfully created scenario from {}".format(datafile))
-        if not args.toml:
+        if prefix is None:
+            prefix = splitext(scenario_file)[0]
+        verbosity = verbose
+        model = sansmic.io.read_scenario(scenario_file, warn=not quiet)
+        logger.info("Successfully created scenario from {}".format(scenario_file))
+        if toml is False:
             pass
-        elif (
-            args.toml is None and args.prefix is not None
-        ) or datafile.lower().endswith(".dat"):
-            args.toml = True
-        elif args.toml is None and args.prefix is None:
-            args.toml = False
-        if args.toml:
+        elif (toml is None and prefix is not None) or scenario_file.lower().endswith(
+            ".dat"
+        ):
+            toml = True
+        elif toml is None and prefix is None:
+            toml = False
+        if toml:
             sansmic.io.write_scenario(model, prefix + ".toml")
+            logger.info("Wrote scenario to {}".format(prefix + ".toml"))
     except Exception as e:
-        if extra_args:
-            raise e
-        parser.error(str(e))
+        logger.critical(str(e))
+        raise e
 
     logger.debug("Running simulation")
-    with model.new_simulation(prefix, verbosity, args.tst, args.old_out) as sim:
+    with model.new_simulation(prefix, verbosity, tst, oldout) as sim:
         logger.debug("Created new simulation")
-        if args.quiet or not args.verbose:
+        if quiet or not verbose:
             logger.debug("Running in batch mode")
-            if not args.quiet:
-                print("Running sansmic in batch mode from ".format(repr(datafile)))
+            if not quiet:
+                click.echo(
+                    "Running sansmic in batch mode from {}".format(repr(scenario_file))
+                )
             sim.run_sim()
         else:
             logger.debug("Running in stepwise mode")
@@ -309,28 +211,28 @@ def main(args=None, ret=False):
             ]
             n_steps = sum(stage_sizes)
             p_freq = day_size[0]
-            print(
+            click.echo(
                 "Running sansmic scenario: {}".format(
-                    datafile if not model.title else model.title
+                    scenario_file if not model.title else model.title
                 )
             )
             stage = 0
             with Progress() as progress:
-                if args.verbose >= 1:
+                if verbose >= 1:
                     task = progress.add_task("Progress...", total=n_steps)
-                if args.verbose >= 2:
+                if verbose >= 2:
                     task_S = progress.add_task(
                         "[red]Stage {}...".format(stage + 1), total=stage_sizes[stage]
                     )
                 for stage, step in sim.steps:
                     if last_stage != stage:
                         if stage >= len(model.stages):
-                            if args.verbose >= 1:
+                            if verbose >= 1:
                                 progress.update(
                                     task,
                                     completed=n_steps,
                                 )
-                            if args.verbose >= 2:
+                            if verbose >= 2:
                                 progress.update(
                                     task_S,
                                     completed=n_steps,
@@ -340,7 +242,7 @@ def main(args=None, ret=False):
                             last_stage = stage
                             last_step = step
                             p_freq = day_size[stage]
-                            if args.verbose >= 2:
+                            if verbose >= 2:
                                 progress.update(
                                     task_S,
                                     completed=n_steps,
@@ -350,21 +252,21 @@ def main(args=None, ret=False):
                                     total=stage_sizes[stage],
                                 )
                     else:
-                        if args.verbose >= 1 and (step - last_step) % p_freq == 0:
+                        if verbose >= 1 and (step - last_step) % p_freq == 0:
                             progress.update(
                                 task,
                                 advance=p_freq,
                             )
-                        if args.verbose >= 2 and (step - last_step) % p_freq == 0:
+                        if verbose >= 2 and (step - last_step) % p_freq == 0:
                             progress.update(
                                 task_S,
                                 advance=p_freq,
                             )
         logger.debug("Simulation complete")
     res = sim.results
-    if not args.quiet:
-        print("Initial and final results:")
-        print(
+    if not quiet:
+        click.echo("Initial and final results:")
+        click.echo(
             (res.df_t_1D.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
                 index=False
             )
@@ -372,64 +274,57 @@ def main(args=None, ret=False):
 
     # Wrap the outputs in a try/except block
     try:
-        if args.csv:
+        if csv:
             sansmic.io.write_csv_results(res, prefix)
-        if args.json:
+        if json:
             sansmic.io.write_json_results(res, prefix + ".json")
-        if args.hdf:
+        if hdf:
             sansmic.io.write_hdf_results(res, prefix + ".h5")
         logger.debug("Sansmic complete")
-    except Exception as e:
-        if extra_args:
-            raise e
+    except Exception as e:  # pragma: no cover
         logger.critical("Error while writing results - some results may be missing")
-        parser.error(str(e))
+        raise e
 
-    if ret:
-        return res
-
-
-def _convert_parser():
-    from sansmic import __version__
-
-    parser = ArgumentParser(
-        prog=f"sansmic-convert v.{__version__}",
-        description="Convert from an old-style DAT file to the new TOML format.",
-        epilog=f"sansmic (c) 2024 NTESS. Use the --copyright or --license flags for full details.",
-    )
-    AboutAction.add_to_parser(parser)
-    parser.add_argument(
-        "infile", metavar="OLD_FILE", help="the SANSMIC input file to convert"
-    )
-    parser.add_argument(
-        "outfile",
-        metavar="NEW_FILE",
-        help="the new scenario file to create [extensansmic.ion choices: .toml, .json, .yaml]",
-        default=None,
-    )
-    parser.add_argument(
-        "-f",
-        "--full",
-        action="store_true",
-        default=False,
-        help="Keep all entries, even if they are blank",
-    )
-    return parser
+    return res
 
 
-def convert(args=None):
+@click.command()
+@click.argument("dat_file", type=click.Path(exists=True))
+@click.argument("out_file", type=click.Path(), required=False)
+@click.option(
+    "--full",
+    is_flag=True,
+    default=False,
+    help="Keep all entries even blanks.",
+    show_default=True,
+)
+@click.version_option(package_name="sansmic", message="%(version)s")
+@click.option(
+    "--license",
+    is_flag=True,
+    callback=print_license,
+    expose_value=False,
+    is_eager=True,
+    help="Show license and exit.",
+)
+@click.option(
+    "--copyright",
+    is_flag=True,
+    callback=print_copyright,
+    expose_value=False,
+    is_eager=True,
+    help="Print copyright and exit.",
+)
+def convert(dat_file, out_file=None, full=False):
     """Command line function to convert a scenario/dat to a new format."""
-    extra_args = args is not None
-    parser = _convert_parser()
-    args = parser.parse_args(args=args)
-    infile = args.infile
     logger.debug("Running sansmic-convert")
+    if out_file is None:
+        out_file = click.prompt("Please enter the name of the file to create")
     try:
-        model = sansmic.io.read_scenario(infile)
-        logger.debug("Successfully created scenario from {}".format(infile))
-        sansmic.io.write_scenario(model, args.outfile, redundant=args.full)
+        model = sansmic.io.read_scenario(dat_file)
+        logger.debug("Successfully created scenario from {}".format(dat_file))
+        sansmic.io.write_scenario(model, out_file, redundant=full)
     except Exception as e:
-        if extra_args:
-            raise e
-        parser.error(str(e))
-    logger.debug("Successfully wrote scenario to {}".format(args.outfile))
+        logger.critical(str(e))
+        raise e
+    logger.debug("Successfully wrote scenario to {}".format(out_file))
