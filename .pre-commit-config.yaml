@@ -33,7 +33,19 @@ repos:
       hooks:
         - id: conventional-pre-commit
           stages: [commit-msg]
-          args: []
+          args: [
+              "build", # Changes to build system or external dependencies (omit from CHANGELOG - manually add if needed)
+              "ci",    # Changes to CI configuration files and scripts (omit from CHANGELOG - manually add if needed)
+              "chore", # Other changes that don't touch the source code (omit from CHANGELOG - manually add if needed)
+              "test", # Adding missing tests or correcting existing tests (does not change package code)
+              "fix",      # A bug fix (a patch-level version change)
+              "perf",     # A code change that improves performance (at-least patch-level, possibly minor version change)
+              "feat",     # A new feature or functionality (at-least minor, possibly major version change)
+              "refactor", # A change that does not add a feature nor fix a bug (could be major, minor or patch)
+              "docs",     # Documentation-only changes within the source code (no version level change)
+              "style",    # A code that does not change meaning of the code (no version level change)
+              "release",
+          ]
 
     - repo: https://github.com/kynan/nbstripout
       rev: 0.7.1
