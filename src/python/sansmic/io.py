@@ -15,6 +15,8 @@ import sys
 import warnings
 from dataclasses import fields
 from enum import IntEnum
+from pathlib import Path
+from typing import Union
 
 if sys.version_info[1] < 11:
     import tomli as tomllib
@@ -39,22 +41,14 @@ try:
 except ImportError as e:
     h5py = e
 
-from .model import (
-    GeometryFormat,
-    Results,
-    Scenario,
-    SimulationMode,
-    StageDefinition,
-    StopCondition,
-    _OutDataBlock,
-    _OutputData,
-)
+from .model import (GeometryFormat, Results, Scenario, SimulationMode,
+                    StageDefinition, StopCondition, _OutDataBlock, _OutputData)
 
 logger = logging.getLogger("sansmic")
 
 
 def read_scenario(
-    config_file: str, warn=True, strict=False, *, format=None
+    config_file: Union[str, Path], warn=True, strict=False, *, format=None
 ) -> Scenario:
     """Load a sansmic scenario file.
 
@@ -78,44 +72,44 @@ def read_scenario(
         if there is an unrecognized option and ``strict`` is True, or if there are no
         stages defined.
     """
-    logger.debug(
-        "Attempting to read scenario {} in {} mode".format(
-            config_file, "strict" if strict else "permissive"
-        )
+    if isinstance(config_file, str):
+        config_file = Path(config_file)
+    logger.info(
+        f'Reading scenario from "{config_file.name}"'
     )
     try:
-        if config_file.lower().endswith(".json") or format == "json":
-            with open(config_file, "r") as fin:
-                data = json.load(fin)
-        elif config_file.lower().endswith(".yaml") or format == "yaml":
-            with open(config_file, "r") as fin:
-                data = yaml.safe_load(fin)
-        elif config_file.lower().endswith(".toml") or format == "toml":
-            with open(config_file, "rb") as fin:
-                data = tomllib.load(fin)
-        elif config_file.lower().endswith(".dat") or format == "dat":
+        if config_file.suffix.lower() == ".dat" or format == "dat":
             with open(config_file, "r") as fin:
                 data = read_dat(fin)
             return data
+        elif config_file.suffix.lower() == ".toml" or format == "toml":
+            with open(config_file, "rb") as fin:
+                data = tomllib.load(fin)
+        elif config_file.suffix.lower() == ".json" or format == "json":
+            with open(config_file, "r") as fin:
+                data = json.load(fin)
+        elif config_file.suffix.lower() in [".yaml", ".yml"] or format == "yaml":
+            with open(config_file, "r") as fin:
+                data = yaml.safe_load(fin)
         else:
             with open(config_file, "rb") as fin:
                 data = tomllib.load(fin)
     except:
-        logger.error("Error reading scenario file {}".format(config_file))
+        logger.error('Error reading scenario file "{}"'.format(config_file))
         raise
-
+    logger.info("Read scenario file")
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
         raise RuntimeError("No stages provided.")
     return Scenario.from_dict(data)
 
 
-def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
+def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenario:
     """Read an old-style SANSMIC input DAT file.
 
     Parameters
     ----------
-    str_or_buffer : str or stream
+    str_or_buffer : Path, str or stream
         The file or stream buffer to process.
 
     Returns
@@ -125,13 +119,17 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
 
     """
     scenario = Scenario()
-    with open(str_or_buffer, "r") if isinstance(
-        str_or_buffer, str
-    ) else str_or_buffer as fin:
-        prefix = fin.name
-        scenario.title = "Converted from {}".format(prefix)
+    logger.info("Converting from .DAT format")
+    with (
+        open(str_or_buffer, "r") if isinstance(str_or_buffer, (str, Path)) else str_or_buffer
+    ) as fin:
+        scenario.title = "Converted from DAT-file"
         first = True
-        logger.debug("Reading old DAT format file: {}".format(prefix))
+        logger.debug(
+            'Reading DAT-formatted file "{}"'.format(
+                Path(fin.name).name
+            )
+        )
         while True:
             stage = StageDefinition()
             # Stage - block 1
@@ -212,9 +210,7 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             logger.debug("  dt            = {}".format(timestep))
             logger.debug("  tend          = {}".format(injection_duration))
             # Stage - block 8
-            fill_rate, tDelay, coallescing_well_separation = (
-                fin.readline().strip().split()
-            )
+            fill_rate, tDelay, coallescing_well_separation = fin.readline().strip().split()
             logger.debug(" Record 8: Oil fill rates")
             logger.debug("  qfil          = {}".format(fill_rate))
             logger.debug("  tdlay  [depr.]= {}".format(tDelay))
@@ -273,13 +269,9 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 logger.debug("  refdep [depr.]= {}".format(refdep))
                 logger.debug("  depth         = {}".format(depth))
                 if refdep != depth:
-                    logger.warning(
-                        "The REFDEP is no longer used, only DEPTH. Ignoring REFDEP."
-                    )
+                    logger.warning("The REFDEP is no longer used, only DEPTH. Ignoring REFDEP.")
                 if float(dissolution_factor) != 1.0:
-                    logger.warning(
-                        "The ZDIS should always be 1.0. This is a dangerous choice."
-                    )
+                    logger.warning("The ZDIS should almost always be 1.0 for NaCl(s)")
                 scenario.geometry_format = geometry_format
                 scenario.geometry_data = geometry_data
                 scenario.num_cells = int(num_cells)
@@ -306,7 +298,9 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 raise TypeError("Invalid data in DAT file: RESETGEO not 0")
             if not first and isinstance(cavern_sg, (float, int)) and cavern_sg > 1.0:
                 logger.warning(
-                    "The REPEAT option was supposed to turn off the cavern SG; it did not do so. sansmic is currently mimicing SANSMIC behavior and resetting the cavern brine to {} sg in stage {}. \n\nIf this is not what is intended, please manually remove the 'set-cavern-sg' entry from stages after stage 1. This behavior will change in future releases.".format(cavern_sg, len(scenario.stages)+1)
+                    "The REPEAT option was supposed to turn off the cavern SG; it did not do so. sansmic is currently mimicing SANSMIC behavior and resetting the cavern brine to {} sg in stage {}. \n\nIf this is not what is intended, please manually remove the 'set-cavern-sg' entry from stages after stage 1. This behavior will change in future releases.".format(
+                        cavern_sg, len(scenario.stages) + 1
+                    )
                 )
             stage.title = title
             stage.simulation_mode = SimulationMode(int(mode))
@@ -333,11 +327,21 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             stage.product_injection_rate = float(fill_rate)
             scenario.stages.append(stage)
             logger.debug("Finished reading stage")
+    logger.info(
+        ".DAT file converted successfully"
+    )
     return scenario
 
 
 def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format=None):
     """Write a new-style SANSMIC scenario file (preferred extension is .toml)"""
+
+    logger.info('Writing scenario file')
+    if isinstance(filename, str):
+        file_path = Path(filename)
+    else:
+        file_path = filename
+
     sdict = scenario.to_dict(redundant)
     keys = [k for k in sdict.keys()]
     for k in keys:
@@ -352,19 +356,12 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
         elif isinstance(sdict[k], IntEnum):
             sdict[k] = sdict[k].name.lower().replace("_", "-")
     for ct, s in enumerate(sdict["stages"]):
-        if (
-            not redundant
-            and scenario.stages[ct].stop_condition == StopCondition.DURATION
-        ):
+        if not redundant and scenario.stages[ct].stop_condition == StopCondition.DURATION:
             del s["stop-condition"]
             del s["stop-value"]
         keys = [k for k in s.keys()]
         for k in keys:
-            if (
-                not redundant
-                and k in scenario.defaults
-                and scenario.defaults.get(k, None) == s[k]
-            ):
+            if not redundant and k in scenario.defaults and scenario.defaults.get(k, None) == s[k]:
                 del s[k]
                 continue
             if s[k] is None:
@@ -376,9 +373,11 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                 s[k] = s[k].name.lower().replace("_", "-")
         if not redundant and ct == 0 and "set-initial-conditions" in s:
             del s["set-initial-conditions"]
-    name, ext = os.path.splitext(filename)
-    with open(filename, "w") as fout:
-        if ext.lower() == ".toml" or format == "toml":
+
+    ext = file_path.suffix.lower()
+
+    with open(file_path, "w") as fout:
+        if ext == ".toml" or format == "toml":
             for k, v in sdict.items():
                 if k in ["stages", "defaults", "advanced"]:
                     continue
@@ -426,9 +425,9 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                     elif isinstance(v, IntEnum):
                         v = repr(v.name.lower().replace("_", "-"))
                     fout.write("{} = {}\n".format(k, v))
-        elif ext.lower() == ".json" or format == "json":
+        elif ext == ".json" or format == "json":
             json.dump(sdict, fout)
-        elif ext.lower() == ".yaml" or format == "yaml":
+        elif ext in [".yaml", ".yml"] or format == "yaml":
             yaml.dump(sdict, fout)
         else:
             logger.critical(
@@ -437,6 +436,7 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                 )
             )
             raise RuntimeError("Unknown file format for scenario output")
+    logger.info(f'Scenario file written to "{file_path.name}"')
 
 
 def read_classic_out_ddl(file_prefix):
@@ -673,7 +673,7 @@ def read_tst_file(file_prefix: str):
     )
 
 
-def write_hdf_results(results: Results, filename: str, **kwargs):
+def write_hdf_results(results: Results, filename: Union[Path, str], **kwargs):
     """Write results to an HDF5 file.
 
     Parameters
@@ -689,10 +689,12 @@ def write_hdf_results(results: Results, filename: str, **kwargs):
         See :meth:`~sansmic.model.Results.to_hdf` for keyword arguments.
 
     """
+    if isinstance(filename, str):
+        filename = Path(filename).absolute()
     results.to_hdf(filename)
 
 
-def read_hdf_results(filename: str) -> Results:
+def read_hdf_results(filename: Union[Path, str]) -> Results:
     """Read results from an HDF5 file.
 
     Parameters
@@ -701,11 +703,13 @@ def read_hdf_results(filename: str) -> Results:
         Filename to read the results from.
 
     """
+    if isinstance(filename, str):
+        filename = Path(filename).absolute()
     results = Results.from_hdf(filename)
     return results
 
 
-def write_json_results(results: Results, filename: str, **kwargs):
+def write_json_results(results: Results, filename: Union[Path, str], **kwargs):
     """Write results to a JSON file.
 
     Parameters
@@ -738,54 +742,56 @@ def read_json_results(filename: str):
     return Results.from_dict(d)
 
 
-def write_csv_results(results: Results, prefix: str):
+def write_csv_results(results: Results, prefix: Union[Path, str]):
     """Write results to CSV files.
 
     Parameters
     ----------
     results : Results
         The results to write out.
-    prefix : str
-        Write results files in CSV formats.
+    prefix : Path or str
+        The path and output file stem (prefix) to write to
     """
-    with open(prefix + "-summary.csv", "w") as f:
+    if isinstance(prefix, str):
+        prefix = Path(str)
+    with open(prefix.with_suffix(".summary.csv"), "w") as f:
         results.df_t_1D.to_csv(f, lineterminator="\n", index=False)
-    with open(prefix + "-radius.csv", "w") as f:
+    with open(prefix.with_suffix(".radius.csv"), "w") as f:
         df = results.radius
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-density.csv", "w") as f:
+    with open(prefix.with_suffix(".density.csv"), "w") as f:
         df = results.cell_sg
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-wall-angle.csv", "w") as f:
+    with open(prefix.with_suffix(".wall-angle.csv"), "w") as f:
         df = results.wall_angle
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-dr_dt.csv", "w") as f:
+    with open(prefix.with_suffix(".dr_dt.csv"), "w") as f:
         df = results.rate_of_change_in_radius
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-dC_dt.csv", "w") as f:
+    with open(prefix.with_suffix(".dC_dt.csv"), "w") as f:
         df = results.rate_of_change_in_sg
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-dC_dz.csv", "w") as f:
+    with open(prefix.with_suffix(".dC_dz.csv"), "w") as f:
         df = results.vertical_diffusion_rate
         df.index = results.depths
         df = df.T

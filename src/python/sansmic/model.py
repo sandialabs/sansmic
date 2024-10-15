@@ -244,8 +244,8 @@ class StageDefinition:
     """The simulation mode used in this stage."""
     solver_timestep: float = None
     """The solver timestep in hours."""
-    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = "daily"
-    """The save frequency in number of timesteps or one of {"hourly", "daily", "bystage"}, by default "daily"."""
+    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = "bystage"
+    """The save frequency in number of timesteps, or one of "hourly", "daily", or "bystage", by default "bystage"."""
     injection_duration: float = None
     """The duration of the injection phase of the stage."""
     rest_duration: float = None
@@ -652,11 +652,7 @@ class StageDefinition:
             elif self.save_frequency == "daily":
                 stage.print_interval = int(np.round(24.0 / stage.timestep))
             elif self.save_frequency == "bystage":
-                stage.print_interval = int(
-                    np.round(
-                        (self.injection_duration + self.rest_duration) / stage.timestep
-                    )
-                )
+                stage.print_interval = 0
             else:
                 stage.print_interval = int(self.save_frequency)
         elif isinstance(self.save_frequency, (int, float)):
@@ -1649,8 +1645,6 @@ class Results:
 
         if isinstance(h5py, ImportError):
             raise RuntimeError("Optional dependency not installed: h5py") from h5py
-        if not filename.lower().endswith(".h5"):
-            filename = filename + ".h5"
         with h5py.File(filename, "w") as f:
             f.create_dataset(
                 "df_t_1D",
