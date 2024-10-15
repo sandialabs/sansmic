@@ -244,7 +244,7 @@ class StageDefinition:
     """The simulation mode used in this stage."""
     solver_timestep: float = None
     """The solver timestep in hours."""
-    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = "bystage"
+    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = None
     """The save frequency in number of timesteps, or one of "hourly", "daily", or "bystage", by default "bystage"."""
     injection_duration: float = None
     """The duration of the injection phase of the stage."""
@@ -658,9 +658,7 @@ class StageDefinition:
         elif isinstance(self.save_frequency, (int, float)):
             stage.print_interval = int(self.save_frequency)
         else:
-            stage.print_interval = defaults.get(
-                "save_frequency", int(np.round(24.0 / stage.timestep))
-            )
+            stage.print_interval = defaults.get("save_frequency", 0)
         stage.subsequent = 0 if self.set_initial_conditions else 1
         stage.rest_duration = self.rest_duration
         stage.stop_value = (
