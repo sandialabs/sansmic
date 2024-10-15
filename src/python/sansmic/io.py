@@ -41,8 +41,16 @@ try:
 except ImportError as e:
     h5py = e
 
-from .model import (GeometryFormat, Results, Scenario, SimulationMode,
-                    StageDefinition, StopCondition, _OutDataBlock, _OutputData)
+from .model import (
+    GeometryFormat,
+    Results,
+    Scenario,
+    SimulationMode,
+    StageDefinition,
+    StopCondition,
+    _OutDataBlock,
+    _OutputData,
+)
 
 logger = logging.getLogger("sansmic")
 
@@ -74,9 +82,7 @@ def read_scenario(
     """
     if isinstance(config_file, str):
         config_file = Path(config_file)
-    logger.info(
-        f'Reading scenario from "{config_file.name}"'
-    )
+    logger.info(f'Reading scenario from "{config_file.name}"')
     try:
         if config_file.suffix.lower() == ".dat" or format == "dat":
             with open(config_file, "r") as fin:
@@ -121,15 +127,13 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
     scenario = Scenario()
     logger.info("Converting from .DAT format")
     with (
-        open(str_or_buffer, "r") if isinstance(str_or_buffer, (str, Path)) else str_or_buffer
+        open(str_or_buffer, "r")
+        if isinstance(str_or_buffer, (str, Path))
+        else str_or_buffer
     ) as fin:
         scenario.title = "Converted from DAT-file"
         first = True
-        logger.debug(
-            'Reading DAT-formatted file "{}"'.format(
-                Path(fin.name).name
-            )
-        )
+        logger.debug('Reading DAT-formatted file "{}"'.format(Path(fin.name).name))
         while True:
             stage = StageDefinition()
             # Stage - block 1
@@ -210,7 +214,9 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             logger.debug("  dt            = {}".format(timestep))
             logger.debug("  tend          = {}".format(injection_duration))
             # Stage - block 8
-            fill_rate, tDelay, coallescing_well_separation = fin.readline().strip().split()
+            fill_rate, tDelay, coallescing_well_separation = (
+                fin.readline().strip().split()
+            )
             logger.debug(" Record 8: Oil fill rates")
             logger.debug("  qfil          = {}".format(fill_rate))
             logger.debug("  tdlay  [depr.]= {}".format(tDelay))
@@ -269,7 +275,9 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
                 logger.debug("  refdep [depr.]= {}".format(refdep))
                 logger.debug("  depth         = {}".format(depth))
                 if refdep != depth:
-                    logger.warning("The REFDEP is no longer used, only DEPTH. Ignoring REFDEP.")
+                    logger.warning(
+                        "The REFDEP is no longer used, only DEPTH. Ignoring REFDEP."
+                    )
                 if float(dissolution_factor) != 1.0:
                     logger.warning("The ZDIS should almost always be 1.0 for NaCl(s)")
                 scenario.geometry_format = geometry_format
@@ -327,16 +335,14 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             stage.product_injection_rate = float(fill_rate)
             scenario.stages.append(stage)
             logger.debug("Finished reading stage")
-    logger.info(
-        ".DAT file converted successfully"
-    )
+    logger.info(".DAT file converted successfully")
     return scenario
 
 
 def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format=None):
     """Write a new-style SANSMIC scenario file (preferred extension is .toml)"""
 
-    logger.info('Writing scenario file')
+    logger.info("Writing scenario file")
     if isinstance(filename, str):
         file_path = Path(filename)
     else:
@@ -356,12 +362,19 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
         elif isinstance(sdict[k], IntEnum):
             sdict[k] = sdict[k].name.lower().replace("_", "-")
     for ct, s in enumerate(sdict["stages"]):
-        if not redundant and scenario.stages[ct].stop_condition == StopCondition.DURATION:
+        if (
+            not redundant
+            and scenario.stages[ct].stop_condition == StopCondition.DURATION
+        ):
             del s["stop-condition"]
             del s["stop-value"]
         keys = [k for k in s.keys()]
         for k in keys:
-            if not redundant and k in scenario.defaults and scenario.defaults.get(k, None) == s[k]:
+            if (
+                not redundant
+                and k in scenario.defaults
+                and scenario.defaults.get(k, None) == s[k]
+            ):
                 del s[k]
                 continue
             if s[k] is None:
