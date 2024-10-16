@@ -268,40 +268,42 @@ def run(
 
     log_file = opath.joinpath(prefix).with_suffix(".log")
     with open(log_file, "w") as flog:
-        flog.write("#" * 79 + "\n")
-        flog.write(f"# program:  sansmic v{sansmic.__version__}\n")
-        flog.write(f"# startup:  {startup}\n")
-        flog.write(f"# input:    {scenario_file}\n")
-        flog.write(f"# output:   {pprefix}\n")
-        flog.write("# log data:\n")
-        if not quiet:
-            flog.write("\nlevel    | time (ms) | message\n")
-            flog.write("======== | ========= | " + "=" * 56 + "\n")
-            flog.write("")
+        flog.write(f"program:  sansmic v{sansmic.__version__}\n")
+        flog.write(f"startup:  {startup}\n")
+        flog.write(f"input:    {scenario_file}\n")
+        flog.write(f"output:   {pprefix}\n")
+        flog.write("run-log:\n")
 
     file_log = logging.FileHandler(log_file)
     file_log.setLevel(logging.INFO)
-    if not quiet:
+    if debug:
         file_log.setFormatter(
-            logging.Formatter("%(levelname)-8s | %(relativeCreated)9.0f | %(message)s")
+            logging.Formatter(
+                "- time: %(asctime)s\n  level: %(levelname)s\n  file: %(filename)s:%(lineno)d\n  funcName: %(funcName)s\n  message: %(message)s",
+                datefmt="%Y-%m-%dT%H:%M:%S",
+            )
         )
+    elif verbose < 2:
+        file_log.setFormatter(logging.Formatter("- %(message)s"))
     else:
-        file_log.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+        file_log.setFormatter(logging.Formatter("- message: %(message)s"))
+
     if debug:
         file_log.setLevel(logging.DEBUG)
-        verbose = 3
+        verbose = 4
         echo.verbosity = 3
-    elif verbose >= 3:
-        echo.verbosity = 3
+    elif verbose > 2:
         file_log.setLevel(logging.DEBUG)
+        echo.verbosity = 2
     elif verbose == 2:
+        file_log.setLevel(logging.INFO)
+        echo.verbosity = 2
+    elif verbose == 1:
         file_log.setLevel(logging.INFO)
     elif quiet:
         file_log.setLevel(logging.WARNING)
 
     logger.addHandler(file_log)
-
-    logger.info("Startup")
 
     toml_file = opath.joinpath(prefix).with_suffix(".toml")
     if toml_file.exists() and toml_file == scenario_file:
@@ -322,6 +324,12 @@ def run(
 
     with model.new_simulation(str(pprefix.absolute()), verbose, tst, oldout) as sim:
         logger.debug("Created new simulation object")
+        if verbose >= 2 and not debug:
+            file_log.setFormatter(
+                logging.Formatter(
+                    "- message: %(message)s\n  elapsed: %(relativeCreated).0f ms"
+                )
+            )
         logger.info("Running simulation")
         if not verbose:
             echo("Running sansmic simulation...")
@@ -334,40 +342,43 @@ def run(
             day_size = [int(round(24.0 / dt)) for dt in dt_stage]
             t_stage = [s.injection_duration + s.rest_duration for s in model.stages]
             t_inject = [s.injection_duration for s in model.stages]
-            stage_sizes = [int(round(t_stage[ct] / dt_stage[ct])) for ct in range(n_stages)]
+            stage_sizes = [
+                int(round(t_stage[ct] / dt_stage[ct])) for ct in range(n_stages)
+            ]
             n_steps = sum(stage_sizes)
             p_freq = day_size[0]
-            echo("Running {}".format("sansmic simulation..." if not model.title else model.title))
+            echo(
+                "Running {}".format(
+                    "sansmic simulation..." if not model.title else model.title
+                )
+            )
             stage = 0
             with Progress() as progress:
-                logger.info(f"Starting stage {stage+1}")
                 file_log.flush()
                 if verbose >= 1:
                     task = progress.add_task("Progress...", total=n_steps)
                 if verbose >= 2:
+                    logger.info(f"Starting stage {stage+1}")
                     task_S = progress.add_task(
                         "[red]Stage {}...".format(stage + 1), total=stage_sizes[stage]
                     )
                 for stage, step in sim.steps:
                     if last_stage != stage:
                         if stage >= len(model.stages):
-                            logger.info(f"Stage {stage} complete")
-                            logger.info("All stages complete")
-                            file_log.flush()
                             if verbose >= 1:
                                 progress.update(
                                     task,
                                     completed=n_steps,
                                 )
                             if verbose >= 2:
+                                logger.info(f"Stage {stage} complete")
                                 progress.update(
                                     task_S,
                                     completed=n_steps,
                                 )
-                        else:
-                            logger.info(f"Stage {stage} complete")
-                            logger.info(f"Starting stage {stage+1}")
+                            logger.info("All stages complete")
                             file_log.flush()
+                        else:
                             last_stage = stage
                             last_step = step
                             p_freq = day_size[stage]
@@ -376,6 +387,9 @@ def run(
                                     task_S,
                                     completed=n_steps,
                                 )
+                                logger.info(f"Stage {stage} complete")
+                                logger.info(f"Starting stage {stage+1}")
+                                file_log.flush()
                                 task_S = progress.add_task(
                                     "[red]Stage {}...".format(stage + 1),
                                     total=stage_sizes[stage],
@@ -397,7 +411,11 @@ def run(
 
     res = sim.results
     echo("Starting and ending cavern state: ")
-    echo((res.df_t_1D.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(index=False))
+    echo(
+        (res.df_t_1D.iloc[[0, -1], [1, 3, 13, 15, 19, 20, 21, 26]]).to_string(
+            index=False
+        )
+    )
 
     # Wrap the outputs in a try/except block
     try:
@@ -406,7 +424,9 @@ def run(
             logger.info(f'Wrote results to "{prefix}.*.csv"')
             echo("CSV result files written to {}.*.csv".format(opath.joinpath(prefix)))
         if json:
-            sansmic.io.write_json_results(res, opath.joinpath(prefix).with_suffix(".json"))
+            sansmic.io.write_json_results(
+                res, opath.joinpath(prefix).with_suffix(".json")
+            )
             logger.info(f'Wrote results to "{prefix}.json"')
             echo(
                 "JSON results file written to {}".format(
@@ -417,7 +437,9 @@ def run(
             sansmic.io.write_hdf_results(res, opath.joinpath(prefix).with_suffix(".h5"))
             logger.info(f'Wrote results to "{prefix}.h5"')
             echo(
-                "HDF5 results file written to {}".format(opath.joinpath(prefix).with_suffix(".h5"))
+                "HDF5 results file written to {}".format(
+                    opath.joinpath(prefix).with_suffix(".h5")
+                )
             )
     except Exception as e:  # pragma: no cover
         logger.critical("Error while writing results - some results may be missing")
@@ -425,10 +447,7 @@ def run(
         raise e
     logger.info("All processes complete")
     file_log.flush()
-    if not quiet:
-        file_log.stream.write("\n")
-    file_log.stream.write(f"# shutdown: {dt.now().isoformat()}\n")
-    file_log.stream.write("#" * 79 + "\n")
+    file_log.stream.write(f"shutdown: {dt.now().isoformat()}\n")
     file_log.stream.close()
     return res
 

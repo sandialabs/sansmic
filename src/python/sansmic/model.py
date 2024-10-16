@@ -1079,9 +1079,6 @@ class Simulator:
 
     def __enter__(self):
         self.open(self._prefix)
-        self._cmodel.set_verbosity_level(self._verbosity)
-        self._cmodel.generate_tst_file(self._b_use_tstfile)
-        self._cmodel.generate_out_file(self._b_use_outfile)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1198,6 +1195,9 @@ class Simulator:
         if self._cmodel is None and self._scenario is not None:
             cscenario = self._scenario._to_cscenario()
             self._cmodel = _ext.CModel(prefix)
+            self._cmodel.set_verbosity_level(self._verbosity)
+            self._cmodel.generate_tst_file(self._b_use_tstfile)
+            self._cmodel.generate_out_file(self._b_use_outfile)
             self._cmodel.configure(cscenario)
         self.__results = None
         self._is_open = True

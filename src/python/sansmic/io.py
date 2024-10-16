@@ -103,7 +103,7 @@ def read_scenario(
     except:
         logger.error('Error reading scenario file "{}"'.format(config_file))
         raise
-    logger.info("Read scenario file")
+    logger.debug("Read scenario file")
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
         raise RuntimeError("No stages provided.")
@@ -125,7 +125,7 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
 
     """
     scenario = Scenario()
-    logger.info("Converting from .DAT format")
+    logger.debug("Converting from .DAT format")
     with (
         open(str_or_buffer, "r")
         if isinstance(str_or_buffer, (str, Path))
@@ -140,8 +140,9 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             title = fin.readline().strip()
             if title == "END":
                 break
-            logger.debug(" Record 1: Stage title")
-            logger.debug("  title         = {}".format(title))
+            logger.debug(
+                "Record 1 - Stage title\n  data:\n    title         : {}".format(title)
+            )
             # Stage - block 2
             (
                 num_cells,
@@ -156,16 +157,18 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             ) = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 2: General")
-            logger.debug("  ndiv          = {}".format(num_cells))
-            logger.debug("  leachtype     = {}".format(mode))
-            logger.debug("  iprint        = {}".format(print_interval))
-            logger.debug("  repeat        = {}".format(subsequent))
-            logger.debug("  resetgeo[depr]= {}".format(iResetGeo))
-            logger.debug("  iWait         = {}".format(rest_duration))
-            logger.debug("  nco           = {}".format(num_coallescing))
-            logger.debug("  idata         = {}".format(geometry_format))
-            logger.debug("  ivol          = {}".format(stop_value))
+            logger.debug(
+                "Record 2 - General\n  data:"
+                + "\n    ndiv          : {}".format(num_cells)
+                + "\n    leachtype     : {}".format(mode)
+                + "\n    iprint        : {}".format(print_interval)
+                + "\n    repeat        : {}".format(subsequent)
+                + "\n    resetgeo[depr]: {}".format(iResetGeo)
+                + "\n    iWait         : {}".format(rest_duration)
+                + "\n    nco           : {}".format(num_coallescing)
+                + "\n    idata         : {}".format(geometry_format)
+                + "\n    ivol          : {}".format(stop_value)
+            )
             # Stage - block 3
             (
                 cavern_height,
@@ -176,16 +179,20 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             ) = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 3: Heights")
-            logger.debug("  zmax          = {}".format(cavern_height))
-            logger.debug("  zi            = {}".format(injection_height))
-            logger.debug("  zp            = {}".format(production_height))
-            logger.debug("  zb            = {}".format(interface_height))
-            logger.debug("  zu            = {}".format(ullage_standoff))
+            logger.debug(
+                "Record 3 - Heights\n  data:"
+                + "\n    zmax          : {}".format(cavern_height)
+                + "\n    zi            : {}".format(injection_height)
+                + "\n    zp            : {}".format(production_height)
+                + "\n    zb            : {}".format(interface_height)
+                + "\n    zu            : {}".format(ullage_standoff)
+            )
             # Stage - block 4
             injection_rate = fin.readline().strip()
-            logger.debug(" Record 4: Injection flow rates")
-            logger.debug("  QI            = {}".format(injection_rate))
+            logger.debug(
+                "Record 4 - Injection flow rates\n  data:"
+                + "\n    QI            : {}".format(injection_rate)
+            )
             # TODO: FIXME: handle injection tables? Or do we ignore for old
             # style inputs?
             #
@@ -198,35 +205,43 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             ) = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 5: Casing and tubing")
-            logger.debug("  rpi           = {}".format(inn_tbg_inside_radius))
-            logger.debug("  rpo           = {}".format(inn_tbg_outside_radius))
-            logger.debug("  rcasi         = {}".format(out_csg_inside_radius))
-            logger.debug("  rcaso         = {}".format(out_csg_outside_radius))
+            logger.debug(
+                "Record 5 - Casing and tubing\n  data:"
+                + "\n    rpi           : {}".format(inn_tbg_inside_radius)
+                + "\n    rpo           : {}".format(inn_tbg_outside_radius)
+                + "\n    rcasi         : {}".format(out_csg_inside_radius)
+                + "\n    rcaso         : {}".format(out_csg_outside_radius)
+            )
             # Stage - block 6
             injection_fluid_sg, cavern_sg = fin.readline().strip().split()
-            logger.debug(" Record 6: Water and brine")
-            logger.debug("  sginj         = {}".format(injection_fluid_sg))
-            logger.debug("  sgcav         = {}".format(cavern_sg))
+            logger.debug(
+                "Record 6 - Water and brine\n  data:"
+                + "\n    sginj         : {}".format(injection_fluid_sg)
+                + "\n    sgcav         : {}".format(cavern_sg)
+            )
             # Stage - block 7
             timestep, injection_duration = fin.readline().strip().split()
-            logger.debug(" Record 7: Timing")
-            logger.debug("  dt            = {}".format(timestep))
-            logger.debug("  tend          = {}".format(injection_duration))
+            logger.debug(
+                "Record 7 - Timing\n  data:"
+                + "\n    dt            : {}".format(timestep)
+                + "\n    tend          : {}".format(injection_duration)
+            )
             # Stage - block 8
             fill_rate, tDelay, coallescing_well_separation = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 8: Oil fill rates")
-            logger.debug("  qfil          = {}".format(fill_rate))
-            logger.debug("  tdlay  [depr.]= {}".format(tDelay))
-            logger.debug("  sep           = {}".format(coallescing_well_separation))
+            logger.debug(
+                "Record 8 - Oil fill rates\n  data:"
+                + "\n    qfil          : {}".format(fill_rate)
+                + "\n    tdlay  [depr.]: {}".format(tDelay)
+                + "\n    sep           : {}".format(coallescing_well_separation)
+            )
             if float(tDelay) != 0:
                 logger.warning("The TDLAY option should not be used. Ignoring.")
             # First stage - block 9
             if first:
                 logger.debug("First stage initialization")
-                logger.debug(" Record 9: Geometry")
+                logger.debug("Record 9 - Geometry\n  data:")
                 geometry_data = list()
                 first = False
                 geometry_format = GeometryFormat(int(geometry_format))
@@ -269,11 +284,13 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
                 dissolution_factor, insoluble_fraction, refdep, depth = (
                     fin.readline().strip().split()
                 )
-                logger.debug(" Record 10: Miscellaneous")
-                logger.debug("  zdis          = {}".format(dissolution_factor))
-                logger.debug("  zfin          = {}".format(insoluble_fraction))
-                logger.debug("  refdep [depr.]= {}".format(refdep))
-                logger.debug("  depth         = {}".format(depth))
+                logger.debug(
+                    "Record 10: Miscellaneous\n  data:"
+                    + "\n    zdis          : {}".format(dissolution_factor)
+                    + "\n    zfin          : {}".format(insoluble_fraction)
+                    + "\n    refdep [depr.]: {}".format(refdep)
+                    + "\n    depth         : {}".format(depth)
+                )
                 if refdep != depth:
                     logger.warning(
                         "The REFDEP is no longer used, only DEPTH. Ignoring REFDEP."
@@ -335,14 +352,14 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             stage.product_injection_rate = float(fill_rate)
             scenario.stages.append(stage)
             logger.debug("Finished reading stage")
-    logger.info(".DAT file converted successfully")
+    logger.debug(".DAT file converted successfully")
     return scenario
 
 
 def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format=None):
     """Write a new-style SANSMIC scenario file (preferred extension is .toml)"""
 
-    logger.info("Writing scenario file")
+    logger.debug("Writing scenario file")
     if isinstance(filename, str):
         file_path = Path(filename)
     else:
