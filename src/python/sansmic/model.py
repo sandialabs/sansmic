@@ -244,8 +244,8 @@ class StageDefinition:
     """The simulation mode used in this stage."""
     solver_timestep: float = None
     """The solver timestep in hours."""
-    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = "daily"
-    """The save frequency in number of timesteps or one of {"hourly", "daily", "bystage"}, by default "daily"."""
+    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = None
+    """The save frequency in number of timesteps, or one of "hourly", "daily", or "bystage", by default "bystage"."""
     injection_duration: float = None
     """The duration of the injection phase of the stage."""
     rest_duration: float = None
@@ -652,19 +652,13 @@ class StageDefinition:
             elif self.save_frequency == "daily":
                 stage.print_interval = int(np.round(24.0 / stage.timestep))
             elif self.save_frequency == "bystage":
-                stage.print_interval = int(
-                    np.round(
-                        (self.injection_duration + self.rest_duration) / stage.timestep
-                    )
-                )
+                stage.print_interval = 0
             else:
                 stage.print_interval = int(self.save_frequency)
         elif isinstance(self.save_frequency, (int, float)):
             stage.print_interval = int(self.save_frequency)
         else:
-            stage.print_interval = defaults.get(
-                "save_frequency", int(np.round(24.0 / stage.timestep))
-            )
+            stage.print_interval = defaults.get("save_frequency", 0)
         stage.subsequent = 0 if self.set_initial_conditions else 1
         stage.rest_duration = self.rest_duration
         stage.stop_value = (
@@ -1085,9 +1079,6 @@ class Simulator:
 
     def __enter__(self):
         self.open(self._prefix)
-        self._cmodel.set_verbosity_level(self._verbosity)
-        self._cmodel.generate_tst_file(self._b_use_tstfile)
-        self._cmodel.generate_out_file(self._b_use_outfile)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1204,6 +1195,9 @@ class Simulator:
         if self._cmodel is None and self._scenario is not None:
             cscenario = self._scenario._to_cscenario()
             self._cmodel = _ext.CModel(prefix)
+            self._cmodel.set_verbosity_level(self._verbosity)
+            self._cmodel.generate_tst_file(self._b_use_tstfile)
+            self._cmodel.generate_out_file(self._b_use_outfile)
             self._cmodel.configure(cscenario)
         self.__results = None
         self._is_open = True
@@ -1649,8 +1643,6 @@ class Results:
 
         if isinstance(h5py, ImportError):
             raise RuntimeError("Optional dependency not installed: h5py") from h5py
-        if not filename.lower().endswith(".h5"):
-            filename = filename + ".h5"
         with h5py.File(filename, "w") as f:
             f.create_dataset(
                 "df_t_1D",
