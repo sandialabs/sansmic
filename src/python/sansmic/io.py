@@ -15,6 +15,8 @@ import sys
 import warnings
 from dataclasses import fields
 from enum import IntEnum
+from pathlib import Path
+from typing import Union
 
 if sys.version_info[1] < 11:
     import tomli as tomllib
@@ -54,7 +56,7 @@ logger = logging.getLogger("sansmic")
 
 
 def read_scenario(
-    config_file: str, warn=True, strict=False, *, format=None
+    config_file: Union[str, Path], warn=True, strict=False, *, format=None
 ) -> Scenario:
     """Load a sansmic scenario file.
 
@@ -78,44 +80,42 @@ def read_scenario(
         if there is an unrecognized option and ``strict`` is True, or if there are no
         stages defined.
     """
-    logger.debug(
-        "Attempting to read scenario {} in {} mode".format(
-            config_file, "strict" if strict else "permissive"
-        )
-    )
+    if isinstance(config_file, str):
+        config_file = Path(config_file)
+    logger.info(f'Reading scenario from "{config_file.name}"')
     try:
-        if config_file.lower().endswith(".json") or format == "json":
-            with open(config_file, "r") as fin:
-                data = json.load(fin)
-        elif config_file.lower().endswith(".yaml") or format == "yaml":
-            with open(config_file, "r") as fin:
-                data = yaml.safe_load(fin)
-        elif config_file.lower().endswith(".toml") or format == "toml":
-            with open(config_file, "rb") as fin:
-                data = tomllib.load(fin)
-        elif config_file.lower().endswith(".dat") or format == "dat":
+        if config_file.suffix.lower() == ".dat" or format == "dat":
             with open(config_file, "r") as fin:
                 data = read_dat(fin)
             return data
+        elif config_file.suffix.lower() == ".toml" or format == "toml":
+            with open(config_file, "rb") as fin:
+                data = tomllib.load(fin)
+        elif config_file.suffix.lower() == ".json" or format == "json":
+            with open(config_file, "r") as fin:
+                data = json.load(fin)
+        elif config_file.suffix.lower() in [".yaml", ".yml"] or format == "yaml":
+            with open(config_file, "r") as fin:
+                data = yaml.safe_load(fin)
         else:
             with open(config_file, "rb") as fin:
                 data = tomllib.load(fin)
     except:
-        logger.error("Error reading scenario file {}".format(config_file))
+        logger.error('Error reading scenario file "{}"'.format(config_file))
         raise
-
+    logger.debug("Read scenario file")
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
         raise RuntimeError("No stages provided.")
     return Scenario.from_dict(data)
 
 
-def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
+def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenario:
     """Read an old-style SANSMIC input DAT file.
 
     Parameters
     ----------
-    str_or_buffer : str or stream
+    str_or_buffer : Path, str or stream
         The file or stream buffer to process.
 
     Returns
@@ -125,21 +125,24 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
 
     """
     scenario = Scenario()
-    with open(str_or_buffer, "r") if isinstance(
-        str_or_buffer, str
-    ) else str_or_buffer as fin:
-        prefix = fin.name
-        scenario.title = "Converted from {}".format(prefix)
+    logger.debug("Converting from .DAT format")
+    with (
+        open(str_or_buffer, "r")
+        if isinstance(str_or_buffer, (str, Path))
+        else str_or_buffer
+    ) as fin:
+        scenario.title = "Converted from DAT-file"
         first = True
-        logger.debug("Reading old DAT format file: {}".format(prefix))
+        logger.debug('Reading DAT-formatted file "{}"'.format(Path(fin.name).name))
         while True:
             stage = StageDefinition()
             # Stage - block 1
             title = fin.readline().strip()
             if title == "END":
                 break
-            logger.debug(" Record 1: Stage title")
-            logger.debug("  title         = {}".format(title))
+            logger.debug(
+                "Record 1 - Stage title\n  data:\n    title         : {}".format(title)
+            )
             # Stage - block 2
             (
                 num_cells,
@@ -154,16 +157,18 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             ) = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 2: General")
-            logger.debug("  ndiv          = {}".format(num_cells))
-            logger.debug("  leachtype     = {}".format(mode))
-            logger.debug("  iprint        = {}".format(print_interval))
-            logger.debug("  repeat        = {}".format(subsequent))
-            logger.debug("  resetgeo[depr]= {}".format(iResetGeo))
-            logger.debug("  iWait         = {}".format(rest_duration))
-            logger.debug("  nco           = {}".format(num_coallescing))
-            logger.debug("  idata         = {}".format(geometry_format))
-            logger.debug("  ivol          = {}".format(stop_value))
+            logger.debug(
+                "Record 2 - General\n  data:"
+                + "\n    ndiv          : {}".format(num_cells)
+                + "\n    leachtype     : {}".format(mode)
+                + "\n    iprint        : {}".format(print_interval)
+                + "\n    repeat        : {}".format(subsequent)
+                + "\n    resetgeo[depr]: {}".format(iResetGeo)
+                + "\n    iWait         : {}".format(rest_duration)
+                + "\n    nco           : {}".format(num_coallescing)
+                + "\n    idata         : {}".format(geometry_format)
+                + "\n    ivol          : {}".format(stop_value)
+            )
             # Stage - block 3
             (
                 cavern_height,
@@ -174,16 +179,20 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             ) = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 3: Heights")
-            logger.debug("  zmax          = {}".format(cavern_height))
-            logger.debug("  zi            = {}".format(injection_height))
-            logger.debug("  zp            = {}".format(production_height))
-            logger.debug("  zb            = {}".format(interface_height))
-            logger.debug("  zu            = {}".format(ullage_standoff))
+            logger.debug(
+                "Record 3 - Heights\n  data:"
+                + "\n    zmax          : {}".format(cavern_height)
+                + "\n    zi            : {}".format(injection_height)
+                + "\n    zp            : {}".format(production_height)
+                + "\n    zb            : {}".format(interface_height)
+                + "\n    zu            : {}".format(ullage_standoff)
+            )
             # Stage - block 4
             injection_rate = fin.readline().strip()
-            logger.debug(" Record 4: Injection flow rates")
-            logger.debug("  QI            = {}".format(injection_rate))
+            logger.debug(
+                "Record 4 - Injection flow rates\n  data:"
+                + "\n    QI            : {}".format(injection_rate)
+            )
             # TODO: FIXME: handle injection tables? Or do we ignore for old
             # style inputs?
             #
@@ -196,35 +205,43 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             ) = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 5: Casing and tubing")
-            logger.debug("  rpi           = {}".format(inn_tbg_inside_radius))
-            logger.debug("  rpo           = {}".format(inn_tbg_outside_radius))
-            logger.debug("  rcasi         = {}".format(out_csg_inside_radius))
-            logger.debug("  rcaso         = {}".format(out_csg_outside_radius))
+            logger.debug(
+                "Record 5 - Casing and tubing\n  data:"
+                + "\n    rpi           : {}".format(inn_tbg_inside_radius)
+                + "\n    rpo           : {}".format(inn_tbg_outside_radius)
+                + "\n    rcasi         : {}".format(out_csg_inside_radius)
+                + "\n    rcaso         : {}".format(out_csg_outside_radius)
+            )
             # Stage - block 6
             injection_fluid_sg, cavern_sg = fin.readline().strip().split()
-            logger.debug(" Record 6: Water and brine")
-            logger.debug("  sginj         = {}".format(injection_fluid_sg))
-            logger.debug("  sgcav         = {}".format(cavern_sg))
+            logger.debug(
+                "Record 6 - Water and brine\n  data:"
+                + "\n    sginj         : {}".format(injection_fluid_sg)
+                + "\n    sgcav         : {}".format(cavern_sg)
+            )
             # Stage - block 7
             timestep, injection_duration = fin.readline().strip().split()
-            logger.debug(" Record 7: Timing")
-            logger.debug("  dt            = {}".format(timestep))
-            logger.debug("  tend          = {}".format(injection_duration))
+            logger.debug(
+                "Record 7 - Timing\n  data:"
+                + "\n    dt            : {}".format(timestep)
+                + "\n    tend          : {}".format(injection_duration)
+            )
             # Stage - block 8
             fill_rate, tDelay, coallescing_well_separation = (
                 fin.readline().strip().split()
             )
-            logger.debug(" Record 8: Oil fill rates")
-            logger.debug("  qfil          = {}".format(fill_rate))
-            logger.debug("  tdlay  [depr.]= {}".format(tDelay))
-            logger.debug("  sep           = {}".format(coallescing_well_separation))
+            logger.debug(
+                "Record 8 - Oil fill rates\n  data:"
+                + "\n    qfil          : {}".format(fill_rate)
+                + "\n    tdlay  [depr.]: {}".format(tDelay)
+                + "\n    sep           : {}".format(coallescing_well_separation)
+            )
             if float(tDelay) != 0:
                 logger.warning("The TDLAY option should not be used. Ignoring.")
             # First stage - block 9
             if first:
                 logger.debug("First stage initialization")
-                logger.debug(" Record 9: Geometry")
+                logger.debug("Record 9 - Geometry\n  data:")
                 geometry_data = list()
                 first = False
                 geometry_format = GeometryFormat(int(geometry_format))
@@ -267,19 +284,19 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 dissolution_factor, insoluble_fraction, refdep, depth = (
                     fin.readline().strip().split()
                 )
-                logger.debug(" Record 10: Miscellaneous")
-                logger.debug("  zdis          = {}".format(dissolution_factor))
-                logger.debug("  zfin          = {}".format(insoluble_fraction))
-                logger.debug("  refdep [depr.]= {}".format(refdep))
-                logger.debug("  depth         = {}".format(depth))
+                logger.debug(
+                    "Record 10: Miscellaneous\n  data:"
+                    + "\n    zdis          : {}".format(dissolution_factor)
+                    + "\n    zfin          : {}".format(insoluble_fraction)
+                    + "\n    refdep [depr.]: {}".format(refdep)
+                    + "\n    depth         : {}".format(depth)
+                )
                 if refdep != depth:
                     logger.warning(
                         "The REFDEP is no longer used, only DEPTH. Ignoring REFDEP."
                     )
                 if float(dissolution_factor) != 1.0:
-                    logger.warning(
-                        "The ZDIS should always be 1.0. This is a dangerous choice."
-                    )
+                    logger.warning("The ZDIS should almost always be 1.0 for NaCl(s)")
                 scenario.geometry_format = geometry_format
                 scenario.geometry_data = geometry_data
                 scenario.num_cells = int(num_cells)
@@ -306,7 +323,9 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
                 raise TypeError("Invalid data in DAT file: RESETGEO not 0")
             if not first and isinstance(cavern_sg, (float, int)) and cavern_sg > 1.0:
                 logger.warning(
-                    "The REPEAT option was supposed to turn off the cavern SG; it did not do so. sansmic is currently mimicing SANSMIC behavior and resetting the cavern brine to {} sg in stage {}. \n\nIf this is not what is intended, please manually remove the 'set-cavern-sg' entry from stages after stage 1. This behavior will change in future releases.".format(cavern_sg, len(scenario.stages)+1)
+                    "The REPEAT option was supposed to turn off the cavern SG; it did not do so. sansmic is currently mimicing SANSMIC behavior and resetting the cavern brine to {} sg in stage {}. \n\nIf this is not what is intended, please manually remove the 'set-cavern-sg' entry from stages after stage 1. This behavior will change in future releases.".format(
+                        cavern_sg, len(scenario.stages) + 1
+                    )
                 )
             stage.title = title
             stage.simulation_mode = SimulationMode(int(mode))
@@ -333,11 +352,19 @@ def read_dat(str_or_buffer, *, ignore_errors=False) -> Scenario:
             stage.product_injection_rate = float(fill_rate)
             scenario.stages.append(stage)
             logger.debug("Finished reading stage")
+    logger.debug(".DAT file converted successfully")
     return scenario
 
 
 def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format=None):
     """Write a new-style SANSMIC scenario file (preferred extension is .toml)"""
+
+    logger.debug("Writing scenario file")
+    if isinstance(filename, str):
+        file_path = Path(filename)
+    else:
+        file_path = filename
+
     sdict = scenario.to_dict(redundant)
     keys = [k for k in sdict.keys()]
     for k in keys:
@@ -376,9 +403,11 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                 s[k] = s[k].name.lower().replace("_", "-")
         if not redundant and ct == 0 and "set-initial-conditions" in s:
             del s["set-initial-conditions"]
-    name, ext = os.path.splitext(filename)
-    with open(filename, "w") as fout:
-        if ext.lower() == ".toml" or format == "toml":
+
+    ext = file_path.suffix.lower()
+
+    with open(file_path, "w") as fout:
+        if ext == ".toml" or format == "toml":
             for k, v in sdict.items():
                 if k in ["stages", "defaults", "advanced"]:
                     continue
@@ -426,9 +455,9 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                     elif isinstance(v, IntEnum):
                         v = repr(v.name.lower().replace("_", "-"))
                     fout.write("{} = {}\n".format(k, v))
-        elif ext.lower() == ".json" or format == "json":
+        elif ext == ".json" or format == "json":
             json.dump(sdict, fout)
-        elif ext.lower() == ".yaml" or format == "yaml":
+        elif ext in [".yaml", ".yml"] or format == "yaml":
             yaml.dump(sdict, fout)
         else:
             logger.critical(
@@ -437,6 +466,7 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                 )
             )
             raise RuntimeError("Unknown file format for scenario output")
+    logger.info(f'Scenario file written to "{file_path.name}"')
 
 
 def read_classic_out_ddl(file_prefix):
@@ -673,7 +703,7 @@ def read_tst_file(file_prefix: str):
     )
 
 
-def write_hdf_results(results: Results, filename: str, **kwargs):
+def write_hdf_results(results: Results, filename: Union[Path, str], **kwargs):
     """Write results to an HDF5 file.
 
     Parameters
@@ -689,10 +719,12 @@ def write_hdf_results(results: Results, filename: str, **kwargs):
         See :meth:`~sansmic.model.Results.to_hdf` for keyword arguments.
 
     """
+    if isinstance(filename, str):
+        filename = Path(filename).absolute()
     results.to_hdf(filename)
 
 
-def read_hdf_results(filename: str) -> Results:
+def read_hdf_results(filename: Union[Path, str]) -> Results:
     """Read results from an HDF5 file.
 
     Parameters
@@ -701,11 +733,13 @@ def read_hdf_results(filename: str) -> Results:
         Filename to read the results from.
 
     """
+    if isinstance(filename, str):
+        filename = Path(filename).absolute()
     results = Results.from_hdf(filename)
     return results
 
 
-def write_json_results(results: Results, filename: str, **kwargs):
+def write_json_results(results: Results, filename: Union[Path, str], **kwargs):
     """Write results to a JSON file.
 
     Parameters
@@ -738,54 +772,56 @@ def read_json_results(filename: str):
     return Results.from_dict(d)
 
 
-def write_csv_results(results: Results, prefix: str):
+def write_csv_results(results: Results, prefix: Union[Path, str]):
     """Write results to CSV files.
 
     Parameters
     ----------
     results : Results
         The results to write out.
-    prefix : str
-        Write results files in CSV formats.
+    prefix : Path or str
+        The path and output file stem (prefix) to write to
     """
-    with open(prefix + "-summary.csv", "w") as f:
+    if isinstance(prefix, str):
+        prefix = Path(str)
+    with open(prefix.with_suffix(".summary.csv"), "w") as f:
         results.df_t_1D.to_csv(f, lineterminator="\n", index=False)
-    with open(prefix + "-radius.csv", "w") as f:
+    with open(prefix.with_suffix(".radius.csv"), "w") as f:
         df = results.radius
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-density.csv", "w") as f:
+    with open(prefix.with_suffix(".density.csv"), "w") as f:
         df = results.cell_sg
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-wall-angle.csv", "w") as f:
+    with open(prefix.with_suffix(".wall-angle.csv"), "w") as f:
         df = results.wall_angle
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-dr_dt.csv", "w") as f:
+    with open(prefix.with_suffix(".dr_dt.csv"), "w") as f:
         df = results.rate_of_change_in_radius
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-dC_dt.csv", "w") as f:
+    with open(prefix.with_suffix(".dC_dt.csv"), "w") as f:
         df = results.rate_of_change_in_sg
         df.index = results.depths
         df = df.T
         df.index = results.time
         df = df.T
         df.to_csv(f, lineterminator="\n")
-    with open(prefix + "-dC_dz.csv", "w") as f:
+    with open(prefix.with_suffix(".dC_dz.csv"), "w") as f:
         df = results.vertical_diffusion_rate
         df.index = results.depths
         df = df.T
