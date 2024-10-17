@@ -94,14 +94,14 @@ version_variables = [
 ]
 
 [tool.semantic_release.branches.main]
-match = "(main|master)"
+match = "(main|master|staging)"
 prerelease_token = "rc"
 prerelease = false
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
 changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = ["build", "ci", "chore", "style", "docs", "^Bump", "release"]
+exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release"]
 
 [tool.semantic_release.changelog.environment]
 block_start_string = "{%"
@@ -136,9 +136,6 @@ allowed_tags = [
     "refactor", # A change that does not add a feature nor fix a bug (could be major, minor or patch)
     "docs",     # Documentation-only changes within the source code (no version level change)
     "style",    # A code that does not change meaning of the code (no version level change)
-    # Release
-    "release"
-
 ]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf", "refactor"]
