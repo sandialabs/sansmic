@@ -44,23 +44,24 @@ sansmic::Model::Model(string out_prefix) {
  * @brief Initialize variables to zero or default values.
  */
 void sansmic::Model::init_vars() {
-  salt = sansmic::Salt();
+  salt = new sansmic::Salt();
+  jet_model = new sansmic::JetModel(1);
+
   results = sansmic::Results();
-  jet_model = sansmic::JetModel();
 
   b_use_tstfile = true;
   b_use_outfile = false;
   verbosity = 0;
 
   b_initialized = false;
-  b_running = false;
+  b_is_running = false;
   b_times_up = false;
   b_use_fill_table = b_use_inj_table = false;
   b_just_saved = false;
 
   b_first_stage = true;
   b_obi_below_roof = true;
-  b_injecting = true;
+  b_is_injecting = true;
 
   stepNum = 0;
   stageNum = 0;
@@ -101,7 +102,7 @@ void sansmic::Model::init_vars() {
 
   f_insol0 = 0.0;
 
-  print_freq = 10000000000;
+  print_freq = 0;
   dt = 0.0;
   t_tot = 0.0;
   t_wait = 0.0;
@@ -143,7 +144,6 @@ void sansmic::Model::init_vars() {
   p2 = 0;
 
   // set default model versions
-  jet_model.set_version(1);
   plumeModelVer = 1;
   tempModelVer = 0;
   f_dis0 = 1.0;
@@ -162,9 +162,9 @@ void sansmic::Model::init_vars() {
  * @brief Configure the model with the scenario provided.
  */
 void sansmic::Model::configure(Scenario scenario) {
-  salt = sansmic::Salt(scenario.max_brine_sg, scenario.solid_density);
+  salt = new sansmic::Salt(scenario.max_brine_sg, scenario.solid_density);
   results = sansmic::Results();
-  jet_model = sansmic::JetModel(scenario.jet_model_version);
+  jet_model = new sansmic::JetModel(scenario.jet_model_version);
   beta = scenario.diffusion_beta;
   alpha = scenario.entrainment_coeff;
   D_mol = scenario.molecular_diffusion;
@@ -186,13 +186,13 @@ void sansmic::Model::configure(Scenario scenario) {
   stages = scenario.stages;
   open_outfiles(false);
 
-  if (verbosity > 0) scenario.debug_log(fileLog);
+  if (verbosity > 3) scenario.debug_log(fileLog);
 
   dz = h_max / double(n_cells);
   diffCoeff = D_mol;
-  C_hat = salt.get_sg_max();
-  C_wall = salt.get_solid_density();
-  w_hat = salt.wt_pct(C_hat, temp);
+  C_hat = salt->get_sg_max();
+  C_wall = salt->get_solid_density();
+  w_hat = salt->wt_pct(C_hat, temp);
 
   C_tmp = vector<double>(n_nodes + 1, 0.0);
   tunc = vector<double>(n_cells + 1, -1e10);
@@ -284,8 +284,8 @@ void sansmic::Model::configure(Scenario scenario) {
   V_saltRemove[n_nodes] = 0.0;
   C_cavAve = C_hat;
 
-  write_tst_header();  // It's nice to have this header at each stage
-  save_results(results, false);
+  save_results(results);
+  write_simulation_init(fileLog);
   b_initialized = true;
 }
 
@@ -302,7 +302,7 @@ int sansmic::Model::init_stage(void) {
   // initialize variables that have to be reset every stage;
   V_stop = -1.0e5;
   z_obi_stop = 1.0e9;
-  b_injecting = true;
+  b_is_injecting = true;
   Q_inj_table_name = "CONSTANT";
   b_use_inj_table = false;
   Q_fill_table_name = "CONSTANT";
@@ -372,8 +372,8 @@ int sansmic::Model::init_stage(void) {
   Q_fillSav = Q_fill;
 
   // adjust injection depth based on the jet length
-  u_inj0 = jet_model.velocity(Q_in, r_tbgID);
-  L_jet = jet_model.length(u_inj0);
+  u_inj0 = jet_model->velocity(Q_in, r_tbgID);
+  L_jet = jet_model->length(u_inj0);
   h_inj = max(h_inj - L_jet, 0.0);
 
   /**
@@ -381,7 +381,7 @@ int sansmic::Model::init_stage(void) {
    * where r_inj0 is b_0
    */
   r_inj0 = max(L_jet, r_inj0);
-  u_inj0 = jet_model.velocity(Q_in, r_inj0);  // injection point velocity
+  u_inj0 = jet_model->velocity(Q_in, r_inj0);  // injection point velocity
 
   // determine injection, production, obi cell locations
   h_inj = max(h_inj, h_insol);
@@ -483,8 +483,9 @@ int sansmic::Model::init_stage(void) {
   V_saltRemove[obiCell] = 0.0;
 
   // stage has been initialized
-  b_running = true;  // This says the stage has been initialized
-  stageNum++;        // Increment the stage number
+  b_is_running = true;  // This says the stage has been initialized
+  stageNum++;           // Increment the stage number
+  write_stage_init(fileLog);
   return stageNum;
 }
 
@@ -497,10 +498,9 @@ int sansmic::Model::end_stage(void) {
   timet = timet + days;
   t_last = t_tot;
   h_obiSave = h_obi;
-  if (verbosity > 1) {
-    fileLog << "stageNum, t_last, timet, h_obi = " << stageNum << ", " << t_last
-            << ", " << timet << ", " << h_obiSave << endl;
-    write_log_end_stage();
+  write_stage_summary(fileLog);
+  if (stageNum == stages.size()) {
+    write_simulation_summary(fileLog);
   }
   return 1;
 }
@@ -522,11 +522,11 @@ void sansmic::Model::run_sim(void) {
  * @return 1 if the stage is complete
  */
 int sansmic::Model::run_stage() {
-  if (!b_running) {
+  if (!b_is_running) {
     init_stage();
   }
   int status = 0;
-  while (b_running) {
+  while (b_is_running) {
     status = run_step();
   }
   if (status == 0) end_stage();
@@ -539,11 +539,11 @@ int sansmic::Model::run_stage() {
  */
 int sansmic::Model::run_step() {
   int tstep;
-  if (!b_running) {
+  if (!b_is_running) {
     init_stage();
   }
   tstep = leach();
-  if (!b_running) {
+  if (!b_is_running) {
     end_stage();
     return 1;
   }
@@ -730,7 +730,7 @@ int sansmic::Model::leach() {
   f_dis_prt[jetPlumeCell] = f_dis[jetPlumeCell];
 
   // evaluate eqn 4.1 and multiple by dis factor at jet cell
-  dr_dt = salt.recession_rate(C_cav[jetPlumeCell]) * 60.0 *
+  dr_dt = salt->recession_rate(C_cav[jetPlumeCell]) * 60.0 *
           x_incl[jetPlumeCell] * f_dis[jetPlumeCell];
   dr_prt[jetPlumeCell] = dr_dt * dt;
   V_saltRemove[jetPlumeCell] =
@@ -741,7 +741,7 @@ int sansmic::Model::leach() {
     for (int i = injCell; i <= jetPlumeCellBelow; i++) {
       slope(i);
       f_dis_prt[i] = f_dis[i];
-      dr_dt = salt.recession_rate(C_cav[i]) * 60.0 * x_incl[i] * f_dis[i];
+      dr_dt = salt->recession_rate(C_cav[i]) * 60.0 * x_incl[i] * f_dis[i];
       dr_prt[i] = dr_dt * dt;
       V_saltRemove[i] = 2.0 * dr_dt * r_cav[i] * dz * dt * C_wall;
       m_saltRemove = m_saltRemove + V_saltRemove[i];
@@ -774,7 +774,7 @@ int sansmic::Model::leach() {
     slope(i);
     f_dis_prt[i] = f_dis[i];
 
-    dr_dt = salt.recession_rate(C_cav[i]) * 60.0 * f_dis[i];
+    dr_dt = salt->recession_rate(C_cav[i]) * 60.0 * f_dis[i];
     dr_prt[i] = dr_dt * dt * x_incl[i];
 
     volRemoved =
@@ -799,8 +799,8 @@ int sansmic::Model::leach() {
     p1 = p5 / V_cell;
     watsol = V_cell * dz * C_cav[i];
     watsal = volRemoved * C_wall;
-    w = (watsol * salt.wt_pct(C_cav[i]) + watsal) / (watsol + watsal);
-    dC_dt = (salt.sg(w) - C_cav[i]) / dt;
+    w = (watsol * salt->wt_pct(C_cav[i]) + watsal) / (watsol + watsal);
+    dC_dt = (salt->sg(w) - C_cav[i]) / dt;
 
     // diffusion
     //
@@ -930,8 +930,8 @@ int sansmic::Model::leach() {
       // SS looks like the \Delta C_snk without the (C_inj-C^n)*dt
       // term
       ss[1] = Q_in *
-              (C_cav[1] * salt.wt_pct(C_cav[1]) -
-               C_cav[2] * salt.wt_pct(C_cav[2])) *
+              (C_cav[1] * salt->wt_pct(C_cav[1]) -
+               C_cav[2] * salt->wt_pct(C_cav[2])) *
               0.726 / (V_cell * C_cav[1] * (C_cav[1] - 1.0 + 1e-7));
     }
     ca = ddim(C_cav[2], C_cav[1]) / dz;
@@ -984,17 +984,17 @@ int sansmic::Model::leach() {
         vi = sq(r_cav[i]) * C_cav[i];
         vip = sq(r_cav[ip]) * C_cav[ip];
         if (r_cav[ip] <= r_cav[i]) {
-          w = (vdif * C_cav[i] * salt.wt_pct(C_cav[i]) +
-               vip * salt.wt_pct(C_cav[ip])) /
+          w = (vdif * C_cav[i] * salt->wt_pct(C_cav[i]) +
+               vip * salt->wt_pct(C_cav[ip])) /
               (vdif * C_cav[i] + vip);
-          C_cav[i] = salt.sg(w);
+          C_cav[i] = salt->sg(w);
           C_cav[ip] = cold;
         } else {
-          w = (vdif * C_cav[ip] * salt.wt_pct(C_cav[ip]) +
-               vi * salt.wt_pct(C_cav[i])) /
+          w = (vdif * C_cav[ip] * salt->wt_pct(C_cav[ip]) +
+               vi * salt->wt_pct(C_cav[i])) /
               (vdif * C_cav[ip] + vi);
           C_cav[i] = cnext;
-          C_cav[ip] = salt.sg(w);
+          C_cav[ip] = salt->sg(w);
         }
       }
     }
@@ -1032,8 +1032,8 @@ int sansmic::Model::leach() {
     p2 = V_saltRemove[i] * C_wall;
     p1 = (V_cell - V_saltRemove[i]) * C_tmp[i];
     m_brineOld = m_brineOld + p1;
-    w = (p1 * salt.wt_pct(C_tmp[i]) + p2) / (p1 + p2);
-    C_bar = salt.sg(w);
+    w = (p1 * salt->wt_pct(C_tmp[i]) + p2) / (p1 + p2);
+    C_bar = salt->sg(w);
     p7 = p7 + V_cell - (p1 + p2) / C_bar;
     m_saltRemove = V_saltRemove[i] + m_saltRemove;
     // COMPENSATE FOR INSOLUBLES COVERING BOTTOM WALLS
@@ -1058,9 +1058,9 @@ int sansmic::Model::leach() {
   C_bar = m_brineOld / (volRemoved - m_saltRemove);
   m_saltRemove = m_saltRemove * C_wall;
   Q_out = Q_in - p7 / dt;
-  w = (m_brineOld * salt.wt_pct(C_bar) + m_saltRemove) /
+  w = (m_brineOld * salt->wt_pct(C_bar) + m_saltRemove) /
       (m_brineOld + m_saltRemove);
-  C_bar = salt.sg(w);
+  C_bar = salt->sg(w);
   vrn = (m_brineOld + m_saltRemove) / C_bar;
   p3 = Q_in + (vrn - volRemoved) / dt;
   p5 = m_brineNew / (30.0 * Q_in * dt + m_brineNew);
@@ -1078,7 +1078,7 @@ int sansmic::Model::leach() {
   p4 = Q_in * (C_inj * (1.0 + (C_bar - C_inj) / C_bar) / C_bar - 1.0) * 0.5;
   Q_out = Q_out + p4 * p5;
 
-  w = salt.wt_pct(C_cav[prodCell]);
+  w = salt->wt_pct(C_cav[prodCell]);
   rho_sat = w * C_cav[prodCell] / (w_hat * C_hat) * 100.0;
   if (rho_sat > 100.0) {
     rho_sat = min(rho_sat, 100.0);
@@ -1188,7 +1188,7 @@ int sansmic::Model::leach() {
   // PRINT ONE LINE SUMMARY TO *.tst ON 1 day increments
   days = t / 24.0;
   if (timet + days >= dayOld + 1.0 || (stepNum + 2) * dt > t_end) {
-    write_tst_step(stageNum, b_injecting);
+    if (b_use_tstfile) write_daily_summary(fileTst, stageNum, b_is_injecting);
     Q_iOld = Q_iTot;
     Q_fOld = Q_fTot;
     dayOld = dayOld + 1;
@@ -1202,7 +1202,7 @@ int sansmic::Model::leach() {
     }
   } else if (stopCriteria < 0) {
     // stop on OBI location
-    if (b_injecting) {
+    if (b_is_injecting) {
       if (abs(z_obi - z_obi_stop) < 0.1 * dz) {
         t_end = t;
       } else if (runMode != LeachFill && z_obi < z_obi_stop) {
@@ -1221,8 +1221,10 @@ int sansmic::Model::leach() {
   // 2. t == end of stage
   // 3. t will be beyond the end of the stage next time
   // 4. OBI height is above the top of the cavern
-  if (((stepNum + 1) % print_freq == 0) || (h_obi > h_max)) {
-    save_results(results, true);
+  if (((print_freq > 0) && ((stepNum + 1) % print_freq == 0)) ||
+      (h_obi > h_max)) {
+    save_results(results);
+    if (b_use_outfile) write_detailed_results(fileOut);
     b_just_saved = true;
   }
 
@@ -1241,19 +1243,22 @@ int sansmic::Model::leach() {
       // this happens if there is no waiting period
       // OR after the waiting period, when t_wait is
       // set to 0.
-      b_running = false;
-      write_tst_end_or_wo("=== END");
+      b_is_running = false;
+      if (b_use_tstfile) write_daily_end_of_phase(fileTst, "=== END");
     } else {
       t_end = t + t_wait;
-      write_tst_end_or_wo("--- WO");
+      if (b_use_tstfile) write_daily_end_of_phase(fileTst, "--- WO");
       stopCriteria = 0;
       Q_in = 0.0;
       Q_fill = 0.0;
       t_wait = 0;
-      b_injecting = false;
+      b_is_injecting = false;
     }
   }
-  if (!b_running && !b_just_saved) save_results(results, true);
+  if (!b_is_running && !b_just_saved) {
+    save_results(results);
+    if (b_use_outfile) write_detailed_results(fileOut);
+  }
   return stepNum;
 }
 
@@ -1336,7 +1341,7 @@ void sansmic::Model::plume(double ci, double zi, double zb, double &x,
 
   jetPlumeCell = int(zi / dz) + 1;
   // flfac = y[1] * 3600.0;
-  flold = y[1] * ci * salt.wt_pct(ci) * 3600.0;
+  flold = y[1] * ci * salt->wt_pct(ci) * 3600.0;
   flnew = flold;
 
   // functions are integrated until (see SAND2015-XXXX Ch3):
@@ -1411,211 +1416,6 @@ void sansmic::Model::slope(int i) {
 }
 
 /**
- * @brief Get the single-timestep state of the model in a Results object.
- * @return Results object with single timestep of data.
- */
-sansmic::Results sansmic::Model::get_current_state() {
-  sansmic::Results new_results = sansmic::Results();
-  new_results.r_0 = vector<double>(n_nodes, 0.0);
-  new_results.h_0 = vector<double>(n_nodes, 0.0);
-  new_results.z_0 = vector<double>(n_nodes, 0.0);
-  for (int j = 0; j < n_nodes; j++) {
-    new_results.r_0[j] = results.r_0[j];
-    new_results.h_0[j] = results.h_0[j];
-    new_results.z_0[j] = results.z_0[j];
-  }
-
-  save_results(new_results, false);
-  return new_results;
-}
-
-/**
- * @brief Is this model currently running?
- * @return running status
- */
-bool sansmic::Model::get_running_status(void) { return b_running; }
-
-/**
- * @brief Get the current number of stages
- * @return the number of stages
- */
-int sansmic::Model::get_num_stages(void) { return stages.size(); }
-
-/**
- * @brief Get the stages object
- * @return vector of all stage definitions
- */
-vector<sansmic::Stage> sansmic::Model::get_stages(void) { return stages; }
-
-/**
- * @brief Get the compelte results object
- * @return Results
- */
-sansmic::Results sansmic::Model::get_results(void) { return results; }
-
-/**
- * @brief Get the current stage number
- * @return the stage number
- */
-int sansmic::Model::get_current_stage(void) { return stageNum; }
-
-/**
- * @brief Get the current time
- * @return the time
- */
-double sansmic::Model::get_current_time(void) { return days + timet; }
-
-/**
- * @brief Get the current cavern volume (in bbl)
- * @return the volume
- */
-double sansmic::Model::get_current_volume(void) { return V_tot; }
-
-/**
- * @brief Save results in a results object
- * @param new_results the object to add to
- * @param to_file output to files as well
- */
-void sansmic::Model::save_results(sansmic::Results &new_results, bool to_file) {
-  new_results.t.push_back(t_tot);
-  new_results.dt.push_back(dt);
-  new_results.step.push_back(stepNum);
-  new_results.V_cavTot.push_back(V_tot);
-  new_results.err.push_back(err_cfac);
-  new_results.sg_cavAve.push_back(C_cavAve);
-  new_results.V_injTot.push_back(Q_iTot);
-  new_results.V_fillTot.push_back(Q_fTot);
-  new_results.stage.push_back(stageNum);
-  new_results.phase.push_back((int)b_injecting);
-  new_results.injCell.push_back(injCell);
-  new_results.prodCell.push_back(prodCell);
-  new_results.obiCell.push_back(obiCell);
-  new_results.plmCell.push_back(jetPlumeCell);
-  new_results.z_plm.push_back(z_cav[1] - h_cav[jetPlumeCell]);
-  new_results.z_inj.push_back(z_cav[1] - h_cav[injCell]);
-  new_results.z_prod.push_back(z_cav[1] - h_cav[prodCell]);
-  new_results.l_jet.push_back(L_jet);
-  new_results.r_jet.push_back(r_inj0);
-  new_results.u_jet.push_back(u_inj0);
-
-  // DO FILE OUTPUTS
-  if (to_file) {
-    write_out_timestep_summary();
-  }
-  p1 = 0.0;
-
-  for (int i = 1, j = 1; j <= n_nodes; j++) {
-    i = n_nodes + 1 - j;
-    p1 = p1 + _pi_ * dz * sq(r_cav[i]) * cf_to_bbl;
-    p2 = V_injSigned[i] * cf_to_bbl * per_h_to_per_d;
-    if (to_file) {
-      write_out_timestep_per_cell(i, p1, p2);
-    }
-  }
-  vector<double> _r_cav, _dr_cav, _sg, _theta, _Q_inj, _V, _f_dis, _f_flag,
-      _xincl, _amd, _D_coeff, _dC_dz, _C_old, _C_new, _dC_dt, _dr_dt, _C_plm,
-      _u_plm, _r_plm;
-  for (int i = 1; i <= n_nodes; i++) {
-    p1 = _pi_ * dz * sq(r_cav[i]) * cf_to_bbl;
-    p2 = V_injSigned[i] * cf_to_bbl * per_h_to_per_d;
-    _r_cav.push_back(r_cav[i]);
-    _dr_cav.push_back(r_cav[i] - r_cav0[i]);
-    _sg.push_back(C_cav[i]);
-    _theta.push_back(phi[i]);
-    _Q_inj.push_back(p2);
-    _V.push_back(p1);
-    _f_dis.push_back(f_dis_prt[i]);
-    _f_flag.push_back(f_disType[i]);
-    _xincl.push_back(x_incl[i]);
-    _amd.push_back(amd_prt[i] * cf_to_bbl * per_h_to_per_d);
-    _D_coeff.push_back(akd_prt[i]);
-    _dC_dz.push_back(ca_prt[i]);
-    _C_old.push_back(C_tmp[i]);
-    _C_new.push_back(C_cav[i]);
-    _dC_dt.push_back(dC[i]);
-    _dr_dt.push_back(dr_prt[i]);
-    _C_plm.push_back(C_plume[i]);
-    _u_plm.push_back(u_plume[i]);
-    _r_plm.push_back(r_plume[i]);
-  }
-  new_results.r_cav.push_back(_r_cav);
-  new_results.dr_cav.push_back(_dr_cav);
-  new_results.sg.push_back(_sg);
-  new_results.theta.push_back(_theta);
-  new_results.Q_inj.push_back(_Q_inj);
-  new_results.V.push_back(_V);
-  new_results.f_dis.push_back(_f_dis);
-  new_results.f_flag.push_back(_f_flag);
-  new_results.xincl.push_back(_xincl);
-  new_results.amd.push_back(_amd);
-  new_results.D_coeff.push_back(_D_coeff);
-  new_results.dC_dz.push_back(_dC_dz);
-  new_results.C_old.push_back(_C_old);
-  new_results.C_new.push_back(_C_new);
-  new_results.dC_dt.push_back(_dC_dt);
-  new_results.dr_dt.push_back(_dr_dt);
-  new_results.C_plm.push_back(_C_plm);
-  new_results.u_plm.push_back(_u_plm);
-  new_results.r_plm.push_back(_r_plm);
-
-  slctim = days + timet;
-  for (int i = 1; i <= n_nodes; i++) {
-    if (h_cav[i] < h_insol) {
-      rcscr[i] = 0.0;
-    } else {
-      rcscr[i] = r_cav[i];
-    }
-  }
-  Q_outBPD = Q_out * cf_to_bbl * per_h_to_per_d;  // 4.27387;
-
-  if (to_file) {
-    write_out_timestep_totals(Q_outBPD);
-  }
-  new_results.Q_out.push_back(Q_outBPD);
-  new_results.sg_out.push_back(C_cav[prodCell]);
-
-  p1 = V_insol * cf_to_bbl;
-  p2 = V_insolVent * cf_to_bbl;
-  if (to_file) {
-    write_out_timestep_insolubles(p1, p2);
-  }
-  new_results.V_insolTot.push_back(p1);
-  new_results.V_insolVent.push_back(p2);
-  new_results.h_insol.push_back(h_insol);
-  new_results.z_insol.push_back(z_cav[1] - h_insol);
-  new_results.z_obi.push_back(z_cav[1] - h_obi);
-
-  p1 = volRemoved + _pi_ * sq(r_cav[izbs]) * (h_obi - double(izbs - 1) * dz) -
-       V_insol;
-  p1 = p1 * cf_to_bbl;
-  if (to_file) {
-    write_out_timestep_removed(p1);
-  }
-}
-
-/**
- * @brief Choose whether the .TST file should be written
- * @param use_file the choice
- */
-void sansmic::Model::generate_tst_file(bool use_file) {
-  b_use_tstfile = use_file;
-}
-
-/**
- * @brief Choose whether the .OUT file should be written
- * @param use_file the choice
- */
-void sansmic::Model::generate_out_file(bool use_file) {
-  b_use_outfile = use_file;
-}
-
-/**
- * @brief Set the verbosity output level for cout/cerr
- * @param verb the verbosity level
- */
-void sansmic::Model::set_verbosity_level(int verb) { verbosity = verb; }
-
-/**
  * @brief Open output files and initialize the headers.
  * @param append whether the files should be opened with append, by default
  * false
@@ -1627,31 +1427,29 @@ int sansmic::Model::open_outfiles(bool append) {
       this->fileOut.open(prefix + ".out", std::ios::app);
     } else {
       this->fileOut.open(prefix + ".out", std::ios::out);
-      write_header(this->fileOut);
+      write_version_info(this->fileOut);
     }
   }
   if (!this->fileOut.is_open() && b_use_outfile) {
     std::cerr << "Error writing file " << prefix << ".out - exiting" << endl;
     return sansmic::INVALID_OUT_FILE;
   }
+
   if (!this->fileLog.is_open()) {
-    if (!append) {
-      this->fileLog.open(prefix + ".log", std::ios::out);
-      write_header(this->fileLog);
-    } else {
-      this->fileLog.open(prefix + ".log", std::ios::app);
-    }
+    this->fileLog.open(prefix + ".log", std::ios::app);
   }
   if (!this->fileLog.is_open()) {
     std::cerr << "Error writing file " << prefix << ".log - exiting" << endl;
     return sansmic::INVALID_LOG_FILE;
   }
+
   if (!this->fileTst.is_open() && b_use_tstfile) {
     if (append) {
       this->fileTst.open(prefix + ".tst", std::ios::app);
     } else {
       this->fileTst.open(prefix + ".tst", std::ios::out);
-      write_header(this->fileTst);
+      write_version_info(this->fileTst);
+      write_daily_column_header(this->fileTst);
     }
   }
   if (!this->fileTst.is_open() && b_use_tstfile) {
@@ -1668,228 +1466,4 @@ void sansmic::Model::close_outfiles(void) {
   if (this->fileOut.is_open() && b_use_outfile) this->fileOut.close();
   if (this->fileLog.is_open()) this->fileLog.close();
   if (this->fileTst.is_open() && b_use_tstfile) this->fileTst.close();
-}
-
-/**
- * @brief Add header information to a file
- * @param sout the file to write to
- */
-void sansmic::Model::write_header(ofstream &sout) {
-  sout << "# Generated by sansmic v" << VERSION_INFO
-       << " under the BSD-3-Clause license." << endl;
-  sout << "# [sansmic (c) 2024 NTESS, "
-          "https://github.com/SandiaLabs/sansmic/blob/main/LICENSE]"
-       << endl;
-}
-
-/**
- * @brief Initialize the TST file
- */
-void sansmic::Model::write_tst_header(void) {
-  if (!b_use_tstfile) return;
-  fileTst << "File= " << prefix << endl;
-  fileTst << "#" << std::setw(12) << "t"  // time in days
-          << std::setw(13) << "V_tot"     // total volume
-          << std::setw(13)
-          << "err_conv"  // measure of stability of the mass balance solver
-          << std::setw(13) << "sg_out"  // specific gravity of produced brine
-          << std::setw(13) << "sg_ave"  // average specific gravity of the
-                                        // brine within the cavern
-          << std::setw(13)
-          << "V_insol"  // total volume, in bbl, of insolubes create that has
-                        // accumulated at the bottom
-          << std::setw(13) << "D_insol"  // depth of the top of insoluble level
-          << std::setw(13) << "D_OBI"    // depth of OBI
-          << std::setw(13)
-          << "V_insolVnt"  // volume of insolubles brought to surface entrained
-                           // in the brine, in bbl
-          << std::setw(12) << "V_ullage"  // volume of cavern available for oil
-                                          // above ullage ref depth
-          << std::setw(13)
-          << "V_usable"  // volume of cavern above the ullage ref point
-          << std::setw(13) << "Q_inj"   // current injection of brine in bbl/d
-          << std::setw(13) << "V_inj"   // total volume injected
-          << std::setw(13) << "Q_fill"  // rate of oil injection
-          << std::setw(13) << "V_fill"  // total volume oil injected
-          << endl;
-  fileTst << " #" << std::setw(11) << "(d)" << std::setw(13) << "(bbl)"
-          << std::setw(13) << "(:1)" << std::setw(13) << "(:1.kg/L)"
-          << std::setw(13) << "(:1.kg/L)" << std::setw(13) << "(bbl)"
-          << std::setw(13) << "(ft)" << std::setw(13) << "(ft)" << std::setw(13)
-          << "(bbl)" << std::setw(12) << "(bbl)" << std::setw(13) << "(bbl)"
-          << std::setw(13) << "(bbl/d)" << std::setw(13) << "(bbl)"
-          << std::setw(13) << "(bbl/d)" << std::setw(13) << "(bbl)" << endl;
-}
-
-/**
- * @brief Write data to the TST file
- * @param stage the stage number
- * @param inject whether this is injection or workover
- */
-void sansmic::Model::write_tst_step(int stage, bool inject) {
-  if (!b_use_tstfile) return;
-  fileTst << std::scientific;
-  fileTst << std::setprecision(4);
-  fileTst << std::setw(13) << (days + timet) << std::setw(13) << V_tot
-          << std::setw(13) << err_cfac << std::setw(13) << C_cav[prodCell]
-          << std::setw(13) << C_cavAve << std::setw(13) << V_insol * cf_to_bbl
-          << std::setw(13) << z_cav[1] - h_insol << std::setw(13)
-          << z_cav[1] - h_obi << std::setw(13) << V_insolVent * cf_to_bbl
-          << std::setw(12) << V_ullage << std::setw(13) << V_usable
-          << std::setw(13) << Q_iTot - Q_iOld << std::setw(13) << Q_iTot
-          << std::setw(13) << Q_fTot - Q_fOld << std::setw(13) << Q_fTot
-          << endl;
-}
-
-/**
- * @brief Write end of phase to the TST file
- * @param text what to use as a prefix
- */
-void sansmic::Model::write_tst_end_or_wo(const char *text) {
-  if (!b_use_tstfile) return;
-  fileTst
-      << "                                                     "
-         "                                                                   "
-         "                                                 "
-      << text << std::setw(2) << stageNum << endl;
-}
-
-/**
- * @brief Write data to the LOG file
- */
-void sansmic::Model::write_log_end_stage(void) {
-  fileLog << "END STAGE ----------------------------------" << endl;
-}
-
-/**
- * @brief Write data to the OUT file
- */
-void sansmic::Model::write_out_timestep_summary(void) {
-  if (!b_use_outfile) return;
-  fileOut << endl;
-  fileOut << std::setprecision(4);
-  fileOut << std::scientific;
-  fileOut << " TIME=" << setw(11) << days << " DAYS (" << setw(11)
-          << days * 24.0 << " HRS)"
-          << "     "
-          << "DT=" << setw(11) << dt << " HOURS"
-          << "   START TIME=" << setw(11) << timet << " DAYS (" << setw(11)
-          << timet * 24.0 << " HRS)" << endl;
-
-  if (b_injecting) {
-    fileOut << " INJECTION PHASE " << setw(5) << stageNum << endl;
-  } else {
-    fileOut << " WORKOVER PHASE " << setw(5) << stageNum << endl;
-  }
-  fileOut << endl;
-
-  fileOut << "  I(INJ), I(PRD), I(OBI), I(PLM)= " << std::setw(12) << injCell
-          << std::setw(12) << prodCell << std::setw(12) << obiCell
-          << std::setw(12) << jetPlumeCell << endl;
-  fileOut << "  H(INJ), H(PRD), H(OBI), H(PLM)= " << std::setw(12)
-          << h_cav[injCell] << std::setw(12) << h_cav[prodCell] << std::setw(12)
-          << h_cav[obiCell] << std::setw(12) << h_cav[jetPlumeCell] << endl;
-  fileOut << "  Ljet(ft), RO(ft), UO(ft/s)    = " << std::setw(12) << L_jet
-          << std::setw(12) << r_inj0 << std::setw(12) << u_inj0 << endl;
-  fileOut << endl;
-  fileOut << "     "        // cell index number
-          << "   HEIGHT  "  // height above initial cavern floor
-          << "  RADIUS   "  // radius, in feet
-          << "   d(RAD)  "  // cumulative change in radius, in feet
-          << " BRINE S.G."  // sg of brine; oil set to 1.2019
-          << " WALL ANGLE"  // wall angle, in degrees
-          << " FLOW RATE "  // brine flow rate in bbl/d
-          << "   VOLUME  "  // cumulative volume of cavern, from roof
-          << "  DISFAC   "  // dissolution adjustment factor
-          << "     "        // adjustemnt factor type flag
-          << "  XINCL    "  // wall inclination dissolution factor
-          << "   AMD     "  // internal debugging variable
-          << "     AKD   "  // diffusion coefficient
-          << "     dc/dz "  // change in specific gravity from cell to cell
-          << "     Cold  "  // previous calvulated value of specific grav
-          << "     Cnew  "  // current calculated value of sg in cell
-          << "     dC    "  // Cnew - Cold
-          << "    dR     "  // wall recession
-          << "  Cplm     "  // brine concentration of plume
-          << "  Uplm     "  // velocity of plume
-          << " Rplm      "  // radius of plume
-          << endl;
-  fileOut << endl;
-}
-
-/**
- * @brief Write data to the OUT file
- * @param i cell index
- * @param p1 flow rate
- * @param p2 volume
- */
-void sansmic::Model::write_out_timestep_per_cell(int i, double p1, double p2) {
-  if (!b_use_outfile) return;
-  fileOut << " " << setw(4) << i << setw(11) << h_cav[i] << setw(11) << r_cav[i]
-          << setw(11) << r_cav[i] - r_cav0[i] << setw(11) << C_cav[i]
-          << setw(11) << phi[i] << setw(11) << p2 << setw(11) << p1 << setw(11)
-          << f_dis_prt[i] << setw(5) << f_disType[i] << setw(11) << x_incl[i]
-          << setw(11) << amd_prt[i] * cf_to_bbl * per_h_to_per_d << setw(11)
-          << akd_prt[i] << setw(11) << ca_prt[i] << setw(11) << C_tmp[i]
-          << setw(11) << C_cav[i] << setw(11) << dC[i] << setw(11) << dr_prt[i]
-          << setw(11) << C_plume[i] << setw(11) << u_plume[i] << setw(11)
-          << r_plume[i] << endl;
-}
-
-/**
- * @brief Write data to the OUT file
- * @param qo output flow rate
- */
-void sansmic::Model::write_out_timestep_totals(double qo) {
-  if (!b_use_outfile) return;
-  fileOut << endl;
-  fileOut << " TIME=" << setw(11) << days << " DAYS (" << setw(11)
-          << days * 24.0 << " HRS)"
-          << "     "
-          << "DT=" << setw(11) << dt << " HOURS"
-          << "   START TIME=" << setw(11) << timet << " DAYS (" << setw(11)
-          << timet * 24.0 << " HRS)" << endl;
-
-  if (b_injecting) {
-    fileOut << " INJECTION PHASE " << setw(5) << stageNum << endl;
-  } else {
-    fileOut << " WORKOVER PHASE " << setw(5) << stageNum << endl;
-  }
-  fileOut << endl;
-  fileOut << " TOTAL VOLUME           =" << setw(11) << V_tot << " BBLS "
-          << endl;
-  fileOut << " BRINE OUT              =" << setw(11) << qo << " BBLS/DAY"
-          << endl;
-  fileOut << " OUTLET SPECIFIC GRAVITY=" << setw(11) << C_cav[prodCell] << endl;
-}
-
-/**
- * @brief Write data to the OUT file
- * @param p1 insolubles deposited
- * @param p2 insolubles vented
- */
-void sansmic::Model::write_out_timestep_insolubles(double p1, double p2) {
-  if (!b_use_outfile) return;
-  fileOut << " VOLUME OF INSOLUBLES   =" << setw(11) << p1 << " BBLS " << endl;
-  fileOut << " INSOL LEVEL            =" << setw(11) << h_insol << " FT"
-          << endl;
-  fileOut << " BLANKET LEVEL          =" << setw(11) << h_obi << " FT" << endl;
-  fileOut << " VOL OF INS VENTED      =" << setw(11) << p2 << " BBLS" << endl;
-}
-
-/**
- * @brief Write data to the OUT file
- * @param p1 total brine volume
- */
-void sansmic::Model::write_out_timestep_removed(double p1) {
-  if (!b_use_outfile) return;
-  fileOut << " BRINE VOLUME           =" << setw(11) << p1 << " BBLS " << endl;
-  fileOut << " ULLAGE                 =" << setw(11) << V_ullage << " BBLS"
-          << endl;
-  fileOut << " USEABLE VOLUME         =" << setw(11) << V_usable << " BBLS"
-          << endl;
-  fileOut << " CFAC                   =" << setw(11) << err_cfac << endl;
-  fileOut << "----------------------------------------------------------"
-          << "----------------------------------------------------------"
-          << endl;
 }
