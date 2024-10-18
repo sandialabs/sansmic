@@ -49,8 +49,6 @@ jobs:
         vcs_release: false
 
     - name: Action | Comment on PR with new version
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo "## The results of python-semantic-release are below." | tee -a "$GITHUB_STEP_SUMMARY"
         echo "* released: %{{ github.check.outputs.released }}" | tee -a "$GITHUB_STEP_SUMMARY"
