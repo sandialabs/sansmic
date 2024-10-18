@@ -1,6 +1,15 @@
 # CHANGELOG
 
 
+## v1.0.3 (2024-10-18)
+
+### Unknown
+
+* Merge branch 'main' into staging
+
+Signed-off-by: David Hart <dbhart@users.noreply.github.com> ([`44bf9f7`](https://github.com/sandialabs/sansmic/commit/44bf9f79973c646b0c365ef94d6c8b4c5a435ceb))
+
+
 ## v1.0.2 (2024-10-17)
 
 ### Refactoring
@@ -13,6 +22,14 @@
 
 
 ## v1.0.1 (2024-10-12)
+
+### Bug Fixes
+
+* fix: change workflows for proper execution ([`c4ea2f4`](https://github.com/sandialabs/sansmic/commit/c4ea2f4464cbcbdf8d16a94e392fca404348e48e))
+
+* fix: semantic release workflow syntax errors ([`9f7d215`](https://github.com/sandialabs/sansmic/commit/9f7d215439feb7348068bcae8748452b3737b2d5))
+
+* fix: test semantic release and conventional commits ([`54423b1`](https://github.com/sandialabs/sansmic/commit/54423b194057e493def5456b290a3c4ec2f62098))
 
 ### Documentation
 
@@ -59,14 +76,6 @@ Signed-off-by: David Hart <dbhart@sandia.gov> ([`a181f3a`](https://github.com/sa
 Update the README on github.
 
 Signed-off-by: David Hart <dbhart@users.noreply.github.com> ([`11a5215`](https://github.com/sandialabs/sansmic/commit/11a521545d994ea8777ed654fd7c1f40e287e683))
-
-### Fixes
-
-* fix: change workflows for proper execution ([`c4ea2f4`](https://github.com/sandialabs/sansmic/commit/c4ea2f4464cbcbdf8d16a94e392fca404348e48e))
-
-* fix: semantic release workflow syntax errors ([`9f7d215`](https://github.com/sandialabs/sansmic/commit/9f7d215439feb7348068bcae8748452b3737b2d5))
-
-* fix: test semantic release and conventional commits ([`54423b1`](https://github.com/sandialabs/sansmic/commit/54423b194057e493def5456b290a3c4ec2f62098))
 
 ### Refactoring
 
