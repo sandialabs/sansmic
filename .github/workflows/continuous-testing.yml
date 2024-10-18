@@ -1,4 +1,4 @@
-name: Continuous Integration - Rapid Test
+name: Tests
 
 on:
   push:
@@ -56,13 +56,14 @@ jobs:
         run: |
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          python3 -m pytest --nbmake --no-cov-on-fail --disable-warnings --cov=sansmic --cov=tests --cov-report= --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --no-cov-on-fail --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Generate coverage report
-        run: |
-          echo '### Coverage report' >> $GITHUB_STEP_SUMMARY
-          coverage report --fail-under=80 --format markdown >> $GITHUB_STEP_SUMMARY
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ${{ matrix.os }}
 
       - name: Test uninstall
         run: python3 -m pip uninstall -y sansmic

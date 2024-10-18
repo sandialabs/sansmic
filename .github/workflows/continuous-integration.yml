@@ -1,15 +1,15 @@
-name: Continuous Integration - Full Test Target Suite
+name: Test OSes and Python versions
 
 on:
   push:
+    tags:
+      - '*'
+  pull_request:
     paths:
       - src/**
       - tests/**
     branches:
       - main
-    tags:
-      - '*'
-  pull_request:
   workflow_dispatch:
 
 defaults:
