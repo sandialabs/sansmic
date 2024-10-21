@@ -48,7 +48,7 @@ jobs:
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller -P src/python --collect-all sansmic --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
+          pyinstaller -p src/python --collect-all sansmic --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
 
       - name: Action | Zip the directory
         run: Compress-Archive -Path dist/sansmic -Destination sansmic-$SANSMIC_VERSION-win64-standalone.zip
