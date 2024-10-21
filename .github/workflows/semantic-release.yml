@@ -35,8 +35,23 @@ jobs:
       run: |
         git checkout -B ${{ github.ref_name }} ${{ github.sha }}
 
-    - name: Action | Semantic Version Release
+    - name: Action | Check if release is needed
       id: release
+      # Adjust tag with desired version if applicable.
+      uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        git_committer_name: "github-actions"
+        git_committer_email: "actions@users.noreply.github.com"
+        build: false
+        changelog: false
+        commit: false
+        push: false
+        tag: false
+        vcs_release: false
+
+    - name: Action | Semantic Release - Update version
+      if: steps.release.outputs.released == 'true'
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
       with:
@@ -50,8 +65,16 @@ jobs:
         tag: false
         vcs_release: false
 
-    - name: Action | Create Pull Request
+    - name: Action | Create Pull Request - Release
+      if: steps.release.outputs.released == 'true'
       run: |
-        gh pr create -B main -H staging --title 'Merge staging into main' --body 'Created by Github action: semantic-release.yml'
+        gh pr create -B main -H staging --title "release: Merge into main and create tag as v${{ steps.release.outputs.version }}" --body 'Created by Github action: semantic-release.yml'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Action | Create Pull Request - Chore
+      if: steps.release.outputs.released == 'false'
+      run: |
+        gh pr create -B main -H staging --title 'chore: Merge non-code changes into main' --body 'Created by Github action: semantic-release.yml'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

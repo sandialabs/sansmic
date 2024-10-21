@@ -46,15 +46,14 @@ jobs:
           python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> $Env:GITHUB_ENV
           echo "sha_short=$(git rev-parse --short HEAD)" >> $Env:GITHUB_ENV
 
-      - name: Setup | Create script file
-        run: |
-          echo "${{ env.sansmic_version }}"
-          echo "${{ env.sha_short }}"
-          sansmic-convert tests/baseline.dat tests/example.toml
-
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic --add-data tests/example.toml:. src/python/sansmic/app.py
+          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic src/python/sansmic/app.py
+
+      - name: Action | Create examples
+        run: |
+          mkdir dist/sansmic/examples
+          sansmic-convert tests/baseline.dat dist/sansmic/examples/baseline.toml
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
