@@ -22,8 +22,8 @@ jobs:
     runs-on: [windows-latest]
     continue-on-error: true
     env:
-      sansmic_version: 1.0.2-post
-      sha_short: dummy
+      sansmic_version: 0.0.0+local
+      sha_short: unreal
 
     steps:
       - name: Setup | Install python
@@ -50,15 +50,16 @@ jobs:
         run: |
           echo "${{ env.sansmic_version }}"
           echo "${{ env.sha_short }}"
+          sansmic-convert tests/baseline.dat tests/example.toml
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic src/python/sansmic/app.py
+          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic --add-data tests/example.toml:. src/python/sansmic/app.py
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          name: "sansmic-${{ env.sansmic_version }}-${{ env.sha_short }}-win64-exe"
+          name: "sansmic-${{ env.sansmic_version }}-standalone-win_amd64"
           path: ./dist/sansmic
 
   build_wheels:
@@ -195,10 +196,18 @@ jobs:
         path: dist
         merge-multiple: true
 
+    - name: Setup | Download the standalone executable
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      with:
+        pattern: sansmic-*-standalone-win_amd64
+        path: dist
+        merge-multiple: true
+
     - name: Action | Sign the dists with Sigstore
       uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0
       with:
         inputs: >-
+          ./dist/*.zip
           ./dist/*.tar.gz
           ./dist/*.whl
 
