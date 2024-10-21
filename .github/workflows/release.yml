@@ -21,7 +21,8 @@ jobs:
     name: Build standalone executable for Windows
     runs-on: [windows-latest]
     continue-on-error: true
-
+    env:
+      SANSMIC_VERSION: ${{ }}
     steps:
       - name: Setup | Install python
         uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
@@ -34,11 +35,13 @@ jobs:
       - name: Setup | Install Dependencies
         run: |
           pip install -r requirements.txt -r requirements-exe.txt
-          pip install .
+          pip install -e .
 
       - name: Setup | Get the sansmic version number
+        id: sansmic_version
         run: |
-          python -c "import sansmic; print('SANSMIC_VERSION='+sansmic.__version__)" >> "$GITHUB_ENV"
+          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_OUTPUT"
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Setup | Create script file
         run: |
@@ -48,15 +51,15 @@ jobs:
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller --collect-all sansmic --collect-all click --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
+          pyinstaller -p src/python -p src/python/sansmic --collect-all sansmic --collect-all click --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
 
       - name: Action | Zip the directory
-        run: Compress-Archive -Path dist/sansmic -Destination dist/sansmic-standalone-"$SANSMIC_VERSION"-win64.zip
+        run: Compress-Archive -Path dist/sansmic -Destination dist/exec-sansmic-${{ steps.vars.outputs.sansmic_version }}.${{ steps.vars.outputs.sha_short }}-win64.zip
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          name: pyinst-windows
+          name: pyinst-exec-win64
           path: ./dist/*.zip
 
   build_wheels:
