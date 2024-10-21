@@ -50,15 +50,10 @@ jobs:
         run: |
           echo "${{ env.sansmic_version }}"
           echo "${{ env.sha_short }}"
-          echo "print('Sansmic is starting...')" > sansmic.py
-          echo "import sansmic" >> sansmic.py
-          echo "import sansmic.app" >> sansmic.py
-          echo "import sansmic.libsansmic" >> sansmic.py
-          echo "sansmic.app.run()" >> sansmic.py
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic sansmic.py
+          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic src/python/app.py
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
