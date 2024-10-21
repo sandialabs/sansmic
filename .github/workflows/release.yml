@@ -43,8 +43,8 @@ jobs:
       - name: Setup | Get the sansmic version number
         id: vars
         run: |
-          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_ENV"
-          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> $Env:GITHUB_ENV
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $Env:GITHUB_ENV
 
       - name: Setup | Create script file
         run: |
