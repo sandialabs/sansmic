@@ -12,6 +12,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     concurrency: release
+    if: ${{ github.repository == 'sandialabs/sansmic' }}  # do not run everywhere
 
     permissions:
       id-token: write
@@ -49,15 +50,8 @@ jobs:
         tag: false
         vcs_release: false
 
-    - name: create pull request
+    - name: Action | Create Pull Request
       run: |
         gh pr create -B main -H staging --title 'Merge staging into main' --body 'Created by Github action: semantic-release.yml'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    #- name: Publish | Upload to GitHub Release Assets
-    #  uses: python-semantic-release/publish-action@3dccc469c6577f385b5e844ed29677fb1f4cb4b6 # v9.10.1
-    #  if: steps.release.outputs.released == 'true'
-    #  with:
-    #    github_token: ${{ secrets.GITHUB_TOKEN }}
-    #    tag: ${{ steps.release.outputs.tag }}
