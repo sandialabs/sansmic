@@ -21,8 +21,7 @@ jobs:
     name: Build standalone executable for Windows
     runs-on: [windows-latest]
     continue-on-error: true
-    env:
-      SANSMIC_VERSION: ${{ }}
+
     steps:
       - name: Setup | Install python
         uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
