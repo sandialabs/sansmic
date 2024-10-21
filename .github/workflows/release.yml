@@ -35,8 +35,6 @@ jobs:
         run: |
           pip install -r requirements.txt -r requirements-exe.txt
           pip install -e .
-          dir
-          dir src/python/sansmic
 
       - name: Setup | Get the sansmic version number
         id: vars
@@ -53,12 +51,12 @@ jobs:
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller -p src/python -p src/python/sansmic --collect-all sansmic --collect-all sansmic.libsansmic --collect-all click --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
+          pyinstaller --collect-all sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:_internal/sansmic sansmic.py
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          name: sansmic-${{ steps.vars.outputs.sansmic_version }}-${{ steps.vars.outputs.sha_short }}-win64-exe
+          name: "sansmic-${{ steps.vars.outputs.sansmic_version }}-${{ steps.vars.outputs.sha_short }}-win64-exe"
           path: ./dist/sansmic
 
   build_wheels:
