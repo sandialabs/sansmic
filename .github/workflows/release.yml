@@ -39,12 +39,13 @@ jobs:
       - name: Setup | Get the sansmic version number
         id: vars
         run: |
-          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_OUTPUT"
-          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_ENV"
+          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Setup | Create script file
         run: |
-          echo "%{{ steps.vars.outputs. }}"
+          echo "${{ steps.vars.outputs.sansmic_version }}"
+          echo "${{ steps.vars.outputs.sha_short }}"
           echo "print('Sansmic is starting...')" > sansmic.py
           echo "import sansmic.app" >> sansmic.py
           echo "sansmic.app.run()" >> sansmic.py
