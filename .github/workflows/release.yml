@@ -35,31 +35,31 @@ jobs:
         run: |
           pip install -r requirements.txt -r requirements-exe.txt
           pip install -e .
+          dir
+          dir src/python/sansmic
 
       - name: Setup | Get the sansmic version number
-        id: sansmic_version
+        id: vars
         run: |
           python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_OUTPUT"
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Setup | Create script file
         run: |
+          echo "%{{ steps.vars.outputs. }}"
           echo "print('Sansmic is starting...')" > sansmic.py
           echo "import sansmic.app" >> sansmic.py
           echo "sansmic.app.run()" >> sansmic.py
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller -p src/python -p src/python/sansmic --collect-all sansmic --collect-all click --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
-
-      - name: Action | Zip the directory
-        run: Compress-Archive -Path dist/sansmic -Destination dist/exec-sansmic-${{ steps.vars.outputs.sansmic_version }}.${{ steps.vars.outputs.sha_short }}-win64.zip
+          pyinstaller -p src/python -p src/python/sansmic --collect-all sansmic --collect-all sansmic.libsansmic --collect-all click --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic sansmic.py
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          name: pyinst-exec-win64
-          path: ./dist/*.zip
+          name: sansmic-${{ steps.vars.outputs.sansmic_version }}-${{ steps.vars.outputs.sha_short }}-win64-exe
+          path: ./dist/sansmic
 
   build_wheels:
     name: Build distribution 📦 on ${{ matrix.os }}
