@@ -39,20 +39,22 @@ jobs:
       - name: Setup | Get the sansmic version number
         id: vars
         run: |
-          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_ENV"
-          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> "$GITHUB_OUTPUT"
+          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Setup | Create script file
         run: |
           echo "${{ steps.vars.outputs.sansmic_version }}"
           echo "${{ steps.vars.outputs.sha_short }}"
           echo "print('Sansmic is starting...')" > sansmic.py
+          echo "import sansmic" >> sansmic.py
           echo "import sansmic.app" >> sansmic.py
+          echo "import sansmic.libsansmic" >> sansmic.py
           echo "sansmic.app.run()" >> sansmic.py
 
       - name: Action | Run PyInstaller
         run: |
-          pyinstaller --collect-all sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio --hidden-import sansmic --hidden-import sansmic.libsansmic --hidden-import sansmic.app -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:_internal/sansmic sansmic.py
+          pyinstaller --collect-all sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic sansmic.py
 
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
