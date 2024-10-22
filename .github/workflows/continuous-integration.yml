@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - '*'
+    branches:
+      - '*'
+    paths:
+      - src/**
+      - tests/**
+      - .github/workflows/continuous-integration.yml
   pull_request:
     paths:
       - src/**
@@ -12,15 +18,12 @@ on:
       - main
   workflow_dispatch:
 
-defaults:
-  run:
-    shell: bash
-
 permissions:
   contents: read
 
 jobs:
   full-suite:
+    if: ${{ github.event_name == "pull_request" || github.event_name == "workflow_dispatch" || ( github.event_name == "push" && startsWith(github.ref, 'refs/tags/')) }}
     strategy:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
@@ -29,5 +32,15 @@ jobs:
     with:
       version: ${{ matrix.version }}
       os: ${{ matrix.os }}
+    secrets:
+      coverage_token: ${{ secrets.CODECOV_TOKEN }}
+
+  quick-test:
+    if: ${{ github.event_name == "push" && !startsWith(github.ref, 'refs/tags/') }}
+    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@main
+    with:
+      version: "3.12"
+      os: ubuntu-latest
+      verbose: true
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
