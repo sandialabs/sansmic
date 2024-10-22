@@ -57,12 +57,12 @@ jobs:
         run: python3 -m pip install .[formats,examples,tests]
 
       - name: Test with pytest
-        if: ${{ !inputs.verbose }}
+        if: ${{ ! inputs.verbose }}
         run: |
           python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/
 
       - name: Test with pytest (non-windows verbose)
-        if: ${{ inputs.verbose && inputs.os != "windows-latest" }}
+        if: inputs.verbose && inputs.os != 'windows-latest'
         run: |
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
@@ -70,7 +70,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Test with pytest (windows verbose)
-        if: ${{ inputs.verbose && inputs.os == "windows-latest" }}
+        if: inputs.verbose && inputs.os == 'windows-latest'
         shell: powershell
         run: |
           echo '### Run tests' >> $Env:GITHUB_STEP_SUMMARY
