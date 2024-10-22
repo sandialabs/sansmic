@@ -1,4 +1,4 @@
-name: Test OSes and Python versions
+name: CI Tests
 
 on:
   push:
@@ -20,54 +20,14 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  full-suite:
     strategy:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
         os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
-
-    steps:
-
-      - name: Harden Runner
-        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            api.codecov.io:443
-            api.github.com:443
-            cli.codecov.io:443
-            codecov.io:443
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
-            storage.googleapis.com:443
-            uploader.codecov.io:443
-
-      - name: Check out the commit
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
-
-      - name: Set up Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        with:
-          python-version: ~${{ matrix.version }}
-
-      - name: Install development dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-
-      - name: Test install
-        run: python3 -m pip install .[formats,tests,examples]
-
-      - name: Test with pytest
-        run: python3 -m pytest --nbmake --cov=sansmic --cov=tests examples/ tests/
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: ${{ matrix.os }}
-
-      - name: Test uninstall
-        run: python3 -m pip uninstall -y sansmic
+    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@main
+    with:
+      version: ${{ matrix.version }}
+      os: ${{ matrix.os }}
+    secrets:
+      coverage_token: ${{ secrets.CODECOV_TOKEN }}
