@@ -1,21 +1,18 @@
-name: CI Tests
+name: Testing | Python 3.9--3.12 | all OSes
 
 on:
   push:
     tags:
       - '*'
-    branches:
-      - '*'
-    paths:
-      - src/**
-      - tests/**
-      - .github/workflows/continuous-integration.yml
   pull_request:
     paths:
+      - examples/**
       - src/**
       - tests/**
+      - setup.py
     branches:
       - main
+      - staging
   workflow_dispatch:
 
 permissions:
@@ -23,24 +20,13 @@ permissions:
 
 jobs:
   full-suite:
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     strategy:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
         os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@main
+    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@951ebbd277e18b0a5b88a4e67535e262bc59f979
     with:
       version: ${{ matrix.version }}
       os: ${{ matrix.os }}
-    secrets:
-      coverage_token: ${{ secrets.CODECOV_TOKEN }}
-
-  quick-test:
-    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@main
-    with:
-      version: "3.12"
-      os: ubuntu-latest
-      verbose: true
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
