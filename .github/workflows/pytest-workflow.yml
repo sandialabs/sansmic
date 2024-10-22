@@ -1,4 +1,4 @@
-name: Testing Workflow
+name: Reusable test workflow
 
 on:
   workflow_call:
@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   run-pytest-coverage:
+    name: Test and compute coverage
     runs-on: ${{ inputs.os }}
     steps: 
       - name: Harden Runner
@@ -52,9 +53,14 @@ jobs:
         run: python3 -m pip install .[formats,examples,tests]
 
       - name: Test with pytest
-        run: python3 -m pytest --nbmake --cov=sansmic --cov=tests examples/ tests/
+        run: |
+          echo '### Run tests' >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --no-cov-on-fail --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage reports to Codecov
+        if: success() || failure()
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           token: ${{ secrets.coverage_token }}
