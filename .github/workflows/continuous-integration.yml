@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   full-suite:
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) }}
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     strategy:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
@@ -36,7 +36,7 @@ jobs:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
 
   quick-test:
-    if: ${{ github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') }}
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
     uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@main
     with:
       version: "3.12"
