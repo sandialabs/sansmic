@@ -1,16 +1,11 @@
-name: PR Testing | main and staging
+name: Tests | macOS_arm | CPython 3.9 — 3.12
 
 on:
-  pull_request:
-    paths:
-      - examples/**
-      - src/**
-      - tests/**
-      - setup.py
+  push:
+    tags:
+      - '*'
     branches:
-      - main
-      - staging
-  workflow_dispatch:
+      - 'main'
 
 permissions:
   contents: read
@@ -21,10 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
-        os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
     uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@951ebbd277e18b0a5b88a4e67535e262bc59f979
     with:
       version: ${{ matrix.version }}
-      os: ${{ matrix.os }}
+      os: macOS-latest
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
