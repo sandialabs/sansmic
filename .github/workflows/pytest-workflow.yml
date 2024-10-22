@@ -9,6 +9,10 @@ on:
       os:
         required: true
         type: string
+      verbose:
+        default: false
+        required: false
+        type: boolean
     secrets:
       coverage_token:
         required: false
@@ -53,11 +57,26 @@ jobs:
         run: python3 -m pip install .[formats,examples,tests]
 
       - name: Test with pytest
+        if: ${{ !inputs.verbose }}
+        run: |
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/
+
+      - name: Test with pytest (non-windows verbose)
+        if: ${{ inputs.verbose && inputs.os != "windows-latest" }}
         run: |
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          python3 -m pytest --nbmake --no-cov-on-fail --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Test with pytest (windows verbose)
+        if: ${{ inputs.verbose && inputs.os == "windows-latest" }}
+        shell: powershell
+        run: |
+          echo '### Run tests' >> $Env:GITHUB_STEP_SUMMARY
+          echo '```bash' >> $Env:GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ >> $Env:GITHUB_STEP_SUMMARY
+          echo '```' >> $Env:GITHUB_STEP_SUMMARY
 
       - name: Upload coverage reports to Codecov
         if: success() || failure()
