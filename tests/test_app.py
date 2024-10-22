@@ -167,13 +167,13 @@ class TestApplication(unittest.TestCase):
         """Test the license file echo"""
         runner = click.testing.CliRunner()
         results = runner.invoke(sansmic.app.run, ["--license"])
-        self.assertEqual(results.output.strip(), sansmic.__license__.strip())
+        self.assertEqual(results.output.strip(), sansmic.license.strip())
 
     def test_copyright(self):
         """Test the license file echo"""
         runner = click.testing.CliRunner()
         results = runner.invoke(sansmic.app.run, ["--copyright"])
-        self.assertEqual(results.output.strip(), sansmic.__copyright__.strip())
+        self.assertEqual(results.output.strip(), sansmic.copyright.strip())
 
     def test_version(self):
         """Test the license file echo"""
