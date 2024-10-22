@@ -22,6 +22,7 @@ from numpy import round
 from pip._vendor.rich.progress import Progress
 
 import sansmic.io
+from ._version import __version__, copyright, license
 
 try:  # pragma: no cover
     import h5py
@@ -42,9 +43,7 @@ def print_license(ctx: click.Context, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    from sansmic import __license__
-
-    click.echo_via_pager(__license__)
+    click.echo_via_pager(license)
     ctx.exit()
 
 
@@ -56,9 +55,7 @@ def print_copyright(ctx: click.Context, param, value):
     """
     if not value or ctx.resilient_parsing:
         return
-    from sansmic import __copyright__
-
-    click.echo_via_pager(__copyright__)
+    click.echo_via_pager(copyright)
     ctx.exit()
 
 
@@ -257,7 +254,6 @@ def run(
     debug: bool = False,
     json: bool = False,
 ):
-    from sansmic import __version__
 
     echo = _Echo(verbosity=verbose, quiet=quiet)
     echo(f"sansmic v{__version__}")
@@ -268,7 +264,7 @@ def run(
 
     log_file = opath.joinpath(prefix).with_suffix(".log")
     with open(log_file, "w") as flog:
-        flog.write(f"program:  sansmic v{sansmic.__version__}\n")
+        flog.write(f"program:  sansmic v{__version__}\n")
         flog.write(f"startup:  {startup}\n")
         flog.write(f"input:    {scenario_file}\n")
         flog.write(f"output:   {pprefix}\n")
