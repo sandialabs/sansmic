@@ -1,4 +1,4 @@
-name: windows // CPython 3.9--3.12
+name: '🏢-🐍3.9--3.12'
 
 on:
   push:
