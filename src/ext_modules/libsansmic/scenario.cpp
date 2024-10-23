@@ -62,40 +62,46 @@ int sansmic::Scenario::add_stage(Stage stage) {
  * @param fout the open steam to print to
  */
 void sansmic::Scenario::debug_log(ofstream &fout) {
-  fout << "# Scenario definition" << endl;
-  fout << "title = '" << title << "'" << endl;
-  fout << "comments = '''" << comments << "'''" << endl;
-  fout << "num-cells = " << num_cells << endl;
-  fout << "cavern-height = " << cavern_height << endl;
-  fout << "floor-depth = " << floor_depth << endl;
-  fout << "ullage-standoff = " << ullage_standoff << endl;
-  fout << "geometry-format = " << geometry_format << endl;
-  fout << "fraction-insolubles = " << fraction_insolubles << endl;
-  fout << "geom-radii = [";
+  fout << "- level: DEBUG" << endl;
+  fout << "  file: \"scenario.cpp:--\"" << endl;
+  fout << "  funcName: \"sansmic::Scenario::debug_log\"" << endl;
+  fout << "  message: Data received for scenario"
+       << std::endl
+       << "  scenario:" << std::endl;
+  fout << "    title: '" << title << "'" << std::endl;
+  fout << "    comments: '''" << comments << "'''" << std::endl;
+  fout << "    num-cells: " << num_cells << std::endl;
+  fout << "    cavern-height: " << cavern_height << std::endl;
+  fout << "    floor-depth: " << floor_depth << std::endl;
+  fout << "    ullage-standoff: " << ullage_standoff << std::endl;
+  fout << "    geometry-format: " << geometry_format << std::endl;
+  fout << "    fraction-insolubles: " << fraction_insolubles << std::endl;
+  fout << "    geom-radii: [";
   for (int i = 0; i < geom_radii.size(); i++) fout << geom_radii[i] << ", ";
-  fout << "]" << endl;
-  fout << "geom-depths = [";
+  fout << "]" << std::endl;
+  fout << "    geom-depths: [";
   for (int i = 0; i < geom_depths.size(); i++) fout << geom_depths[i] << ", ";
-  fout << "]" << endl;
-  fout << "geom-volumes = [";
+  fout << "]" << std::endl;
+  fout << "    geom-volumes: [";
   for (int i = 0; i < geom_volumes.size(); i++) fout << geom_volumes[i] << ", ";
-  fout << "]" << endl;
-  fout << endl;
-  fout << "[advanced]" << endl;
-  fout << "coallescing-wells = " << coallescing_wells << endl;
-  fout << "well-separation = " << well_separation << endl;
-  fout << "jet-model-version = " << jet_model_version << endl;
-  fout << "plume-model-version = " << plume_model_version << endl;
-  fout << "temperature-model-version = " << temperature_model_version << endl;
-  fout << "entrainment-coeff = " << entrainment_coeff << endl;
-  fout << "diffusion-beta-coeff = " << diffusion_beta << endl;
-  fout << "molecular-diffusion-coeff = " << molecular_diffusion << endl;
-  fout << "eddy-coeff = " << eddy_coefficient << endl;
-  fout << "ode-relerr = " << relative_error << endl;
-  fout << "ode-abserr = " << absolute_error << endl;
-  fout << "dissolution-factor = " << dissolution_factor << endl;
-  fout << "salt-max-brine-sg = " << max_brine_sg << endl;
-  fout << "salt-solid-density = " << solid_density << endl;
-  fout << endl;
+  fout << "]" << std::endl;
+  fout << "    advanced:" << std::endl;
+  fout << "      coallescing-wells = " << coallescing_wells << std::endl;
+  fout << "      well-separation = " << well_separation << std::endl;
+  fout << "      jet-model-version = " << jet_model_version << std::endl;
+  fout << "      plume-model-version = " << plume_model_version << std::endl;
+  fout << "      temperature-model-version = " << temperature_model_version
+       << std::endl;
+  fout << "      entrainment-coeff = " << entrainment_coeff << std::endl;
+  fout << "      diffusion-beta-coeff = " << diffusion_beta << std::endl;
+  fout << "      molecular-diffusion-coeff = " << molecular_diffusion
+       << std::endl;
+  fout << "      eddy-coeff = " << eddy_coefficient << std::endl;
+  fout << "      ode-relerr = " << relative_error << std::endl;
+  fout << "      ode-abserr = " << absolute_error << std::endl;
+  fout << "      dissolution-factor = " << dissolution_factor << std::endl;
+  fout << "      salt-max-brine-sg = " << max_brine_sg << std::endl;
+  fout << "      salt-solid-density = " << solid_density << std::endl;
+  fout << "    stages:" << std::endl;
   for (int i = 0; i < stages.size(); i++) stages[i].debug_log(fout);
 }

@@ -89,7 +89,7 @@ tag_format = "v{version}"
 version_toml = ["pyproject.toml:project.version"]
 version_variables = [
     "setup.py:__version__",
-    "src/python/sansmic/__init__.py:__version__",
+    "src/python/sansmic/_version.py:__version__",
     "docs/conf.py:version",
 ]
 

@@ -45,26 +45,29 @@ sansmic::Stage::Stage() {
  * @brief Output debug data to a stream.
  * @param fout Open stream to output to
  */
-void sansmic::Stage::debug_log(ofstream &fout) {
-  fout << "[[stages]]" << endl;
-  fout << "title = '" << title << "'" << endl;
-  fout << "leach-mode = " << leach_mode << endl;
-  fout << "print-freq = " << print_freq << endl;
-  fout << "is-subsequent = " << is_subsequent << endl;
-  fout << "t-rest = " << t_rest << endl;
-  fout << "stop-cond-val = " << stop_cond_val << endl;
-  fout << "h-inj = " << h_inj << endl;
-  fout << "h-prod = " << h_prod << endl;
-  fout << "h-obi = " << h_obi << endl;
-  fout << "Q-raw = " << Q_raw << endl;
-  fout << "r-tbgID = " << r_tbgID << endl;
-  fout << "r-tbgOD = " << r_tbgOD << endl;
-  fout << "r-csgID = " << r_csgID << endl;
-  fout << "r-csgOD = " << r_csgOD << endl;
-  fout << "sg-raw = " << sg_raw << endl;
-  fout << "sg-init = " << sg_init << endl;
-  fout << "dt = " << dt << endl;
-  fout << "t-stage = " << t_stage << endl;
-  fout << "Q-oil = " << Q_oil << endl;
-  fout << endl;
+void sansmic::Stage::debug_log(ofstream &fout, int stageNum) {
+  fout << "- level: DEBUG" << endl;
+  fout << "  file: \"stage.cpp:--\"" << endl;
+  fout << "  funcName: \"sansmic::Stage::debug_log\"" << endl;
+  fout << "  message: Data received for stage number " << stageNum << std::endl;
+  fout << "  stage:" << endl;
+  fout << "    title = '" << title << "'" << endl;
+  fout << "    leach-mode = " << leach_mode << endl;
+  fout << "    print-freq = " << print_freq << endl;
+  fout << "    is-subsequent = " << is_subsequent << endl;
+  fout << "    t-rest = " << t_rest << endl;
+  fout << "    stop-cond-val = " << stop_cond_val << endl;
+  fout << "    h-inj = " << h_inj << endl;
+  fout << "    h-prod = " << h_prod << endl;
+  fout << "    h-obi = " << h_obi << endl;
+  fout << "    Q-raw = " << Q_raw << endl;
+  fout << "    r-tbgID = " << r_tbgID << endl;
+  fout << "    r-tbgOD = " << r_tbgOD << endl;
+  fout << "    r-csgID = " << r_csgID << endl;
+  fout << "    r-csgOD = " << r_csgOD << endl;
+  fout << "    sg-raw = " << sg_raw << endl;
+  fout << "    sg-init = " << sg_init << endl;
+  fout << "    dt = " << dt << endl;
+  fout << "    t-stage = " << t_stage << endl;
+  fout << "    Q-oil = " << Q_oil << endl;
 }
