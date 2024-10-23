@@ -201,13 +201,13 @@ PYBIND11_MODULE(libsansmic, m) {
            "Run the next step in stage `istage` of the model.")
       .def("num_stages", &sansmic::Model::get_num_stages,
            "int : Get the number of model stages.")
-      .def("is_running", &sansmic::Model::get_running_status,
+      .def("is_running", &sansmic::Model::get_is_running,
            "int: Is the model in the middle of a stage.")
       .def("close_outfiles", &sansmic::Model::close_outfiles,
            "Close the C-library model output files.")
-      .def("generate_tst_file", &sansmic::Model::generate_tst_file,
+      .def("generate_tst_file", &sansmic::Model::set_use_tstfile,
            py::arg("use_file"), "Generate and output a .TST file")
-      .def("generate_out_file", &sansmic::Model::generate_out_file,
+      .def("generate_out_file", &sansmic::Model::set_use_outfile,
            py::arg("use_file"), "Generate and output an .OUT file")
       .def("set_verbosity_level", &sansmic::Model::set_verbosity_level,
            py::arg("verb"), "Set the console verbosity level")

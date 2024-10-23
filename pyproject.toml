@@ -3,7 +3,7 @@ name = "sansmic"
 description = "Sandia solution mining modeling software"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "1.0.2"
+version = "1.0.3"
 authors = [
     { name = "National Technology & Engineering Solutions of Sandia, LLC (NTESS)" },
     { name = "SANSMIC Authors (see AUTHORS.md)" },
@@ -89,7 +89,7 @@ tag_format = "v{version}"
 version_toml = ["pyproject.toml:project.version"]
 version_variables = [
     "setup.py:__version__",
-    "src/python/sansmic/__init__.py:__version__",
+    "src/python/sansmic/_version.py:__version__",
     "docs/conf.py:version",
 ]
 

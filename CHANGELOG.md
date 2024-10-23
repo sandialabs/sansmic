@@ -1,18 +1,53 @@
 # CHANGELOG
 
 
-## v1.0.2 (2024-10-17)
+## v1.0.3 (2024-10-23)
 
 ### Refactoring
 
-* refactor: logging capabilities and configuration (#58)
+* refactor(cpp): abstract out a BaseModel class for API clarity (#71)
 
-* refactor: convert to click from argparse
+* refactor: change the way logging is done, make output directories more explicit (not enforced yet)
 
-* refactor: change the way logging is done, make output directories more explicit (not enforced yet) ([`4feff68`](https://github.com/sandialabs/sansmic/commit/4feff688fdf1773331dd9864f3fe13a6bf17395c))
+* refactor: modify logging output formats
+
+* refactor: move certain elements out of Model into a BaseModel
+
+* ci: Check output of a continuous release process
+
+* ci: modify semantic-release pr requests to choose between release and chore
+
+* refactor(version): move location of version number to avoid circular imports
+
+* refactor(test): fix test to match refactor of license and copyright text names
+
+* ci(test): Test using re-usable workflow for testing
+
+* ci(test): update test workflows to use same reusable workflow underneath
+
+* ci(test): create separate tests for each of the OSes
+
+* ci(testsuite): change titles of os-specific workflows for brevity ([`926fa56`](https://github.com/sandialabs/sansmic/commit/926fa56840545cc103ffd9671f4557b1e0a19d98))
+
+### Unknown
+
+* Merge branch 'main' into staging
+
+Signed-off-by: David Hart <dbhart@users.noreply.github.com> ([`9416c06`](https://github.com/sandialabs/sansmic/commit/9416c0659d0e12cc463abc669ef8f6a1db07acbc))
+
+
+## v1.0.2 (2024-10-17)
 
 
 ## v1.0.1 (2024-10-12)
+
+### Bug Fixes
+
+* fix: change workflows for proper execution ([`c4ea2f4`](https://github.com/sandialabs/sansmic/commit/c4ea2f4464cbcbdf8d16a94e392fca404348e48e))
+
+* fix: semantic release workflow syntax errors ([`9f7d215`](https://github.com/sandialabs/sansmic/commit/9f7d215439feb7348068bcae8748452b3737b2d5))
+
+* fix: test semantic release and conventional commits ([`54423b1`](https://github.com/sandialabs/sansmic/commit/54423b194057e493def5456b290a3c4ec2f62098))
 
 ### Documentation
 
@@ -59,14 +94,6 @@ Signed-off-by: David Hart <dbhart@sandia.gov> ([`a181f3a`](https://github.com/sa
 Update the README on github.
 
 Signed-off-by: David Hart <dbhart@users.noreply.github.com> ([`11a5215`](https://github.com/sandialabs/sansmic/commit/11a521545d994ea8777ed654fd7c1f40e287e683))
-
-### Fixes
-
-* fix: change workflows for proper execution ([`c4ea2f4`](https://github.com/sandialabs/sansmic/commit/c4ea2f4464cbcbdf8d16a94e392fca404348e48e))
-
-* fix: semantic release workflow syntax errors ([`9f7d215`](https://github.com/sandialabs/sansmic/commit/9f7d215439feb7348068bcae8748452b3737b2d5))
-
-* fix: test semantic release and conventional commits ([`54423b1`](https://github.com/sandialabs/sansmic/commit/54423b194057e493def5456b290a3c4ec2f62098))
 
 ### Refactoring
 

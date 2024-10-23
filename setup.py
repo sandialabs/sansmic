@@ -7,7 +7,7 @@ from glob import glob
 from setuptools import find_packages, setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 here = path.abspath(path.dirname(__file__))
 
