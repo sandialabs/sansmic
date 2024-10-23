@@ -3,9 +3,7 @@
 name: Check release
 
 on:
-  push:
   pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,7 +15,6 @@ jobs:
 
     permissions:
       id-token: write
-      contents: write
       pull-requests: write
 
     steps:
@@ -41,8 +38,9 @@ jobs:
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@657118d28ae4a74d8a387bedf5db2bb7bac0cb33 # v9.11.1
       with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         build: false
-        changelog: false
+        changelog: true
         commit: false
         push: false
         tag: false
@@ -51,9 +49,9 @@ jobs:
     - name: Action | Comment on PR with new version
       run: |
         echo "## The results of python-semantic-release are below." | tee -a "$GITHUB_STEP_SUMMARY"
-        echo "* released: ${{ github.check.outputs.released }}" | tee -a "$GITHUB_STEP_SUMMARY"
-        echo "* is_prerelease: ${{ github.check.outputs.is_prerelease }}" | tee -a "$GITHUB_STEP_SUMMARY"
-        echo "* version: ${{ github.check.outputs.version }}" | tee -a "$GITHUB_STEP_SUMMARY"
-        echo "* tag: ${{ github.check.outputs.tag }}" | tee -a "$GITHUB_STEP_SUMMARY"
-        # echo "The release number should be ${{ github.check.outputs.version }}" >> release.md
-        # gh pr comment ${{ github.event.pull_request.number }} --body "This PR should include a release: ${{ steps.check.outputs.released }}\n"
+        echo "* released: ${{ steps.check.outputs.released }}" | tee -a "$GITHUB_STEP_SUMMARY"
+        echo "* is_prerelease: ${{ steps.check.outputs.is_prerelease }}" | tee -a "$GITHUB_STEP_SUMMARY"
+        echo "* version: ${{ steps.check.outputs.version }}" | tee -a "$GITHUB_STEP_SUMMARY"
+        echo "* tag: ${{ steps.check.outputs.tag }}" | tee -a "$GITHUB_STEP_SUMMARY"
+        # echo "The release number should be ${{ steps.check.outputs.version }}" >> release.md
+        gh pr comment ${{ github.event.pull_request.number }} --body "This PR should include a release: ${{ steps.check.outputs.released }}\n"

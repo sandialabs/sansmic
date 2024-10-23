@@ -1,4 +1,4 @@
-name: ubuntu // CPython 3.9 — 3.12
+name: ubuntu // CPython 3.9--3.12
 
 on:
   push:
