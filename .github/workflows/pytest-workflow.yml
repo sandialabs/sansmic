@@ -1,4 +1,4 @@
-name: Testing Workflow
+name: Reusable test workflow
 
 on:
   workflow_call:
@@ -9,6 +9,10 @@ on:
       os:
         required: true
         type: string
+      verbose:
+        default: false
+        required: false
+        type: boolean
     secrets:
       coverage_token:
         required: false
@@ -18,6 +22,7 @@ permissions:
 
 jobs:
   run-pytest-coverage:
+    name: Test and compute coverage
     runs-on: ${{ inputs.os }}
     steps: 
       - name: Harden Runner
@@ -47,15 +52,34 @@ jobs:
       - name: Install testing dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Test build and install
-        run: python3 -m pip install .
+        run: python3 -m pip install .[formats,examples,tests]
 
       - name: Test with pytest
-        run: python3 -m pytest --nbmake --cov=sansmic --cov=tests examples/ tests/
+        if: ${{ ! inputs.verbose }}
+        run: |
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/
+
+      - name: Test with pytest (non-windows verbose)
+        if: inputs.verbose && inputs.os != 'windows-latest'
+        run: |
+          echo '### Run tests' >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Test with pytest (windows verbose)
+        if: inputs.verbose && inputs.os == 'windows-latest'
+        shell: powershell
+        run: |
+          echo '### Run tests' >> $Env:GITHUB_STEP_SUMMARY
+          echo '```bash' >> $Env:GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ >> $Env:GITHUB_STEP_SUMMARY
+          echo '```' >> $Env:GITHUB_STEP_SUMMARY
 
       - name: Upload coverage reports to Codecov
+        if: success() || failure()
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           token: ${{ secrets.coverage_token }}
