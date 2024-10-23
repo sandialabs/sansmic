@@ -37,7 +37,11 @@ numpy and pandas packages.
 Installation can be accomplished most easily by using the PyPI.
 It can also be installed by downloading a wheel from the [releases]
 in this repository, or by cloning this repository and building it
-yourself.
+yourself. Finally, a standalone executable has been created that
+will be added to each release for Windows users that are unable
+due to install Python on their corporate computers (see the releases 
+on the right side of the page).
+
 
 #### PyPI wheels
 To install a pre-compiled version of sansmic, use the pip command

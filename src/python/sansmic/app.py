@@ -492,3 +492,7 @@ def convert(dat_file, out_file=None, full=False):
         logger.critical(str(e))
         raise e
     logger.debug("Successfully wrote scenario to {}".format(out_file))
+
+
+if __name__ == "__main__":
+    run()
