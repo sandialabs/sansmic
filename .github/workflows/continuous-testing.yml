@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   quick-test:
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@951ebbd277e18b0a5b88a4e67535e262bc59f979
+    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@7952e59342a8c8d1c8ad833121049bac58277167
     with:
       version: "3.12"
       os: ubuntu-latest
