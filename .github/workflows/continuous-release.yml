@@ -3,7 +3,7 @@
 name: Check release
 
 on:
-  pull_request:
+  pull_request_target:
 
 permissions:
   contents: read
@@ -14,8 +14,8 @@ jobs:
     concurrency: release
 
     permissions:
-      id-token: write
       pull-requests: write
+      id-token: write
 
     steps:
     - name: Setup | Harden Runner
@@ -46,12 +46,16 @@ jobs:
         tag: false
         vcs_release: false
 
-    - name: Action | Comment on PR with new version
-      run: |
+    - run: |
         echo "## The results of python-semantic-release are below." | tee -a "$GITHUB_STEP_SUMMARY"
         echo "* released: ${{ steps.check.outputs.released }}" | tee -a "$GITHUB_STEP_SUMMARY"
         echo "* is_prerelease: ${{ steps.check.outputs.is_prerelease }}" | tee -a "$GITHUB_STEP_SUMMARY"
         echo "* version: ${{ steps.check.outputs.version }}" | tee -a "$GITHUB_STEP_SUMMARY"
         echo "* tag: ${{ steps.check.outputs.tag }}" | tee -a "$GITHUB_STEP_SUMMARY"
-        # echo "The release number should be ${{ steps.check.outputs.version }}" >> release.md
-        gh pr comment ${{ github.event.pull_request.number }} --body "This PR should include a release: ${{ steps.check.outputs.released }}\n"
+
+    - name: Action | Comment on PR with new version
+      if: ${{ steps.check.outputs.released == 'true' }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh pr comment ${{ github.event.pull_request.number }} --body "This PR will induce a release as v${{ steps.check.outputs.version }}\n"
