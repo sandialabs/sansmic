@@ -4,8 +4,6 @@ name: Check release
 
 on:
   pull_request_target:
-    branches:
-      - staging
 
 permissions:
   contents: read
