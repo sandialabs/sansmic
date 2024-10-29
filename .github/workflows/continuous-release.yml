@@ -57,4 +57,4 @@ jobs:
         echo "* version: ${{ steps.check.outputs.version }}" | tee -a "$GITHUB_STEP_SUMMARY"
         echo "* tag: ${{ steps.check.outputs.tag }}" | tee -a "$GITHUB_STEP_SUMMARY"
         # echo "The release number should be ${{ steps.check.outputs.version }}" >> release.md
-        gh pr comment ${{ github.event.pull_request.number }} --body "This PR should include a release: ${{ steps.check.outputs.released }}\n"
+        # gh pr comment ${{ github.event.pull_request.number }} --body "This PR should include a release: ${{ steps.check.outputs.released }}\n"
