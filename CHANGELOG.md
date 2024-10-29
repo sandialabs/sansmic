@@ -1,39 +1,32 @@
 # CHANGELOG
 
 
-## v1.0.3 (2024-10-23)
+## v1.0.4 (2024-10-29)
 
 ### Refactoring
 
-* refactor(cpp): abstract out a BaseModel class for API clarity (#71)
+* refactor: update libsansmic cpp code (#79)
 
 * refactor: change the way logging is done, make output directories more explicit (not enforced yet)
+
+* style: apply black formatting
+
+* ci: change testing output to use 'tee' instead of redirect
+
+* test: no subprocess test in ipynb on linux
+
+* test: strip metadata by hand from ipynb
 
 * refactor: modify logging output formats
 
 * refactor: move certain elements out of Model into a BaseModel
 
-* ci: Check output of a continuous release process
-
-* ci: modify semantic-release pr requests to choose between release and chore
-
 * refactor(version): move location of version number to avoid circular imports
 
-* refactor(test): fix test to match refactor of license and copyright text names
+* refactor(test): fix test to match refactor of license and copyright text names ([`db7ae9c`](https://github.com/sandialabs/sansmic/commit/db7ae9c574db9eae0e7f564386a1c1b71db01770))
 
-* ci(test): Test using re-usable workflow for testing
 
-* ci(test): update test workflows to use same reusable workflow underneath
-
-* ci(test): create separate tests for each of the OSes
-
-* ci(testsuite): change titles of os-specific workflows for brevity ([`926fa56`](https://github.com/sandialabs/sansmic/commit/926fa56840545cc103ffd9671f4557b1e0a19d98))
-
-### Unknown
-
-* Merge branch 'main' into staging
-
-Signed-off-by: David Hart <dbhart@users.noreply.github.com> ([`9416c06`](https://github.com/sandialabs/sansmic/commit/9416c0659d0e12cc463abc669ef8f6a1db07acbc))
+## v1.0.3 (2024-10-23)
 
 
 ## v1.0.2 (2024-10-17)
