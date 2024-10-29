@@ -1,4 +1,4 @@
-name: macOS-14 // CPython 3.9 — 3.12
+name: '🍎-🐍3.9--3.12'
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@951ebbd277e18b0a5b88a4e67535e262bc59f979
+    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@7952e59342a8c8d1c8ad833121049bac58277167
     with:
       version: ${{ matrix.version }}
       os: macOS-latest
