@@ -98,10 +98,15 @@ match = "(main|master|staging)"
 prerelease_token = "rc"
 prerelease = false
 
+[tool.semantic_release.branches.merge]
+match = "[0-9]+/merge"
+prerelease_token = "rc"
+prerelease = false
+
 [tool.semantic_release.changelog]
 template_dir = "templates"
 changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release"]
+exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release", "^Merge branch"]
 
 [tool.semantic_release.changelog.environment]
 block_start_string = "{%"
