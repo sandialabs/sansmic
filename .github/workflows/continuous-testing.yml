@@ -16,8 +16,6 @@ jobs:
   quick-test:
     uses: dbhart/sansmic-workflows/.github/workflows/pytest.yaml@main
     with:
-      packagename: sansmic
       verbose: true
-      extras: 'formats,examples,tests'
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
