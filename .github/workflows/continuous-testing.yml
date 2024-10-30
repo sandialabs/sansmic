@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   quick-test:
-    uses: dbhart/sansmic-workflows/workflows/pytest.yaml@main
+    uses: dbhart/sansmic-workflows/.github/workflows/pytest.yaml@main
     with:
       packagename: sansmic
       verbose: true
