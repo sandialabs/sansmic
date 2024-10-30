@@ -9,6 +9,7 @@ on:
       - setup.py
       - pyproject.toml
       - .github/workflows/*
+  pull_request:
 
 permissions:
   contents: read
