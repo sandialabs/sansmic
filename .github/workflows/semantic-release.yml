@@ -35,23 +35,32 @@ jobs:
       run: |
         git checkout -B ${{ github.ref_name }} ${{ github.sha }}
 
+    - name: Setup | Get short commit SHA
+      id: vars
+      run: |
+        echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
+
     - name: Action | Check if release is needed
-      id: release
+      id: check
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         git_committer_name: "github-actions"
         git_committer_email: "actions@users.noreply.github.com"
+        root_options: -vv --noop
         build: false
-        changelog: false
+        changelog: true
         commit: false
         push: false
         tag: false
         vcs_release: false
+        # prerelease: true
+        # build_metadata: ${{ github.ref_name }}@${{ steps.vars.outputs.short_sha }}
 
     - name: Action | Semantic Release - Update version
-      if: steps.release.outputs.released == 'true'
+      id: release
+      if: steps.check.outputs.released == 'true'
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
       with:
@@ -62,18 +71,21 @@ jobs:
         changelog: true
         commit: true
         push: true
-        tag: false
+        tag: true
         vcs_release: false
+        prerelease: true
+        prerelease_token: rc
+        build_metadata: ${{ steps.vars.outputs.short_sha }}
 
     - name: Action | Create Pull Request - Release
-      if: steps.release.outputs.released == 'true'
+      if: steps.check.outputs.released == 'true'
       run: |
         gh pr create -B main -H staging --title "release: Merge into main and create tag as v${{ steps.release.outputs.version }}" --body 'Created by Github action: semantic-release.yml'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Action | Create Pull Request - Chore
-      if: steps.release.outputs.released == 'false'
+      if: steps.check.outputs.released == 'false'
       run: |
         gh pr create -B main -H staging --title 'chore: Merge non-code changes into main' --body 'Created by Github action: semantic-release.yml'
       env:
