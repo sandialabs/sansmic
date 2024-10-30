@@ -22,7 +22,7 @@ jobs:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
         os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@7952e59342a8c8d1c8ad833121049bac58277167
+    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@8117c5d282da421e0a806d98878d360239af7c01
     with:
       version: ${{ matrix.version }}
       os: ${{ matrix.os }}
