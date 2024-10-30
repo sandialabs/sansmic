@@ -3,6 +3,8 @@
 
 ## v1.0.5-rc.1 (2024-10-30)
 
+## v1.0.4 (2024-10-29)
+
 ### Refactoring
 
 * refactor: update libsansmic cpp code (#79)
