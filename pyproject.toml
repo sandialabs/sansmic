@@ -93,20 +93,24 @@ version_variables = [
     "docs/conf.py:version",
 ]
 
-[tool.semantic_release.branches.main]
-match = "(main|master|staging)"
-prerelease_token = "rc"
+[tool.semantic_release.branches.release]
+match = "main"
 prerelease = false
 
-[tool.semantic_release.branches.merge]
-match = "[0-9]+/merge"
+[tool.semantic_release.branches.candidate]
+match = "staging"
 prerelease_token = "rc"
-prerelease = false
+prerelease = true
+
+[tool.semantic_release.branches.check-only]
+match = "(?!main|master|staging)"
+prerelease_token = "local"
+prerelease = true
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
 changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release", "^Merge branch"]
+exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release", "style", "^Merge branch"]
 
 [tool.semantic_release.changelog.environment]
 block_start_string = "{%"
