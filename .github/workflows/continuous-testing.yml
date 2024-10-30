@@ -7,7 +7,7 @@ on:
       - src/**
       - tests/**
       - setup.py
-      - .github/workflows/continuous-testing.yml
+      - .github/workflows/*
 
 permissions:
   contents: read
@@ -19,3 +19,6 @@ jobs:
       verbose: true
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
+
+  check-release:
+    uses: dbhart/sansmic-workflows/.github/workflows/release.yaml@main
