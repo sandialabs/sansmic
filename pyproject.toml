@@ -107,7 +107,7 @@ match = "(?!main|master|staging)"
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
-changelog_file = "CHANGELOG.md"
+default_templates.changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release", "style", "^Merge branch"]
 
 [tool.semantic_release.changelog.environment]
