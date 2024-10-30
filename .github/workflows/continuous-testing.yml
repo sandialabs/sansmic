@@ -14,10 +14,10 @@ permissions:
 
 jobs:
   quick-test:
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@7952e59342a8c8d1c8ad833121049bac58277167
+    uses: dbhart/sansmic-workflows/workflows/pytest.yaml@main
     with:
-      version: "3.12"
-      os: ubuntu-latest
+      packagename: sansmic
       verbose: true
+      extras: 'formats,examples,tests'
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
