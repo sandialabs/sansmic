@@ -104,8 +104,6 @@ prerelease = true
 
 [tool.semantic_release.branches.check-only]
 match = "(?!main|master|staging)"
-prerelease_token = "local"
-prerelease = true
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
