@@ -642,7 +642,9 @@ class StageDefinition:
                 )
             )
 
-    def _to_cstage(self, defaults=None) -> _ext.CStage:
+    def _to_cstage(
+        self, defaults: Dict[str, Any] = None, position: int = None
+    ) -> _ext.CStage:
         """Create a CStage object for the C++ interface.
         This method is protected because, in general, it is better not to
         try to operate directly on the C++ stage object.
@@ -657,6 +659,12 @@ class StageDefinition:
             if self.solver_timestep
             else defaults.get("solver_timestep", 0.1)
         )
+        if self.title is None and position is None:
+            stage.title = "Untitled stage"
+        elif self.title is None and position is not None:
+            stage.title = "Stage {}".format(position)
+        else:
+            stage.title = self.title
         stage.title = self.title
         stage.mode = _ext.CRunMode(int(self.simulation_mode))
         if isinstance(self.save_frequency, str):
@@ -1008,7 +1016,7 @@ class Scenario:
         for stage_num, stage in enumerate(self.stages):
             if stage_num == 0:
                 stage.set_initial_conditions = True
-            cstage = stage._to_cstage(defaults=self.defaults)
+            cstage = stage._to_cstage(defaults=self.defaults, position=stage_num + 1)
             cscenario.add_stage(cstage)
         return cscenario
 
