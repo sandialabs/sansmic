@@ -334,21 +334,16 @@ int sansmic::Model::init_stage(void) {
     z_obi_stop = -double(stopCriteria);
   }
 
-  // if the current depths are below zero (?) set to the
-  // height of the insolubles plus the absolute height given
-  // I.e., consider that these are relative heights above the
-  // level of the insoluble materials not absolute heights.
+  // Version 1.1.0: removed relative heights above new floor height as negatives
+  // Version 1.1.0: Negative values will be considered depths below surface
   if (h_inj < 0) {
-    h_inj = h_insol - h_inj;
+    h_inj = z_TD0 + h_inj;
   }
   if (h_prd < 0) {
-    h_prd = h_insol - h_prd;
+    h_prd = z_TD0 + h_prd;
   }
   if (h_obi < 0) {
-    h_obi = h_insol - h_obi;
-  }
-  if (h_uso < 0) {
-    h_uso = h_insol - h_uso;
+    h_obi = z_TD0 + h_obi;
   }
 
   // use previous OBI if OBI is ~0
@@ -401,7 +396,7 @@ int sansmic::Model::init_stage(void) {
     C_cav[n_nodes] = C_hat;
     C_cavAve = C_cav0;
 
-    if (runMode == Withdrawal) {
+    if (runMode == WITHDRAWAL) {
       dt_min = (_pi_ * sq(r_cavMin) * dz) / (Q_in + 1.0e-10);
       if (dt_min < 0.01) {
         dt_min = 0.01;
@@ -415,7 +410,7 @@ int sansmic::Model::init_stage(void) {
       f_disSav[i] = f_dis[i];
     }
     // FIXME: do we really want this next line?
-    if (runMode == Withdrawal && C_cav0 > 1.0) {
+    if (runMode == WITHDRAWAL && C_cav0 > 1.0) {
       std::fill(C_cav.begin(), C_cav.end(), C_cav0);
       C_cav[n_nodes] = C_hat;
       C_cavAve = C_cav0;
@@ -449,7 +444,7 @@ int sansmic::Model::init_stage(void) {
   // End of initialization of cavern settings
 
   // set the prod and min timestep if withdrawal leach
-  if (runMode == Withdrawal) {
+  if (runMode == WITHDRAWAL) {
     prodCell = obiCell;
     dt_min = (_pi_ * sq(r_cavMin) * dz) / (Q_in + 1.0e-10);
     // next two lines are commented out?
@@ -574,6 +569,8 @@ int sansmic::Model::leach() {
   if (b_use_fill_table) {
     throw sansmic::UNIMPLEMENTED_FLOW_TABLES;
   }
+
+  double t_add = 0;
 
   // Convert back to BPD? Ugh.
   Q_inBPD = Q_in * cf_to_bbl * per_h_to_per_d;
@@ -707,7 +704,7 @@ int sansmic::Model::leach() {
   // end of adjust the plume model (reverse)
 
   // leach fill from production to OBI
-  if (runMode >= LeachFill) {
+  if (runMode >= LEACH_FILL) {
     for (int i = prodCell; i <= obiCell; i++) {
       if (i > maxProdOrJet) {
         V_injSigned[i] = 0.0;
@@ -782,7 +779,7 @@ int sansmic::Model::leach() {
     if (i < minProdOrJet || i > maxProdOrJet) {
       V_injSigned[i] = 0.0;
     }
-    if (i > maxProdOrJet && runMode == LeachFill) {
+    if (i > maxProdOrJet && runMode == LEACH_FILL) {
       V_injSigned[i] = -Q_fill;
     }
     r = max(r_cav[i], 1.0e-10);
@@ -1086,14 +1083,14 @@ int sansmic::Model::leach() {
 
   izbs = obiCell;
   // move OBI if not Ordinary leaching mode
-  if (runMode == LeachFill) {
+  if (runMode == LEACH_FILL) {
     // move OBI if simultaneous LeachFill
     i_obi = int(h_obi / dz) + 1;
     dz_inc = Q_fill * dt / (_pi_ * sq(r_cav[i_obi]));
     h_obi = h_obi - min(dz_inc, dz);
     obiCell = int(h_obi / dz + 0.5) + 1;
     obiCellBelow = obiCell - 1;
-  } else if (runMode != Ordinary) {
+  } else if (runMode != ORDINARY) {
     // move OBI if Withdrawal or OilFill
     i_obiOld = obiCell;
     i_obi = int(h_obi / dz) + 1;
@@ -1115,9 +1112,9 @@ int sansmic::Model::leach() {
 
   // CALCULATE MASS BALANCE CORRECTION FACTOR
   m_brineNew = m_brineNew - V_insol * C_cav[1];
-  if (runMode == Ordinary) {
+  if (runMode == ORDINARY) {
     Q_fill = 0.0;
-  } else if (runMode == Withdrawal) {
+  } else if (runMode == WITHDRAWAL) {
     Q_fill = -ddim(Q_out, 0.0);
   }
   p5 = Q_fill;
@@ -1205,11 +1202,13 @@ int sansmic::Model::leach() {
     if (b_is_injecting) {
       if (abs(z_obi - z_obi_stop) < 0.1 * dz) {
         t_end = t;
-      } else if (runMode != LeachFill && z_obi < z_obi_stop) {
+      } else if (runMode == WITHDRAWAL && z_obi <= z_obi_stop) {
         t_end = t;
-      } else if (z_obi > z_obi_stop) {
+      } else if (runMode == LEACH_FILL && z_obi >= z_obi_stop) {
         t_end = t;
       }
+      // dbh: there probably ought to be an exception check for ordinary
+      // mode, but the OBI doesn't move so it should be impossible to reach
     }
   }
   // stop on time - clear the handling variables

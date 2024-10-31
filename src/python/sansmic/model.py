@@ -122,9 +122,6 @@ class SimulationMode(IntEnum):
     LEACH_FILL = 2
     """Simultaneous leaching (water/brine injection and brine production) and
     product injection from the top."""
-    STORAGE_FILL = -1
-    """Storage fill, with product injected from the top of the cavern and brine
-    produced from the suspended tubing/hanging string."""
 
 
 class RateScheduleType(IntEnum):
@@ -268,59 +265,6 @@ class StageDefinition:
     """The depth below surface/:term:`ZDP` where the end of the production string/casing/tubing is positioned."""
     brine_injection_rate: Union[float, str] = 0
     """The meaning of this field is based on the type of data that is provided (a value of 0 means off)."""
-    # """
-    # float : constant rate
-    #     Injection occurs at a constant rate for the duration of the
-    #     :attr:`injection_duration`.
-
-    # str : file path
-    #     Injection rates should be read from a file. The file can be any type that can
-    #     be read into a pd DataFrame. An 'index' column is optional, but if not provided,
-    #     then all data is assumed to be pre-sorted. In addition to the
-    #     'index' column, files may contain exactly one set of the following columns:
-
-    #     ['rate', 'duration']
-    #         This style gives a list of rates and how long they should continue for.
-    #         Durations are provided in decimal hours. If the sum of durations is greater
-    #         than :attr:`injection_duration`, an error will be raised. If the
-    #         sum of durations is less than :attr:`injection_duration`, the remaining
-    #         time will be assumed to be no-flow.
-
-    #     ['time', 'rate']
-    #         This style gives a list of new rate values that start at the given time
-    #         after the start of the stage. The 'time' values must be increasing and
-    #         never duplicate. Times are in decimal hours since the start of the stage.
-    #         The last rate will be used up until the end of the
-    #         :attr:`injection_duration`. If a time is given that is after the
-    #         :attr:`injection_duration`, then an error will be raised.
-
-    #     ['hourly']
-    #         This style specifies a new rate for each hour of the stage. There must be
-    #         a value specified for each hour of the :attr`injection_duration`, or an
-    #         error will be raised.
-
-    #     The optional column ['sg'] can be provided to change the injection water/brine
-    #     specific gravity; however, if provided, it must contain a value for every row.
-
-    #     If 'duration' and 'time' occur in the same file, an error will be raised.
-    #     If 'time', 'rate', or 'duration' occur in the same file as 'hourly', then
-    #     an error will be raised.
-
-    #     Columns with names other than those described above will be ignored.
-
-    #     .. attention::
-
-    #         In all cases, a no-flow, leaching-only period will occur for
-    #         :attr:`rest_duration` hours **after** all injection data
-    #         is processed -- this means that if an injection file finishes with 0s
-    #         that there will be an additional :attr:`rest_duration` hours added to the
-    #         end of the stage.
-
-    #     .. warning::
-
-    #         The same file cnnot be used for both brine injection and product
-    #         injection data.
-    # """
 
     set_initial_conditions: bool = None
     """Unlink initial cavern brine gravity and interface level from previous stage.
@@ -331,9 +275,6 @@ class StageDefinition:
     brine_interface_depth: float = None
     """Set the initial oil-brine interface or blanket level. By default None, which
     will link to the previous stage (as will a value of 0)."""
-    # set_cavern_temp: float = None
-    # """Set the initial temperature for all brine-filled cells of the cavern; by
-    # default None, which will link to the previous stage."""
 
     product_injection_rate: Union[float, str] = 0.0
     """Either a constant rate of product injection or a file with an injection schedule, by default 0."""
@@ -350,6 +291,10 @@ class StageDefinition:
     """If the :attr:`stop_condition` is not :attr:`~StopCondition.DURATION`, then the depth or volume value."""
 
     defaults: InitVar[Dict[str, Any]] = None
+    blanket_depth: InitVar[float] = None
+    brine_injection_height: InitVar[float] = None
+    brine_production_height: InitVar[float] = None
+    brine_interface_height: InitVar[float] = None
 
     valid_default_keys = [
         "solver_timestep",
@@ -360,7 +305,14 @@ class StageDefinition:
         "outer_csg_outside_diam",
     ]
 
-    def __post_init__(self, defaults=None):
+    def __post_init__(
+        self,
+        defaults=None,
+        blanket_depth=None,
+        brine_injection_height=None,
+        brine_production_height=None,
+        brine_interface_height=None,
+    ):
         if defaults is None:
             return
         if not isinstance(defaults, dict):
@@ -375,6 +327,17 @@ class StageDefinition:
                 )
             elif getattr(self, k2) is None:
                 setattr(self, k2, v)
+        if blanket_depth is not None:
+            self.brine_interface_depth = blanket_depth
+        if isinstance(brine_injection_height, float):
+            self.brine_injection_depth = -abs(brine_injection_height)
+        if isinstance(brine_production_height, float):
+            self.brine_production_depth = -abs(brine_production_height)
+        if isinstance(brine_interface_height, float):
+            self.brine_interface_depth = -abs(brine_interface_height)
+        self.brine_injection_height = self.__class__._brine_injection_height
+        self.brine_production_height = self.__class__._brine_production_height
+        self.brine_interface_height = self.__class__._brine_interface_height
 
     def __setattr__(self, name, value):
         if isinstance(value, str) and value.strip() == "":
@@ -405,6 +368,60 @@ class StageDefinition:
         #     self.set_cavern_sg = None
         #     self.brine_interface_depth = None
         super().__setattr__(name, value)
+
+    @property
+    def _blanket_depth(self) -> float:
+        """Alias for :attr:`brine_interface_depth`"""
+        return self.brine_interface_depth
+
+    @_blanket_depth.setter
+    def _blanket_depth(self, value):
+        self.brine_interface_depth = value
+
+    @property
+    def _brine_injection_height(self) -> float:
+        """Height above floor where brine is injected. The :attr:`brine_injection_depth` will be a negative value if set using this property."""
+        if self.brine_injection_depth is None:
+            return None
+        if self.brine_injection_depth < 0:
+            return abs(self.brine_injection_depth)
+        raise ValueError(
+            "Cannot calculate height above floor when a depth was used to set this value"
+        )
+
+    @_brine_injection_height.setter
+    def _brine_injection_height(self, value):
+        self.brine_injection_depth = -abs(value)
+
+    @property
+    def _brine_production_height(self) -> float:
+        """Height above floor where brine is produced. The :attr:`brine_production_depth` will be a negative value if set using this property."""
+        if self.brine_production_depth is None:
+            return None
+        if self.brine_production_depth < 0:
+            return abs(self.brine_production_depth)
+        raise ValueError(
+            "Cannot calculate height above floor when a depth was used to set this value"
+        )
+
+    @_brine_production_height.setter
+    def _brine_production_height(self, value):
+        self.brine_production_depth = -abs(value)
+
+    @property
+    def _brine_interface_height(self) -> float:
+        """Height above floor where interface starts. The :attr:`brine_interface_depth` will be a negative value if set using this property."""
+        if self.brine_interface_depth is None:
+            return None
+        if self.brine_interface_depth <= 0:
+            return abs(self.brine_interface_depth)
+        raise ValueError(
+            "Cannot calculate height above floor when a depth was used to set this value"
+        )
+
+    @_brine_interface_height.setter
+    def _brine_interface_height(self, value):
+        self.brine_interface_depth = -abs(value)
 
     @classmethod
     def from_dict(cls, opts: dict, defaults=None) -> "StageDefinition":
@@ -510,7 +527,6 @@ class StageDefinition:
             in [
                 SimulationMode.ORDINARY,
                 SimulationMode.LEACH_FILL,
-                SimulationMode.STORAGE_FILL,
             ]
             and self.brine_production_depth is None
         ):
@@ -569,7 +585,6 @@ class StageDefinition:
                 SimulationMode.ORDINARY,
                 SimulationMode.LEACH_FILL,
                 SimulationMode.WITHDRAWAL,
-                SimulationMode.STORAGE_FILL,
             ]
             and self.inner_tbg_inside_diam is None
         ):
@@ -584,7 +599,6 @@ class StageDefinition:
                 SimulationMode.ORDINARY,
                 SimulationMode.LEACH_FILL,
                 SimulationMode.WITHDRAWAL,
-                SimulationMode.STORAGE_FILL,
             ]
             and self.inner_tbg_outside_diam is None
         ):
@@ -619,8 +633,7 @@ class StageDefinition:
         # ):
         #     self.product_injection_depth = 0.0
         if (
-            self.simulation_mode
-            in [SimulationMode.LEACH_FILL, SimulationMode.STORAGE_FILL]
+            self.simulation_mode is SimulationMode.LEACH_FILL
             and self.product_injection_rate is None
         ):
             raise TypeError(
@@ -667,15 +680,15 @@ class StageDefinition:
             else 0
         )
         stage.injection_depth = (
-            self.brine_injection_depth if self.brine_injection_depth is not None else 0
+            -self.brine_injection_depth if self.brine_injection_depth is not None else 0
         )
         stage.production_depth = (
-            self.brine_production_depth
+            -self.brine_production_depth
             if self.brine_production_depth is not None
             else 0
         )
         stage.interface_depth = (
-            self.brine_interface_depth if self.brine_interface_depth is not None else 0
+            -self.brine_interface_depth if self.brine_interface_depth is not None else 0
         )
         stage.injection_rate = self.brine_injection_rate
         stage.inn_tbg_inside_radius = self.inner_tbg_inside_diam / 2.0
