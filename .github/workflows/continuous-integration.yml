@@ -22,7 +22,7 @@ jobs:
       matrix:
         version: ["3.9", "3.10", "3.11", "3.12"]
         os: [windows-latest, macOS-13, macOS-latest, ubuntu-latest]
-    uses: ./.github/workflows/pytest.yaml
+    uses: ./.github/workflows/pytest.yml
     with:
       version: ${{ matrix.version }}
       os: ${{ matrix.os }}
