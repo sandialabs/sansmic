@@ -73,12 +73,12 @@ class Units(IntEnum):
     @classmethod
     def cubic_foot(self):
         """1 ft³ == 0.028316846592 m³"""
-        return Fraction(3048**3, 10000**3)
+        return Fraction(3048, 10000) ** 3
 
     @classmethod
     def barrel(self):
         """1 bbl == 0.158987294928 m³"""
-        return Fraction(42 * 231 * 254, 10000**3)
+        return 42 * 231 * Fraction(254, 10000) ** 3
 
     @classmethod
     def centimeter(self):
@@ -313,8 +313,9 @@ class StageDefinition:
         brine_production_height=None,
         brine_interface_height=None,
     ):
+
         if defaults is None:
-            return
+            defaults = dict()
         if not isinstance(defaults, dict):
             raise TypeError("defaults must be a dictionary")
         for k, v in defaults.items():
@@ -327,17 +328,14 @@ class StageDefinition:
                 )
             elif getattr(self, k2) is None:
                 setattr(self, k2, v)
-        if blanket_depth is not None:
+        if isinstance(blanket_depth, (float, int, str)):
             self.brine_interface_depth = blanket_depth
-        if isinstance(brine_injection_height, float):
-            self.brine_injection_depth = -abs(brine_injection_height)
-        if isinstance(brine_production_height, float):
-            self.brine_production_depth = -abs(brine_production_height)
-        if isinstance(brine_interface_height, float):
-            self.brine_interface_depth = -abs(brine_interface_height)
-        self.brine_injection_height = self.__class__._brine_injection_height
-        self.brine_production_height = self.__class__._brine_production_height
-        self.brine_interface_height = self.__class__._brine_interface_height
+        if isinstance(brine_injection_height, (float, int, str)):
+            self.brine_injection_depth = -abs(float(brine_injection_height))
+        if isinstance(brine_production_height, (float, int, str)):
+            self.brine_production_depth = -abs(float(brine_production_height))
+        if isinstance(brine_interface_height, (float, int, str)):
+            self.brine_interface_depth = -abs(float(brine_interface_height))
 
     def __setattr__(self, name, value):
         if isinstance(value, str) and value.strip() == "":
@@ -370,16 +368,16 @@ class StageDefinition:
         super().__setattr__(name, value)
 
     @property
-    def _blanket_depth(self) -> float:
+    def blanket_depth(self) -> float:
         """Alias for :attr:`brine_interface_depth`"""
         return self.brine_interface_depth
 
-    @_blanket_depth.setter
-    def _blanket_depth(self, value):
+    @blanket_depth.setter
+    def blanket_depth(self, value):
         self.brine_interface_depth = value
 
     @property
-    def _brine_injection_height(self) -> float:
+    def brine_injection_height(self) -> float:
         """Height above floor where brine is injected. The :attr:`brine_injection_depth` will be a negative value if set using this property."""
         if self.brine_injection_depth is None:
             return None
@@ -389,12 +387,12 @@ class StageDefinition:
             "Cannot calculate height above floor when a depth was used to set this value"
         )
 
-    @_brine_injection_height.setter
-    def _brine_injection_height(self, value):
+    @brine_injection_height.setter
+    def brine_injection_height(self, value):
         self.brine_injection_depth = -abs(value)
 
     @property
-    def _brine_production_height(self) -> float:
+    def brine_production_height(self) -> float:
         """Height above floor where brine is produced. The :attr:`brine_production_depth` will be a negative value if set using this property."""
         if self.brine_production_depth is None:
             return None
@@ -404,12 +402,12 @@ class StageDefinition:
             "Cannot calculate height above floor when a depth was used to set this value"
         )
 
-    @_brine_production_height.setter
-    def _brine_production_height(self, value):
+    @brine_production_height.setter
+    def brine_production_height(self, value):
         self.brine_production_depth = -abs(value)
 
     @property
-    def _brine_interface_height(self) -> float:
+    def brine_interface_height(self) -> float:
         """Height above floor where interface starts. The :attr:`brine_interface_depth` will be a negative value if set using this property."""
         if self.brine_interface_depth is None:
             return None
@@ -419,8 +417,8 @@ class StageDefinition:
             "Cannot calculate height above floor when a depth was used to set this value"
         )
 
-    @_brine_interface_height.setter
-    def _brine_interface_height(self, value):
+    @brine_interface_height.setter
+    def brine_interface_height(self, value):
         self.brine_interface_depth = -abs(value)
 
     @classmethod
