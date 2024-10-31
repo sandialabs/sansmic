@@ -9,13 +9,13 @@ on:
       - setup.py
       - pyproject.toml
       - .github/workflows/*
-    branches:
-      - '!main'
-      - '!staging'
+    branches-ignore:
+      - 'main'
+      - 'staging'
   pull_request:
-    branches:
-      - '!main'
-      - '!staging'
+    branches-ignore:
+      - 'main'
+      - 'staging'
 
 permissions:
   contents: read
