@@ -67,10 +67,9 @@ const int UNIMPLEMENTED_GEOMETRY_IDATA =
 
 /// @brief The leaching operations mode for sansmic.
 enum LeachMode : int {
-  Ordinary = 0,    //!< fill with raw water, produce brine
-  Withdrawal = 1,  //!< fill with raw water, produce oil
-  LeachFill = 2,   //!< fill with oil and raw water, produce brine
-  OilFill = -1     //!< fill with oil, produce brine
+  ORDINARY = 0,    //!< fill with raw water, produce brine
+  WITHDRAWAL = 1,  //!< fill with raw water, produce oil
+  LEACH_FILL = 2,   //!< fill with oil and raw water, produce brine
 };
 
 /// @brief The format of the data; will go away once python code fully handles

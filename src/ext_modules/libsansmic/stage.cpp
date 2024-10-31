@@ -22,7 +22,7 @@
  */
 sansmic::Stage::Stage() {
   title = "";
-  leach_mode = Withdrawal;
+  leach_mode = WITHDRAWAL;
   print_freq = -1;
   is_subsequent = 0;
   t_rest = -1;

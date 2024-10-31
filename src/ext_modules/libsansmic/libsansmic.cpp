@@ -22,14 +22,12 @@ PYBIND11_MODULE(libsansmic, m) {
 
   py::enum_<sansmic::LeachMode>(m, "CRunMode",
                                 "See :py:class:`sansmic.model.SimulationMode`.")
-      .value("ORDINARY", sansmic::LeachMode::Ordinary,
+      .value("ORDINARY", sansmic::LeachMode::ORDINARY,
              "ordinary leaching (water in, brine out)")
-      .value("WITHDRAWAL", sansmic::LeachMode::Withdrawal,
+      .value("WITHDRAWAL", sansmic::LeachMode::WITHDRAWAL,
              "oil withdrawal (water in, oil out)")
-      .value("LEACH_FILL", sansmic::LeachMode::LeachFill,
+      .value("LEACH_FILL", sansmic::LeachMode::LEACH_FILL,
              "leach and fill (water and oil in, brine out)")
-      .value("OIL_FILL", sansmic::LeachMode::OilFill,
-             "oil fill (oil in, brine out)")
       .export_values();
 
   py::enum_<sansmic::GeomFormat>(

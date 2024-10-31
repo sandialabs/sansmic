@@ -59,14 +59,14 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertIs(
             scenario.geometry_format, sansmic.model.GeometryFormat.RADIUS_LIST
         )
-        self.assertEqual(scenario.stages[0].stop_value, -200.0)
+        self.assertEqual(scenario.stages[0].stop_value, 3800.0)
         self.assertIs(
             scenario.stages[0].stop_condition, sansmic.model.StopCondition.DEPTH
         )
         self.assertEqual(scenario.cavern_height, 1000.0)
-        self.assertEqual(scenario.stages[0].brine_injection_depth, 32.0)
-        self.assertEqual(scenario.stages[0].brine_production_depth, 350.0)
-        self.assertEqual(scenario.stages[0].brine_interface_depth, 900.0)
+        self.assertEqual(scenario.stages[0].brine_injection_depth, 3968.0)
+        self.assertEqual(scenario.stages[0].brine_production_depth, 4000 - 350.0)
+        self.assertEqual(scenario.stages[0].brine_interface_depth, 4000 - 900.0)
         self.assertEqual(scenario.ullage_standoff, 20.0)
         self.assertEqual(scenario.stages[0].brine_injection_rate, 240000.0)
         self.assertEqual(scenario.stages[0].inner_tbg_inside_diam / 2, 4.925)
@@ -107,9 +107,9 @@ class TestReadAndWriteScenarios(unittest.TestCase):
             scenario.stages[0].stop_condition, sansmic.model.StopCondition.DURATION
         )
         self.assertEqual(scenario.cavern_height, 1000.0)
-        self.assertEqual(scenario.stages[0].brine_injection_depth, 32.0)
-        self.assertEqual(scenario.stages[0].brine_production_depth, 1000.0)
-        self.assertEqual(scenario.stages[0].brine_interface_depth, 100.0)
+        self.assertEqual(scenario.stages[0].brine_injection_depth, 4000 - 32.0)
+        self.assertEqual(scenario.stages[0].brine_production_depth, 4000 - 1000.0)
+        self.assertEqual(scenario.stages[0].brine_interface_depth, 4000 - 100.0)
         self.assertEqual(scenario.ullage_standoff, 20.0)
         self.assertEqual(scenario.stages[0].brine_injection_rate, 240000.0)
         self.assertEqual(scenario.stages[0].inner_tbg_inside_diam / 2, 4.925)
@@ -150,9 +150,9 @@ class TestReadAndWriteScenarios(unittest.TestCase):
             scenario.stages[0].stop_condition, sansmic.model.StopCondition.VOLUME
         )
         self.assertEqual(scenario.cavern_height, 1000.0)
-        self.assertEqual(scenario.stages[0].brine_injection_depth, 100.0)
-        self.assertEqual(scenario.stages[0].brine_production_depth, 800.0)
-        self.assertEqual(scenario.stages[0].brine_interface_depth, 900.0)
+        self.assertEqual(scenario.stages[0].brine_injection_depth, 4000 - 100.0)
+        self.assertEqual(scenario.stages[0].brine_production_depth, 4000 - 800.0)
+        self.assertEqual(scenario.stages[0].brine_interface_depth, 4000 - 900.0)
         self.assertEqual(scenario.ullage_standoff, 20.0)
         self.assertEqual(scenario.stages[0].brine_injection_rate, 240000.0)
         self.assertEqual(scenario.stages[0].inner_tbg_inside_diam / 2, 4.925)
@@ -193,9 +193,9 @@ class TestReadAndWriteScenarios(unittest.TestCase):
             scenario.stages[0].stop_condition, sansmic.model.StopCondition.DURATION
         )
         self.assertEqual(scenario.cavern_height, 1000.0)
-        self.assertEqual(scenario.stages[0].brine_injection_depth, 800.0)
-        self.assertEqual(scenario.stages[0].brine_production_depth, 100.0)
-        self.assertEqual(scenario.stages[0].brine_interface_depth, 900.0)
+        self.assertEqual(scenario.stages[0].brine_injection_depth, 4000 - 800.0)
+        self.assertEqual(scenario.stages[0].brine_production_depth, 4000 - 100.0)
+        self.assertEqual(scenario.stages[0].brine_interface_depth, 4000 - 900.0)
         self.assertEqual(scenario.ullage_standoff, 20.0)
         self.assertEqual(scenario.stages[0].brine_injection_rate, 240000.0)
         self.assertEqual(scenario.stages[0].inner_tbg_inside_diam / 2, 4.925)
@@ -225,8 +225,8 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertIs(
             scenario.stages[1].stop_condition, sansmic.model.StopCondition.DURATION
         )
-        self.assertEqual(scenario.stages[1].brine_injection_depth, 800.0)
-        self.assertEqual(scenario.stages[1].brine_production_depth, 100.0)
+        self.assertEqual(scenario.stages[1].brine_injection_depth, 4000 - 800.0)
+        self.assertEqual(scenario.stages[1].brine_production_depth, 4000 - 100.0)
         self.assertEqual(scenario.stages[1].brine_interface_depth, 0.0)
         self.assertEqual(scenario.stages[1].brine_injection_rate, 240000.0)
         self.assertEqual(scenario.stages[1].inner_tbg_inside_diam / 2, 4.925)
@@ -250,8 +250,8 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertIs(
             scenario.stages[2].stop_condition, sansmic.model.StopCondition.DURATION
         )
-        self.assertEqual(scenario.stages[2].brine_injection_depth, 800.0)
-        self.assertEqual(scenario.stages[2].brine_production_depth, 100.0)
+        self.assertEqual(scenario.stages[2].brine_injection_depth, 4000 - 800.0)
+        self.assertEqual(scenario.stages[2].brine_production_depth, 4000 - 100.0)
         self.assertEqual(scenario.stages[2].brine_interface_depth, 0.0)
         self.assertEqual(scenario.stages[2].brine_injection_rate, 240000.0)
         self.assertEqual(scenario.stages[2].inner_tbg_inside_diam / 2, 4.925)

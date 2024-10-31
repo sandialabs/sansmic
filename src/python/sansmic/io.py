@@ -335,11 +335,18 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             stage.stop_value = float(stop_value)
             if stage.stop_value < 0:
                 stage.stop_condition = StopCondition.DEPTH
-            if stage.stop_value > 0:
+                stage.stop_value = scenario.floor_depth + stage.stop_value
+            elif stage.stop_value > 0:
                 stage.stop_condition = StopCondition.VOLUME
-            stage.brine_injection_depth = float(injection_height)
-            stage.brine_production_depth = float(production_height)
-            stage.brine_interface_depth = float(interface_height)
+            stage.brine_injection_depth = scenario.floor_depth - float(injection_height)
+            stage.brine_production_depth = scenario.floor_depth - float(
+                production_height
+            )
+            stage.brine_interface_depth = (
+                scenario.floor_depth - float(interface_height)
+                if float(interface_height) != 0
+                else 0
+            )
             stage.brine_injection_rate = float(injection_rate)
             stage.inner_tbg_inside_diam = float(inn_tbg_inside_radius) * 2
             stage.inner_tbg_outside_diam = float(inn_tbg_outside_radius) * 2
