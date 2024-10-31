@@ -9,18 +9,21 @@ on:
       - setup.py
       - pyproject.toml
       - .github/workflows/*
+    branches:
+      - '!main'
+      - '!staging'
   pull_request:
+    branches:
+      - '!main'
+      - '!staging'
 
 permissions:
   contents: read
 
 jobs:
   quick-test:
-    uses: dbhart/sansmic-workflows/.github/workflows/pytest.yaml@main
+    uses: ./.github/workflows/pytest.yaml
     with:
       verbose: true
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}
-
-  check-release:
-    uses: dbhart/sansmic-workflows/.github/workflows/release.yaml@main
