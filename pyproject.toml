@@ -143,9 +143,10 @@ allowed_tags = [
     "refactor", # A change that does not add a feature nor fix a bug (could be major, minor or patch)
     "docs",     # Documentation-only changes within the source code (no version level change)
     "style",    # A code that does not change meaning of the code (no version level change)
+    "release",  # A push to main
 ]
-minor_tags = ["feat"]
-patch_tags = ["fix", "perf", "refactor"]
+minor_tags = ["feat", "release(feat)"]
+patch_tags = ["fix", "perf", "refactor", "release"]
 default_bump_level = 0
 
 [tool.semantic_release.remote]
