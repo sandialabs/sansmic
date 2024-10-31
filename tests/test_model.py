@@ -42,6 +42,18 @@ class TestStageDefinition(unittest.TestCase):
             a = stage.brine_injection_height + 2
         with self.assertRaises(ValueError):
             a = stage.brine_interface_height + 2
+        stage.brine_injection_height = 30
+        stage.brine_production_height = -100
+        stage.brine_interface_height = 523
+        self.assertEqual(stage.brine_injection_depth, -30)
+        self.assertEqual(stage.brine_production_depth, -100)
+        self.assertEqual(stage.brine_interface_depth, -523)
+        stage.brine_injection_height = None
+        stage.brine_production_height = None
+        stage.brine_interface_height = None
+        self.assertIsNone(stage.brine_injection_height)
+        self.assertIsNone(stage.brine_production_depth)
+        self.assertIsNone(stage.blanket_depth)
 
 
 class TestEnumFunctions(unittest.TestCase):

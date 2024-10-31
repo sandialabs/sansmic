@@ -389,7 +389,10 @@ class StageDefinition:
 
     @brine_injection_height.setter
     def brine_injection_height(self, value):
-        self.brine_injection_depth = -abs(value)
+        if value is None:
+            self.brine_injection_depth = None
+        else:
+            self.brine_injection_depth = -abs(value)
 
     @property
     def brine_production_height(self) -> float:
@@ -404,7 +407,10 @@ class StageDefinition:
 
     @brine_production_height.setter
     def brine_production_height(self, value):
-        self.brine_production_depth = -abs(value)
+        if value is None:
+            self.brine_production_depth = None
+        else:
+            self.brine_production_depth = -abs(value)
 
     @property
     def brine_interface_height(self) -> float:
@@ -419,7 +425,10 @@ class StageDefinition:
 
     @brine_interface_height.setter
     def brine_interface_height(self, value):
-        self.brine_interface_depth = -abs(value)
+        if value is None:
+            self.brine_interface_depth = None
+        else:
+            self.brine_interface_depth = -abs(value)
 
     @classmethod
     def from_dict(cls, opts: dict, defaults=None) -> "StageDefinition":
