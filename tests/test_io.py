@@ -297,7 +297,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario, scenario2)
 
     def test_roundtrip_spec_format(self):
-        scenario = sansmic.io.read_scenario(self.leach_fill_dat, format="dat")
+        scenario = sansmic.io.read_scenario(self.leach_fill_dat)
         scenario.title = ""
 
         sansmic.io.write_scenario(scenario, self.leach_fill_format, format="toml")
@@ -786,7 +786,3 @@ END
 1.01   0.05   4000.   4000.
 END
 """
-
-
-if __name__ == "__main__":
-    unittest.main()

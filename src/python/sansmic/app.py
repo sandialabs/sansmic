@@ -26,7 +26,7 @@ from ._version import __version__, copyright, license
 
 try:  # pragma: no cover
     import h5py
-except ImportError as e:
+except ImportError as e:  # pragma: no cover
     h5py = e
 
 startup = dt.now().isoformat()
@@ -132,7 +132,7 @@ class _Echo:
 
 @click.group()
 def cli():
-    pass
+    pass  # pragma: no cover
 
 
 @click.command("run")
@@ -479,7 +479,9 @@ def convert(dat_file, out_file=None, full=False):
     """Command line function to convert a scenario/dat to a new format."""
     logger.debug("Running sansmic-convert")
     if out_file is None:
-        out_file = click.prompt("Please enter the name of the file to create")
+        out_file = click.prompt(
+            "Please enter the name of the file to create"
+        )  # pragma: no cover
     try:
         model = sansmic.io.read_scenario(dat_file)
         logger.debug("Successfully created scenario from {}".format(dat_file))
@@ -491,4 +493,4 @@ def convert(dat_file, out_file=None, full=False):
 
 
 if __name__ == "__main__":
-    run()
+    run()  # pragma: no cover

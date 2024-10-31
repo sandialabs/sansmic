@@ -340,7 +340,9 @@ class StageDefinition:
     def __setattr__(self, name, value):
         if isinstance(value, str) and value.strip() == "":
             value = None
-        if name == "simulation_mode" and not isinstance(value, SimulationMode):
+        if name == "simulation_mode" and not (
+            value is None or isinstance(value, (SimulationMode))
+        ):
             if isinstance(value, int):
                 value = SimulationMode(value)
             elif isinstance(value, str):
@@ -350,16 +352,20 @@ class StageDefinition:
             elif isinstance(value, _ext.CRunMode):
                 value = SimulationMode(int(value))
             else:
-                TypeError("simulation_mode cannot be of type {}".format(type(value)))
-        elif name == "stop_condition" and not isinstance(value, StopCondition):
+                raise TypeError(
+                    "simulation_mode cannot be of type {}".format(type(value))
+                )
+        elif name == "stop_condition" and not (
+            value is None or isinstance(value, StopCondition)
+        ):
             if isinstance(value, int):
                 value = StopCondition(value)
             elif isinstance(value, str):
                 value = StopCondition[value.upper().replace(" ", "_").replace("-", "_")]
-            elif isinstance(value, _ext.CGeometryFormat):
-                value = StopCondition(int(value))
             else:
-                TypeError("stop_condition cannot be of type {}".format(type(value)))
+                raise TypeError(
+                    "stop_condition cannot be of type {}".format(type(value))
+                )
         elif name == "set_cavern_sg" and value is not None and value < 1.0:
             value = None
         # elif name == "set_initial_conditions" and value is False:
@@ -500,7 +506,7 @@ class StageDefinition:
 
         """
 
-        if self.solver_timestep and self.solver_timestep <= 0:
+        if isinstance(self.solver_timestep, (int, float)) and self.solver_timestep <= 0:
             raise ValueError("Timestep must be greater than 0 hours")
         if self.injection_duration <= 0:
             raise ValueError("Injection duration must be greater than 0 hours")
