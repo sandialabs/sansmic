@@ -2,14 +2,6 @@ name: Build - Publish - Release
 
 on:
   push:
-    branches:
-      - 'main'
-      - 'executable'
-    paths-ignore:
-      - '.github/**'
-      - '!.github/workflows/release.yml'
-      - 'docs/**'
-      - 'examples/**'
     tags:
       - '*'
 
@@ -202,14 +194,14 @@ jobs:
           ./dist/*.tar.gz
           ./dist/*.whl
 
-    - name: Action | Create GitHub Release
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: >-
-        gh release create
-        '${{ github.ref_name }}'
-        --repo '${{ github.repository }}'
-        --notes ""
+    # - name: Action | Create GitHub Release
+    #   env:
+    #     GITHUB_TOKEN: ${{ github.token }}
+    #   run: >-
+    #     gh release create
+    #     '${{ github.ref_name }}'
+    #     --repo '${{ github.repository }}'
+    #     --notes ""
 
     - name: Action | Upload artifact signatures to GitHub Release
       if: success() || failure()
@@ -242,7 +234,8 @@ jobs:
       - name: Zip up dist directory
         run: |
           cd dist
-          zip ../sansmic-${{ env.sansmic_version }}-standalone-win_amd64.zip *
+          zip -r ../sansmic-${{ env.sansmic_version }}-standalone-win_amd64.zip *
+          cd ..
 
       - name: Action | Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0

@@ -1,7 +1,67 @@
 # CHANGELOG
 
 
+## v1.0.5-rc.2 (2024-10-31)
+
+### Bug Fixes
+
+* fix: change TOML config file to use MD (#84)
+
+* ci: test separate repo for reusable workflows
+
+* ci: test separate repo for reusable workflows
+
+* ci: test separate repo for reusable workflows
+
+* ci: update continuous testing to include semantic release check
+
+* chore: modify pyproject release branches specification
+
+* ci: update continuous testing to include semantic release check on pyproject.toml modification
+
+* ci: add pull request context to quick test
+
+* ci: remove automatic prerelease tag from pr builds for time being
+
+* ci: update semantic-release workflow for commits to staging
+
+* fix: depths as true measured depths not as heights from TD_0
+
+* ci: configure semantic-release on staging branch
+
+The semantic-release job will now run on staging and automatically update the version number to the next version and create a new changelog. It will not, however, add a tag or build a release. This may result in a need to synchronize.
+
+---------
+
+Signed-off-by: David Hart <dbhart@users.noreply.github.com> ([`dd62c5d`](https://github.com/sandialabs/sansmic/commit/dd62c5da1afe9f6b1b53c5963e675bea05cb546a))
+
+
 ## v1.0.4 (2024-10-29)
+
+### Refactoring
+
+* refactor: update libsansmic cpp code (#79)
+
+* refactor: change the way logging is done, make output directories more explicit (not enforced yet)
+
+* style: apply black formatting
+
+* ci: change testing output to use 'tee' instead of redirect
+
+* test: no subprocess test in ipynb on linux
+
+* test: strip metadata by hand from ipynb
+
+* refactor: modify logging output formats
+
+* refactor: move certain elements out of Model into a BaseModel
+
+* refactor(version): move location of version number to avoid circular imports
+
+* refactor(test): fix test to match refactor of license and copyright text names ([`ed6ddd8`](https://github.com/sandialabs/sansmic/commit/ed6ddd896cffab1e3c6572ecde2a04b0b8b97ca9))
+
+
+## v1.0.5-rc.1 (2024-10-30)
 
 ### Refactoring
 

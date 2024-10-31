@@ -7,17 +7,23 @@ on:
       - src/**
       - tests/**
       - setup.py
-      - .github/workflows/continuous-testing.yml
+      - pyproject.toml
+      - .github/workflows/*
+    branches:
+      - '!main'
+      - '!staging'
+  pull_request:
+    branches:
+      - '!main'
+      - '!staging'
 
 permissions:
   contents: read
 
 jobs:
   quick-test:
-    uses: sandialabs/sansmic/.github/workflows/pytest-workflow.yml@7952e59342a8c8d1c8ad833121049bac58277167
+    uses: ./.github/workflows/pytest.yml
     with:
-      version: "3.12"
-      os: ubuntu-latest
       verbose: true
     secrets:
       coverage_token: ${{ secrets.CODECOV_TOKEN }}

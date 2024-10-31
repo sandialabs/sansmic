@@ -1,13 +1,15 @@
-name: Reusable test workflow
+name: Use pytest to run tests
 
 on:
   workflow_call:
     inputs:
       version:
-        required: true
+        required: false
+        default: '3.12'
         type: string
       os:
-        required: true
+        required: false
+        default: 'ubuntu-latest'
         type: string
       verbose:
         default: false
@@ -22,9 +24,9 @@ permissions:
 
 jobs:
   run-pytest-coverage:
-    name: Test and compute coverage
+    name: pytest and coverarge
     runs-on: ${{ inputs.os }}
-    steps: 
+    steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
@@ -49,19 +51,19 @@ jobs:
         with:
           python-version: ${{ inputs.version }}
 
-      - name: Install testing dependencies
+      - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
 
-      - name: Test build and install
-        run: python3 -m pip install .[formats,examples,tests]
+      - name: Build test
+        run: python3 -m pip install -e .[formats,examples,tests]
 
-      - name: Test with pytest
+      - name: Test with pytest (quiet)
         if: ${{ ! inputs.verbose }}
         run: |
           python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/
 
-      - name: Test with pytest (non-windows verbose)
+      - name: Test with pytest (non-windows, verbose)
         if: inputs.verbose && inputs.os != 'windows-latest'
         run: |
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
@@ -69,7 +71,7 @@ jobs:
           python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Test with pytest (windows verbose)
+      - name: Test with pytest (windows, verbose)
         if: inputs.verbose && inputs.os == 'windows-latest'
         shell: powershell
         run: |
