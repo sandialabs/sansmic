@@ -54,6 +54,9 @@ class TestStageDefinition(unittest.TestCase):
         self.assertIsNone(stage.brine_injection_height)
         self.assertIsNone(stage.brine_production_depth)
         self.assertIsNone(stage.blanket_depth)
+        self.assertIsNone(stage.brine_injection_depth)
+        self.assertIsNone(stage.brine_production_height)
+        self.assertIsNone(stage.brine_interface_height)
 
 
 class TestEnumFunctions(unittest.TestCase):
