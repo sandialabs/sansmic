@@ -665,7 +665,6 @@ class StageDefinition:
             stage.title = "Stage {}".format(position)
         else:
             stage.title = self.title
-        stage.title = self.title
         stage.mode = _ext.CRunMode(int(self.simulation_mode))
         if isinstance(self.save_frequency, str):
             if self.save_frequency == "hourly":
