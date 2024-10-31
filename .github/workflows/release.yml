@@ -1,10 +1,9 @@
 name: Build - Publish - Release
 
 on:
-  push:
-    tags:
-      - '*'
-
+  release:
+    types: [released]
+    
 permissions:
   contents: read
 
