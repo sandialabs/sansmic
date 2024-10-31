@@ -51,5 +51,5 @@ jobs:
         changelog: true
         commit: true
         push: true
-        tag: false
+        tag: true
         vcs_release: false
