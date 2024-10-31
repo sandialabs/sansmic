@@ -101,8 +101,13 @@ def read_scenario(
             with open(config_file, "rb") as fin:
                 data = tomllib.load(fin)
     except:
-        logger.error('Error reading scenario file "{}"'.format(config_file))
-        raise
+        try:
+            with open(config_file, "r") as fin:
+                data = read_dat(fin)
+            return data
+        except:  # pragma: no cover
+            logger.error('Error reading scenario file "{}"'.format(config_file))
+            raise
     logger.debug("Read scenario file")
     if "stages" not in data or len(data["stages"]) < 1:
         logger.error("No stages provided. Failed to load valid scenario.")
@@ -466,7 +471,7 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
             json.dump(sdict, fout)
         elif ext in [".yaml", ".yml"] or format == "yaml":
             yaml.dump(sdict, fout)
-        else:
+        else:  # pragma: no cover
             logger.critical(
                 'Unknown file extension ({}) and invalid format ({}). Valid extensions/formats are "toml", "yaml" and "json".'.format(
                     ext, format
