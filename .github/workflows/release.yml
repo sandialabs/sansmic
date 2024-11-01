@@ -221,6 +221,9 @@ jobs:
     name: >-
       Sign the standalone with Sigstore and upload to GitHub Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write  # IMPORTANT: mandatory for sigstore
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'sandialabs/sansmic' }}
     steps:
       - name: Setup | Download the standalone executable
