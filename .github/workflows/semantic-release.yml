@@ -3,8 +3,18 @@ name: Semantic Release
 on:
   push:
     branches:
-      - staging
       - main
+
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'The type of release'
+        required: false
+        default: 'prerelease'
+        type: choice
+        options:
+          - prerelease
+          - release
 
 permissions:
   contents: read
@@ -13,7 +23,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     concurrency: release
-    if: ${{ github.repository == 'sandialabs/sansmic' }}  # do not run everywhere
+    # if: ${{ github.repository == 'sandialabs/sansmic' }}  # do not run everywhere
 
     permissions:
       id-token: write
@@ -50,7 +60,8 @@ jobs:
         git_committer_email: "actions@users.noreply.github.com"
         build: false
         changelog: true
-        commit: true
-        push: true
-        tag: true
+        commit: false
+        push: false
+        tag: false
+        prerelease: ${{ ! (inputs.releaseType == 'release') }}
         vcs_release: false
