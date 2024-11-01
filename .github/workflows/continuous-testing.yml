@@ -23,7 +23,6 @@ permissions:
 
 jobs:
   quick-test:
-    name: pytest and coverarge
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
