@@ -1,6 +1,36 @@
 # CHANGELOG
 
 
+## v1.0.6-rc.1 (2024-11-01)
+
+### Bug Fixes
+
+* fix(StageDefinition): handle null values in heights ([`6a8ef80`](https://github.com/sandialabs/sansmic/commit/6a8ef8063bc0c8e944bae001c49585f64be31f0e))
+
+* fix(StageDefinition): property error in class definition due to dataclass use ([`756976d`](https://github.com/sandialabs/sansmic/commit/756976dea294e8b5643337c0438d6cec3e97d441))
+
+* fix(StageDefinition): test the lack of stage title in basic example ([`0debd5a`](https://github.com/sandialabs/sansmic/commit/0debd5a4b059c845f43089a23c353d358a5ca492))
+
+* fix(StageDefinition): provide default name for stages when creating a CStage object ([`57326e5`](https://github.com/sandialabs/sansmic/commit/57326e558d0cb7d07461a3eb007400b0de80d25e))
+
+* fix(StageDefinition): provide default name for stages when creating a CStage object ([`9255340`](https://github.com/sandialabs/sansmic/commit/92553404ec0e4eeb62e957f6788d3f27c9003f8d))
+
+### Documentation
+
+* docs: update example with depths not heights ([`4426fc7`](https://github.com/sandialabs/sansmic/commit/4426fc7495f5a4dd1f3ba18b72c8367e67c1b01e))
+
+### Testing
+
+* test(python): improve test coverage for the python code ([`f153760`](https://github.com/sandialabs/sansmic/commit/f153760b5c3fdc8f7079df7d5d05cf8f3e9c995c))
+
+* test(model): test null values ([`94883b2`](https://github.com/sandialabs/sansmic/commit/94883b2816fa6ae5fd581e76de88a67b745161f0))
+
+* test: add tests for StageDefinition class ([`436748e`](https://github.com/sandialabs/sansmic/commit/436748e56b442a3c235f3c48a8a14db78add9ef2))
+
+
+## v1.0.5-post.1 (2024-10-31)
+
+
 ## v1.0.5 (2024-10-31)
 
 ### Release
