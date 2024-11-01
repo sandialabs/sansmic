@@ -19,7 +19,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   quick-test:
@@ -71,7 +70,7 @@ jobs:
         if: success() || failure()
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
-          token: ${{ secrets.coverage_token }}
+          token: ${{ secrets.CODECOV_TOKEN }}
           flags: ${{ inputs.os }}
 
       - name: Test uninstall
