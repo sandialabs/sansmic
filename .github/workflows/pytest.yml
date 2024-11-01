@@ -68,13 +68,11 @@ jobs:
         if: inputs.verbose && inputs.os == 'ubuntu-latest'
         run: |
           export CPPFLAGS="-coverage"
-          sudo apt install gcovr
           python3 setup.py build_ext --inplace --force
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
           python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
           find src -type f -name '*.cpp' | xargs -I{} gcov -o build/temp*/src/ext_modules/libsansmic {}
-          gcovr --txt | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Test with pytest (non-windows, verbose)
