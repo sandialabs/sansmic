@@ -68,6 +68,7 @@ jobs:
         if: inputs.verbose && inputs.os == 'ubuntu-latest'
         run: |
           export CPPFLAGS="-coverage"
+          sudo apt install gcovr
           python3 setup.py build_ext --inplace --force
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
