@@ -59,12 +59,12 @@ jobs:
         run: python3 -m pip install -e .[formats,examples,tests]
 
       - name: Test with pytest (quiet)
-        if: ${{ ! inputs.verbose }}
+        if: ${{ ! inputs.verbose && inputs.os != 'ubuntu-latest' }}
         run: |
           python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/
 
-      - name: Get C++ coverage
-        if: inputs.verbose && inputs.os == 'ubuntu-latest'
+      - name: Full coverage test on linux
+        if: inputs.os == 'ubuntu-latest'
         run: |
           export CPPFLAGS="-coverage"
           python3 -m pip install setuptools pybind11 gcovr
