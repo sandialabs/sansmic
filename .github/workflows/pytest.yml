@@ -63,8 +63,19 @@ jobs:
         run: |
           python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/
 
+      - name: Get C++ coverage
+        if: inputs.verbose && inputs.os == 'ubuntu-latest'
+        run: |
+          export CPPFLAGS="-coverage"
+          python3 setup.py build_ext --inplace --force
+          echo '### Run tests' >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
+          find src -type f -name '*.cpp' | xargs -I{} gcov -o build/temp*/src/ext_modules/libsansmic
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
       - name: Test with pytest (non-windows, verbose)
-        if: inputs.verbose && inputs.os != 'windows-latest'
+        if: inputs.verbose && inputs.os != 'windows-latest' && inputs.os != 'ubuntu-latest'
         run: |
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
