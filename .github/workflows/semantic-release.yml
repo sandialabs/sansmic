@@ -3,6 +3,7 @@ name: Semantic Release
 on:
   push:
     branches:
+      - main
 
   workflow_dispatch:
     inputs:
@@ -31,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: semanticRelease
     # Only run if this is the primary origin main branch
-    # debug if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
     outputs:
       is_prerelease: ${{ steps.semVer.outputs.is_prerelease }}
       released: ${{ steps.semVer.outputs.released }}
@@ -72,8 +73,8 @@ jobs:
         git_committer_email: "actions@users.noreply.github.com"
         build: false
         changelog: true
-        commit: false
-        push: false
+        commit: true
+        push: true
         tag: false
         prerelease: ${{ ! (inputs.releaseType == 'release') }}
         force: ${{ inputs.force }}
