@@ -10,9 +10,10 @@ on:
       releaseType:
         description: 'The type of release'
         required: false
-        default: 'prerelease'
+        default: ''
         type: choice
         options:
+          - ''
           - prerelease
           - release
       force:
@@ -191,8 +192,6 @@ jobs:
     environment:
       name: release
     concurrency: semanticRelease
-    # Only run if this is the primary origin main branch
-    # debug if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
 
     permissions:
       id-token: write
@@ -255,7 +254,7 @@ jobs:
         tag: true
         prerelease: ${{ ! (inputs.releaseType == 'release') }}
         force: ${{ inputs.force }}
-        vcs_release: false
+        vcs_release: true
 
     - name: Publish | Upload to GitHub Release Assets
       uses: python-semantic-release/publish-action@v9.8.9

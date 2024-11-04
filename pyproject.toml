@@ -95,15 +95,6 @@ version_variables = [
 
 [tool.semantic_release.branches.release]
 match = "main"
-prerelease = false
-
-[tool.semantic_release.branches.candidate]
-match = "staging"
-prerelease_token = "rc"
-prerelease = true
-
-[tool.semantic_release.branches.check-only]
-match = "(?!main|master|staging)"
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
@@ -146,7 +137,7 @@ allowed_tags = [
     "release",  # A push to main
 ]
 minor_tags = ["feat", "release(feat)"]
-patch_tags = ["fix", "perf", "refactor", "release"]
+patch_tags = ["fix", "perf", "refactor"]
 default_bump_level = 0
 
 [tool.semantic_release.remote]

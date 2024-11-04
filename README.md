@@ -1,7 +1,7 @@
 ![Lines of code](https://sloc.xyz/github/sandialabs/sansmic/?category=code)
+[![Test Matrix](https://github.com/sandialabs/sansmic/actions/workflows/test-matrix.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/test-matrix.yml)
 [![codecov](https://codecov.io/github/sandialabs/sansmic/graph/badge.svg?token=oDeMIUHoqg)](https://codecov.io/github/sandialabs/sansmic)
 
-[![Continuous Integration - Full Test Target Suite](https://github.com/sandialabs/sansmic/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/sandialabs/sansmic/actions/workflows/continuous-integration.yml)
 [![Deploy Sphinx documentation](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml)
 
 [![pypi](https://img.shields.io/pypi/v/sansmic.svg?maxAge=3600)](https://pypi.org/project/sansmic/)
@@ -39,7 +39,7 @@ It can also be installed by downloading a wheel from the [releases]
 in this repository, or by cloning this repository and building it
 yourself. Finally, a standalone executable has been created that
 will be added to each release for Windows users that are unable
-due to install Python on their corporate computers (see the releases 
+due to install Python on their corporate computers (see the releases
 on the right side of the page).
 
 
@@ -81,13 +81,13 @@ If you use sansmic for a publication, please use the following citation:
   [doi:10.11578/dc.20240911.9](https://doi.org/10.11578/dc.20240911.9)
 
 The list of current contributors is located in the [AUTHORS](AUTHORS.md) file.
-If you would like to contribute, please read the 
+If you would like to contribute, please read the
 [guide to contributing](CONTRIBUTING.md).
 
 ### License & Copyright
 See [LICENSE](LICENSE) and [COPYRIGHT](COPYRIGHT.md).
 
-[Sandia National Laboratories](https://www.sandia.gov) 
+[Sandia National Laboratories](https://www.sandia.gov)
 is a multimission laboratory managed
 and operated by National Technology & Engineering Solutions of Sandia,
 LLC, a wholly owned subsidiary of Honeywell International Inc., for
