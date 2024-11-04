@@ -1,5 +1,5 @@
 # Deploy Sphinx content to GitHub Pages
-name: Deploy Sphinx documentation
+name: Docs
 
 on:
   # Runs on pushes targeting the default branch
