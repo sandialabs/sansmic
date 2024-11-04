@@ -3,8 +3,6 @@ name: Semantic Release
 on:
   push:
     branches:
-      - main
-      - development/ci-actions
 
   workflow_dispatch:
     inputs:
@@ -16,6 +14,12 @@ on:
         options:
           - prerelease
           - release
+      force:
+        description: "Force a bump to a specific version"
+        required: false
+        default: null
+        type: choice
+        options: ["prerelease", "patch", "minor", "major"]
 
 permissions:
   contents: read
@@ -23,8 +27,14 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    concurrency: release
-    # if: ${{ github.repository == 'sandialabs/sansmic' }}  # do not run everywhere
+    concurrency: semanticRelease
+    # Only run if this is the primary origin main branch
+    # debug if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
+    outputs:
+      is_prerelease: ${{ steps.semVer.outputs.is_prerelease }}
+      released: ${{ steps.semVer.outputs.released }}
+      version: ${{ steps.semVer.outputs.version }}
+      tag: ${{ steps.semVer.outputs.tag }}
 
     permissions:
       id-token: write
@@ -35,6 +45,12 @@ jobs:
       uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
       with:
         egress-policy: audit
+
+    - name: Debug
+      run: |
+        echo "## Inputs" >> $GITHUB_STEP_SUMMARY
+        echo ${{ inputs.releaseType }} | tee $GITHUB_STEP_SUMMARY
+        echo ${{ inputs.force }} | tee $GITHUB_STEP_SUMMARY
 
     - name: Setup | Checkout Repository at workflow sha
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -52,7 +68,7 @@ jobs:
         echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
 
     - name: Action | Semantic Release - Update version
-      id: release
+      id: semVer
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
       with:
@@ -64,5 +80,18 @@ jobs:
         commit: false
         push: false
         tag: false
-        prerelease: ${{ ! (inputs.releaseType == 'release') }}
+        prerelease: ${{ ! (inputs.releaseType == 'releaseType') }}
+        force: ${{ input.force }}
         vcs_release: false
+
+    - name: Action | Output changelog
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Results of python-semantic-version" >> $GITHUB_STEP_SUMMARY
+        echo "Released " ${{ steps.semVer.outputs.released }} >> $GITHUB_STEP_SUMMARY
+        echo "Prerelease " ${{ steps.semVer.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
+        echo "Version " ${{ steps.semVer.outputs.version }} >> $GITHUB_STEP_SUMMARY
+        echo "Tag " ${{ steps.semVer.outputs.tag }} >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Changelog" >> $GITHUB_STEP_SUMMARY
+        git diff CHANGELOG.md >> $GITHUB_STEP_SUMMARY
