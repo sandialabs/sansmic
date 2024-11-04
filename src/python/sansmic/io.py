@@ -137,6 +137,7 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
         else str_or_buffer
     ) as fin:
         scenario.title = "Converted from DAT-file"
+        scenario.comments = """\nConversion report:\n"""
         first = True
         logger.debug('Reading DAT-formatted file "{}"'.format(Path(fin.name).name))
         while True:
@@ -241,14 +242,11 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
                 + "\n    tdlay  [depr.]: {}".format(tDelay)
                 + "\n    sep           : {}".format(coallescing_well_separation)
             )
-            if float(tDelay) != 0:
-                logger.warning("The TDLAY option should not be used. Ignoring.")
             # First stage - block 9
             if first:
                 logger.debug("First stage initialization")
                 logger.debug("Record 9 - Geometry\n  data:")
                 geometry_data = list()
-                first = False
                 geometry_format = GeometryFormat(int(geometry_format))
                 if geometry_format == GeometryFormat.RADIUS_LIST:
                     radii = list()
@@ -300,6 +298,7 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
                     logger.warning(
                         "The REFDEP is no longer used, only DEPTH. Ignoring REFDEP."
                     )
+                    scenario.comments += "* The REFDEP value (field 3 in record 10) is unused; DEPTH (field 4) is used instead.\n"
                 if float(dissolution_factor) != 1.0:
                     logger.warning("The ZDIS should almost always be 1.0 for NaCl(s)")
                 scenario.geometry_format = geometry_format
@@ -310,8 +309,14 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
                 df = float(dissolution_factor)
                 if df != 1.0:
                     scenario.advanced.dissolution_factor = df
+                    scenario.comments += "* Atypical dissolution factor set to {} in [advanced] options table.\n".format(
+                        dissolution_factor
+                    )
                 scenario.insolubles_ratio = float(insoluble_fraction)
                 scenario.floor_depth = float(depth)
+                scenario.comments += "* Floor depth was {} ft MD; all heights converted to MD using this value.\n".format(
+                    depth
+                )
                 scenario.cavern_height = float(cavern_height)
                 scenario.ullage_standoff = float(ullage_standoff)
             else:
@@ -326,12 +331,25 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
                     )
                 )
                 raise TypeError("Invalid data in DAT file: RESETGEO not 0")
-            if not first and isinstance(cavern_sg, (float, int)) and cavern_sg > 1.0:
+            if float(tDelay) != 0:
+                logger.warning("The TDLAY option should not be used. Ignoring.")
+                scenario.comments += "* The TDLAY option ({}) was removed from stage {}, as it has been deprecated.\n".format(
+                    tDelay, len(scenario.stages) + 1
+                )
+            if not first and (cavern_sg is not None and float(cavern_sg) > 1.0):
+                scenario.comments += "* Initial cavern SG was changed from {} to 0 in subsequent stage number {}.\n".format(
+                    cavern_sg, len(scenario.stages) + 1
+                )
+                scenario.comments += "  If you truly meant to reset the cavern SG at the beginning of the stage,\n"
+                scenario.comments += "  please add ``set-cavern-sg = {}`` into [[stages]] definition number {}\n".format(
+                    cavern_sg, len(scenario.stages) + 1
+                )
                 logger.warning(
-                    "The REPEAT option was supposed to turn off the cavern SG; it did not do so. sansmic is currently mimicing SANSMIC behavior and resetting the cavern brine to {} sg in stage {}. \n\nIf this is not what is intended, please manually remove the 'set-cavern-sg' entry from stages after stage 1. This behavior will change in future releases.".format(
+                    "The REPEAT option now disables cavern SG initialization that is non-zero. Please add ``set-initial-conditions = true`` and ``set-cavern-sg = {}`` to [[stages]] {}".format(
                         cavern_sg, len(scenario.stages) + 1
                     )
                 )
+                cavern_sg = 0.0
             stage.title = title
             stage.simulation_mode = SimulationMode(int(mode))
             stage.save_frequency = int(print_interval)
@@ -363,6 +381,7 @@ def read_dat(str_or_buffer: Union[str, Path], *, ignore_errors=False) -> Scenari
             stage.injection_duration = float(injection_duration)
             stage.product_injection_rate = float(fill_rate)
             scenario.stages.append(stage)
+            first = False
             logger.debug("Finished reading stage")
     logger.debug(".DAT file converted successfully")
     return scenario
@@ -429,6 +448,8 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
                     continue
                 if isinstance(v, bool):
                     v = str(v).lower()
+                elif k == "comments":
+                    v = '"""' + v + '"""'
                 elif isinstance(v, str):
                     v = repr(v)
                 elif isinstance(v, IntEnum):

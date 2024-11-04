@@ -185,17 +185,20 @@ class TestApplication(unittest.TestCase):
         """Test the 'sansmic-convert' command line application."""
         scenario0 = sansmic.io.read_scenario(self.withdrawal_dat)
         scenario0.title = ""
+        scenario0.comments = ""
         sansmic.app.convert(
             [self.withdrawal_dat, self.withdrawal_toml], standalone_mode=False
         )
         scenario1 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario1.title = ""
+        scenario1.comments = ""
         self.assertEqual(scenario0, scenario1)
         sansmic.app.convert(
             [self.withdrawal_dat, self.withdrawal_toml, "--full"], standalone_mode=False
         )
         scenario2 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario2.title = ""
+        scenario2.comments = ""
         self.maxDiff = None
         self.assertDictEqual(scenario0.to_dict(), scenario2.to_dict())
 
