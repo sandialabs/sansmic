@@ -95,6 +95,8 @@ version_variables = [
 
 [tool.semantic_release.branches.release]
 match = "main"
+prerelease_token = "rc"
+prerelease = false
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
