@@ -1,27 +1,13 @@
 name: Semantic Release
 
 on:
-  push:
-    branches:
-      - main
-
   workflow_dispatch:
     inputs:
-      releaseType:
-        description: 'The type of release'
+      is_prerelease:
+        description: 'Is this a prerelease?'
         required: false
-        default: ''
-        type: choice
-        options:
-          - ''
-          - prerelease
-          - release
-      force:
-        description: "Force a bump to a specific version"
-        required: false
-        default: ""
-        type: choice
-        options: ["", "prerelease", "patch", "minor", "major"]
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -31,7 +17,9 @@ jobs:
     name: >-
       🔖❓ - Check if release needed
     runs-on: ubuntu-latest
-    concurrency: semanticRelease
+    environment:
+      name: release
+    concurrency: release
     # Only run if this is the primary origin main branch
     if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
     outputs:
@@ -50,8 +38,7 @@ jobs:
     - name: Debug
       run: |
         echo "## Inputs" >> $GITHUB_STEP_SUMMARY
-        echo ${{ inputs.releaseType }} | tee $GITHUB_STEP_SUMMARY
-        echo ${{ inputs.force }} | tee $GITHUB_STEP_SUMMARY
+        echo "Is prerelease - " ${{ inputs.is_prerelease }} | tee $GITHUB_STEP_SUMMARY
     - name: Setup | Checkout Repository at workflow sha
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -64,6 +51,7 @@ jobs:
       id: vars
       run: |
         echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
+
     - name: Action | Semantic Release - Update version
       id: semVer
       # Adjust tag with desired version if applicable.
@@ -77,9 +65,9 @@ jobs:
         commit: true
         push: true
         tag: false
-        prerelease: ${{ ! (inputs.releaseType == 'release') }}
-        force: ${{ inputs.force }}
+        prerelease: ${{ inputs.is_prerelease }}
         vcs_release: false
+        
     - name: Action | Output version info
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -191,7 +179,7 @@ jobs:
       - build_wheels
     environment:
       name: release
-    concurrency: semanticRelease
+    concurrency: release
 
     permissions:
       id-token: write
@@ -252,8 +240,7 @@ jobs:
         commit: false
         push: true
         tag: true
-        prerelease: ${{ ! (inputs.releaseType == 'release') }}
-        force: ${{ inputs.force }}
+        prerelease: ${{ inputs.is_prerelease }}
         vcs_release: true
 
     - name: Publish | Upload to GitHub Release Assets
