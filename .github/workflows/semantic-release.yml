@@ -25,7 +25,7 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  check_release:
     runs-on: ubuntu-latest
     concurrency: semanticRelease
     # Only run if this is the primary origin main branch
@@ -35,38 +35,31 @@ jobs:
       released: ${{ steps.semVer.outputs.released }}
       version: ${{ steps.semVer.outputs.version }}
       tag: ${{ steps.semVer.outputs.tag }}
-
     permissions:
       id-token: write
       contents: write
-
     steps:
     - name: Harden Runner
       uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
       with:
         egress-policy: audit
-
     - name: Debug
       run: |
         echo "## Inputs" >> $GITHUB_STEP_SUMMARY
         echo ${{ inputs.releaseType }} | tee $GITHUB_STEP_SUMMARY
         echo ${{ inputs.force }} | tee $GITHUB_STEP_SUMMARY
-
     - name: Setup | Checkout Repository at workflow sha
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         fetch-depth: 0
         ref: ${{ github.sha }}
-
     - name: Setup | Force correct release branch on workflow sha
       run: |
         git checkout -B ${{ github.ref_name }} ${{ github.sha }}
-
     - name: Setup | Get short commit SHA
       id: vars
       run: |
         echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
-
     - name: Action | Semantic Release - Update version
       id: semVer
       # Adjust tag with desired version if applicable.
@@ -80,10 +73,9 @@ jobs:
         commit: false
         push: false
         tag: false
-        prerelease: ${{ ! (inputs.releaseType == 'releaseType') }}
+        prerelease: ${{ ! (inputs.releaseType == 'release') }}
         force: ${{ inputs.force }}
         vcs_release: false
-
     - name: Action | Output changelog
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -93,5 +85,90 @@ jobs:
         echo "Version " ${{ steps.semVer.outputs.version }} >> $GITHUB_STEP_SUMMARY
         echo "Tag " ${{ steps.semVer.outputs.tag }} >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## Changelog" >> $GITHUB_STEP_SUMMARY
-        git diff CHANGELOG.md >> $GITHUB_STEP_SUMMARY
+
+  make_sdist:
+    name: Make source distribution package
+    needs:
+      - check_release
+    if: ${{ steps.semVer.outputs.released == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup | Harden Runner
+      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      with:
+        egress-policy: audit
+    - name: Setup | Checkout Code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0  # Optional, use if you use setuptools_scm
+        submodules: true  # Optional, use if you have submodules
+    - name: Action | Build SDist
+      run: pipx run build --sdist
+    - name: Action | Upload Artifacts
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      with:
+        name: cibw-sdist
+        path: dist/*.tar.gz
+
+  build_wheels:
+    name: Build binary wheel for ${{ matrix.os }}
+    needs:
+      - check_release
+    if: ${{ steps.semVer.outputs.released == 'true' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+    steps:
+      - name: Setup | Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+      - name: Setup | Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Action | Build Wheels
+        uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b # v2.21.0
+      - name: Action | Upload Artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  build_win_exe:
+    name: Build standalone Windows executable
+    needs:
+      - check_release
+    if: ${{ steps.semVer.outputs.released == 'true' }}
+    runs-on: [windows-latest]
+    continue-on-error: true
+    steps:
+      - name: Setup | Install python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.12'
+      - name: Setup | Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup | Install Dependencies
+        run: |
+          pip install -r requirements.txt -r requirements-exe.txt
+          pip install .
+          python setup.py build_ext -i
+      - name: Setup | Get the sansmic version number
+        id: vars
+        run: |
+          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> $Env:GITHUB_ENV
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $Env:GITHUB_ENV
+      - name: Action | Run PyInstaller
+        run: |
+          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic src/python/sansmic/app.py
+      - name: Action | Create examples
+        run: |
+          mkdir dist/sansmic/examples
+          sansmic-convert tests/baseline.dat dist/sansmic/examples/baseline.toml
+          Compress-Archive -Path dist/sansmic -DestinationPath dist/sansmic-${{ jobs.check_release.outputs.version }}-standalone-win_amd64.zip
+      - name: Action | Upload Artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: standalone-executable
+          path: ./dist/sansmic-*-standalone-win_amd64.zip
