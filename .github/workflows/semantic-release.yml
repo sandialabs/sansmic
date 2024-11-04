@@ -81,7 +81,7 @@ jobs:
         push: false
         tag: false
         prerelease: ${{ ! (inputs.releaseType == 'releaseType') }}
-        force: ${{ input.force }}
+        force: ${{ inputs.force }}
         vcs_release: false
 
     - name: Action | Output changelog
