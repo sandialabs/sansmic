@@ -10,6 +10,7 @@ on:
       - '**/*.c'
       - '**/*.h'
       - '**/*.toml'
+      - '.github/workflows/test-continuous.yml'  # run if this file is changed
       - '!docs/conf.py'
 
 permissions:
