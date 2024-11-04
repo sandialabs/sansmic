@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause.
 
-__version__ = "1.0.6"
+__version__ = "1.0.6-rc.2"
 
 copyright = f"""Copyright (c) 2024 National Technology and Engineering Solutions of Sandia,
 LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
