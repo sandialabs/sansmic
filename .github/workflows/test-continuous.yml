@@ -1,21 +1,22 @@
-name: Test
+name: Tests
 
 on:
   push:
     paths:
-      - examples/**
-      - src/**
-      - tests/**
-      - setup.py
-      - pyproject.toml
-      - .github/workflows/*
-  pull_request:
+      - '**/*.py'
+      - '**/*.cpp'
+      - '**/*.hpp'
+      - '**/*.ipynb'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.toml'
+      - '!docs/conf.py'
 
 permissions:
   contents: read
 
 jobs:
-  quick-test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
