@@ -14,6 +14,8 @@ on:
       - '**/*.py'
       - '**/*.cpp'
       - '**/*.hpp'
+      - '**/*.c'
+      - '**/*.h'
   pull_request:
     branches: [ "main" ]
   schedule:
