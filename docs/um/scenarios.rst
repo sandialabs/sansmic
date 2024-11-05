@@ -95,15 +95,15 @@ be defined for **each** stage
 * :confval:`injection-duration`
 * :confval:`rest-duration`
 * :confval:`brine-injection-sg`
-* :confval:`brine-injection-depth`
-* :confval:`brine-production-depth`
+* :confval:`brine-injection-depth` xor :confval:`brine-injection-height`
+* :confval:`brine-production-depth` xor :confval:`brine-production-height`
 * :confval:`brine-injection-rate`
 
 
 The keys which are required for at least the **first** stage are
 
 * :confval:`set-cavern-sg`
-* :confval:`brine-interface-depth`
+* :confval:`brine-interface-depth` xor :confval:`brine-interface-height`
 
 
 The keys which can be set using the ``[defaults]`` section
@@ -528,25 +528,37 @@ number of stages. A stage **requires** a title key.
 
 
 .. confval:: brine-injection-depth
+.. confval:: brine-injection-height
 
-    The *height* above the original :confval:`floor-depth` of the cavern
+    The *depth* (preferred) or *height* within the cavern
     where the EOT for the injection string is located. If above the
     production depth, it will be assigned to the outer casing,
     otherwise it will apply to the inner casing.
-    This value is specified in :term:`foot` above :confval:`floor-depth`.
-    Changing depth values to handle measured depths below surface
-    is the second-highest priority update.
+
+    The :confval:`brine-injection-depth` is specified in :term:`foot`
+    below the :term:`ZDP` at the surface.
+
+    The :confval:`brine-injection-height` is specified in :term:`foot`
+    above the original :confval:`floor-depth`
+
+    Do not use both -depth and -height options.
 
 
 .. confval:: brine-production-depth
+.. confval:: brine-production-height
 
-    The *height* above the original :confval:`floor-depth` of the cavern
+    The *depth* (preferred) or *height* within the cavern
     where the EOT for the injection string is located. If above the
     injection depth, it will be assigned to the outer casing,
     otherwise it will apply to the inner casing.
-    This value is specified in :term:`foot` above :confval:`floor-depth`.
-    Changing depth values to handle measured depths below surface
-    is the second-highest priority update.
+
+    The :confval:`brine-production-depth` is specified in :term:`foot`
+    below the :term:`ZDP` at the surface.
+
+    The :confval:`brine-production-height` is specified in :term:`foot`
+    above the original :confval:`floor-depth`
+
+    Do not use both -depth and -height options.
 
 
 .. confval:: brine-injection-rate
@@ -558,18 +570,23 @@ number of stages. A stage **requires** a title key.
 
 
 .. confval:: brine-interface-depth
+.. confval:: brine-interface-height
 
-    The initial brine interface depth in *height* above the
-    :confval:`floor-depth`. This is only required for the first stage, and
+    The initial brine interface *depth* (preferred) or *height*
+    within the cavern. This is only required for the first stage, and
     should not be set in subsequent stages unless you *want* to
     manually reset the interface position. If so, you should also
     set :confval:`set-initial-conditions` to true. If left blank or set
     to 0, it will behave as if unset and use the value from the
     previous stage.
 
-    Specified in :term:`foot` above :confval:`floor-depth`.
-    Changing depth values to handle measured depths below surface
-    is the second-highest priority update.
+    The :confval:`brine-interface-depth` is specified in :term:`foot`
+    below the :term:`ZDP` at the surface.
+
+    The :confval:`brine-interface-height` is specified in :term:`foot`
+    above the original :confval:`floor-depth`
+
+    Do not use both -depth and -height options.
 
 
 .. confval:: set-cavern-sg
@@ -580,16 +597,17 @@ number of stages. A stage **requires** a title key.
     for the first stage, it will be set to the maximum brine
     specific gravity.
 
+    *Changed: v1.0.6*
+
     The SANSMIC user guide from 2015 had an error, and stated that
     subsequent stages did not use this value. In fact, this value
-    was still being set unless it was set to 1.0 or less. This
-    version of sansmic will give a warning when converting files
-    but behave *as was described in the user manual*. If you want
-    to replicate the old behavior, set :confval:`set-initial-conditions`
+    was still being set unless it was set to 1.0 or less.
+
+    sansmic will behave *as was described in the user manual*. To
+    replicate the old behavior, set :confval:`set-initial-conditions`
     to true to force initialization of the cavern brine to the value
-    you specify in this key. You can also set this to 0.0 in an
-    old DAT file to force the proper behavior of continuing between
-    stages.
+    you specify in this key. (You can also set this to 0.0 in an
+    old DAT file to force this behavior in the FORTRAN version)
 
 
 .. confval:: set-initial-conditions

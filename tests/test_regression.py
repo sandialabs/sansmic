@@ -16,8 +16,11 @@ class TestRegression(unittest.TestCase):
     def setUpClass(cls):
         cls.nameF = "baseline"
         cls.datF = join(testdir, cls.nameF + ".dat")
-        cls.tstF = sansmic.io.read_tst_file(join(testdir, cls.nameF))
-        cls.resF = sansmic.io.read_classic_out_ddl(join(testdir, cls.nameF))
+        cls.tstF = sansmic.io.read_tst_file(join(testdir, cls.nameF) + ".tst.txt")
+        cls.resF = sansmic.io.read_classic_out_ddl(
+            join(testdir, cls.nameF) + ".out.txt",
+            join(testdir, cls.nameF) + ".ddl.txt",
+        )
         cls.namePy = "regression"
 
     def test_regression_results(self):
@@ -26,7 +29,7 @@ class TestRegression(unittest.TestCase):
         with model.new_simulation(join(testdir, self.namePy)) as sim:
             sim.run_sim()
         resPy = sim.results
-        tstPy = sansmic.io.read_tst_file(join(testdir, self.namePy))
+        tstPy = sansmic.io.read_tst_file(join(testdir, self.namePy) + ".tst")
         Stats = sansmic.model.pd.DataFrame.from_dict(
             dict(
                 rmse=np.sqrt(np.mean((self.tstF - tstPy) ** 2, 0)),
