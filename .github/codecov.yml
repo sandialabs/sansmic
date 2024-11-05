@@ -22,8 +22,7 @@ coverage:
 
 comment:
   layout: "condensed_header, condensed_files, condensed_footer"  # show component info in the PR comment
-  behavior: new
-  require_changes: "coverage_drop AND uncovered_patch"
+  require_changes: false
 
 component_management:
   default_rules:
