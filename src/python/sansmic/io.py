@@ -502,7 +502,7 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
     logger.info(f'Scenario file written to "{file_path.name}"')
 
 
-def read_classic_out_ddl(file_prefix):
+def read_classic_out_ddl(out_filename, ddl_filename):
     """
     Read in the data from ".out" and ".ddl" files from a classic SANSMIC run.
 
@@ -528,7 +528,7 @@ def read_classic_out_ddl(file_prefix):
     z_0 = list()
     h_0 = list()
 
-    with open(file_prefix + ".ddl", "r") as fddl:
+    with open(ddl_filename, "r") as fddl:
         for ct, line in enumerate(fddl.readlines()):
             if ct == 0:
                 continue
@@ -544,7 +544,7 @@ def read_classic_out_ddl(file_prefix):
         h = z - z_0[0]
         h_0.append(h)
 
-    with open(file_prefix + ".out", "r") as fout:
+    with open(out_filename, "r") as fout:
         for line in fout.readlines():
             words = line.split()
             if skip1:
@@ -671,7 +671,7 @@ def read_classic_out_ddl(file_prefix):
     return res
 
 
-def read_tst_file(file_prefix: str):
+def read_tst_file(tst_filename: str):
     """Read a .tst output file into a DataFrame.
 
     Parameters
@@ -695,7 +695,7 @@ def read_tst_file(file_prefix: str):
     Q_fill = list()
     V_injTot = list()
     V_fillTot = list()
-    with open(file_prefix + ".tst", "r") as fout:
+    with open(tst_filename, "r") as fout:
         for line in fout.readlines():
             words = line.split()
             if len(words) == 0:
