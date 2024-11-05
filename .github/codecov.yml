@@ -1,7 +1,7 @@
 coverage:
   status:
     project:
-      default: 
+      default:
         target: auto
         threshold: 5%
         paths:
@@ -17,9 +17,8 @@ coverage:
           - "tests/"
 
 comment:
-  layout: "condensed_header, condensed_files, condensed_footer"  # show component info in the PR comment
+  layout: "condensed_header, condensed_diff, condensed_files"  # show component info in the PR comment
   require_changes: false
-  behavior: new
 
 component_management:
   default_rules:
