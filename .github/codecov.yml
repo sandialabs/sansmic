@@ -1,16 +1,12 @@
 coverage:
   status:
     project:
-      default: false
-      tests:
-        target: 100%
-        paths:
-          - "tests/"
-      app:
+      default: 
         target: auto
         threshold: 5%
         paths:
           - "src/"
+          - "tests/"
     patch:
       default:
         target: auto
@@ -23,6 +19,7 @@ coverage:
 comment:
   layout: "condensed_header, condensed_files, condensed_footer"  # show component info in the PR comment
   require_changes: false
+  behavior: new
 
 component_management:
   default_rules:
@@ -31,14 +28,16 @@ component_management:
       - type: patch
   individual_components:
     - component_id: module_python
-      name: python code
+      name: python package
       paths:
         - src/python/**
     - component_id: module_ext
-      name: C++ code
+      name: external modules
       paths:
-        - src/ext_modules/**
+        - src/ext_modules/**/*.cpp
+        - src/ext_modules/**/*.c
     - component_id: module_tests
-      name: tests
+      name: tests and examples
+      target: 100%
       paths:
         - tests/**
