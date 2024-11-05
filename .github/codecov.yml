@@ -1,32 +1,35 @@
 coverage:
   status:
     project:
-      default:
-        # basic
+      default: false
+      tests:
+        target: 100%
+        paths:
+          - "tests/"
+      app:
         target: auto
-        threshold: 5
-        base: auto
+        threshold: 5%
+        paths:
+          - "src/"
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+        only_pulls: true
         paths:
           - "src/"
           - "tests/"
-        # advanced settings
-        branches:
-          - main
-          - dev
-        if_ci_failed: error #success, failure, error, ignore
-        informational: false
-        only_pulls: false
 
 comment:
-  layout: "header, diff, components"  # show component info in the PR comment
+  layout: "condensed_header, condensed_files, condensed_footer"  # show component info in the PR comment
+  behavior: new
+  require_changes: "coverage_drop AND uncovered_patch"
 
 component_management:
   default_rules:
     statuses:
       - type: project
-        target: auto
-        branches:
-          - "!main"
+      - type: patch
   individual_components:
     - component_id: module_python
       name: python code
