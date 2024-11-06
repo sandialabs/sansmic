@@ -18,15 +18,15 @@ jobs:
       🔖❓ - Check if release needed
     runs-on: ubuntu-latest
     environment:
-      name: release
+      name: sem-ver
     concurrency: release
     # Only run if this is the primary origin main branch
     if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
     outputs:
-      is_prerelease: ${{ steps.semVer.outputs.is_prerelease }}
-      released: ${{ steps.semVer.outputs.released }}
-      version: ${{ steps.semVer.outputs.version }}
-      tag: ${{ steps.semVer.outputs.tag }}
+      is_prerelease: ${{ steps.semantic_release.outputs.is_prerelease }}
+      released: ${{ steps.semantic_release.outputs.released }}
+      version: ${{ steps.semantic_release.outputs.version }}
+      tag: ${{ steps.semantic_release.outputs.tag }}
     permissions:
       id-token: write
       contents: write
@@ -53,11 +53,11 @@ jobs:
         echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
 
     - name: Action | Semantic Release - Update version
-      id: semVer
+      id: semantic_release
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
         git_committer_name: "github-actions"
         git_committer_email: "actions@users.noreply.github.com"
         build: false
@@ -67,15 +67,15 @@ jobs:
         tag: false
         prerelease: ${{ inputs.is_prerelease }}
         vcs_release: false
-        
+
     - name: Action | Output version info
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## Results of python-semantic-version" >> $GITHUB_STEP_SUMMARY
-        echo "Released " ${{ steps.semVer.outputs.released }} >> $GITHUB_STEP_SUMMARY
-        echo "Prerelease " ${{ steps.semVer.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
-        echo "Version " ${{ steps.semVer.outputs.version }} >> $GITHUB_STEP_SUMMARY
-        echo "Tag " ${{ steps.semVer.outputs.tag }} >> $GITHUB_STEP_SUMMARY
+        echo "Released " ${{ steps.semantic_release.outputs.released }} >> $GITHUB_STEP_SUMMARY
+        echo "Prerelease " ${{ steps.semantic_release.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
+        echo "Version " ${{ steps.semantic_release.outputs.version }} >> $GITHUB_STEP_SUMMARY
+        echo "Tag " ${{ steps.semantic_release.outputs.tag }} >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
   make_sdist:
@@ -228,7 +228,7 @@ jobs:
           ./dist/*.whl
 
     - name: Action | Semantic Release - Update version
-      id: semVer
+      id: semantic_release
       # Adjust tag with desired version if applicable.
       uses: python-semantic-release/python-semantic-release@c1bcfdbb994243ac7cf419365d5894d6bfb2950e # v9.12.0
       with:
@@ -254,8 +254,8 @@ jobs:
       run: |
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## Results of python-semantic-version" >> $GITHUB_STEP_SUMMARY
-        echo "Released " ${{ steps.semVer.outputs.released }} >> $GITHUB_STEP_SUMMARY
-        echo "Prerelease " ${{ steps.semVer.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
-        echo "Version " ${{ steps.semVer.outputs.version }} >> $GITHUB_STEP_SUMMARY
-        echo "Tag " ${{ steps.semVer.outputs.tag }} >> $GITHUB_STEP_SUMMARY
+        echo "Released " ${{ steps.semantic_release.outputs.released }} >> $GITHUB_STEP_SUMMARY
+        echo "Prerelease " ${{ steps.semantic_release.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
+        echo "Version " ${{ steps.semantic_release.outputs.version }} >> $GITHUB_STEP_SUMMARY
+        echo "Tag " ${{ steps.semantic_release.outputs.tag }} >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
