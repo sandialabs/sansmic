@@ -99,7 +99,7 @@ jobs:
           name: dist-exec-windows-latest
           path: ./dist/sansmic-*-standalone-win_amd64.zip
 
-  cut-release:
+  publish-to-gh:
     name: Upload artifacts
     runs-on: ubuntu-latest
     needs:
@@ -142,14 +142,15 @@ jobs:
           ./dist/*.whl
 
     - name: Publish | Upload to GitHub Release Assets
-      uses: python-semantic-release/publish-action@v9.8.9
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release upload ${{github.ref_name}} dist/*
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
     runs-on: ubuntu-latest
-    needs: [cut-release]
+    needs: [publish-to-gh]
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'sandialabs/sansmic' }}  # only publish to PyPI on tag pushes
 
     environment:
@@ -171,12 +172,11 @@ jobs:
         ref: ${{ github.sha }}
 
     - name: Setup | Download all the dists
-      run: |
-        mkdir dist
-        gh release download -D dist --pattern="*.whl"
-        gh release download -D dist --pattern="*.tar.gz"
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      with:
+        pattern: dist-cibw-*
+        path: dist
+        merge-multiple: true
 
     - name: Action | Publish distribution 📦 to TestPyPI
       uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
@@ -191,7 +191,7 @@ jobs:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'sandialabs/sansmic' }}  # only publish to PyPI on tag pushes
-    needs: [cut-release, publish-to-testpypi]
+    needs: [publish-to-gh, publish-to-testpypi]
     environment:
       name: release
       url: https://pypi.org/p/sansmic
@@ -211,13 +211,12 @@ jobs:
         ref: ${{ github.sha }}
 
     - name: Setup | Download all the dists
-      run: |
-        mkdir dist
-        gh release download -D dist --pattern="*.whl"
-        gh release download -D dist --pattern="*.tar.gz"
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      with:
+        pattern: dist-cibw-*
+        path: dist
+        merge-multiple: true
+
     - name: Setup | Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
       with:
