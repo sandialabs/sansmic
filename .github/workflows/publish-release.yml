@@ -1,9 +1,10 @@
 name: Publish
 
 on:
-  release:
-    types: [published]
-    
+  push:
+    tags:
+      - v*.*.*
+
   workflow_dispatch:
 
 permissions:
@@ -11,9 +12,144 @@ permissions:
 
 jobs:
 
+  make_sdist:
+    name: Make source distribution 📑 package 📦
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup | Harden Runner
+      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      with:
+        egress-policy: audit
+    - name: Setup | Checkout Code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 0  # Optional, use if you use setuptools_scm
+        submodules: true  # Optional, use if you have submodules
+    - name: Action | Build SDist
+      run: pipx run build --sdist
+    - name: Action | Upload Artifacts
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      with:
+        name: dist-cibw-sdist
+        path: dist/*.tar.gz
+
+  build_wheels:
+    name: Build Python 🐍 wheel 📦 for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+    steps:
+      - name: Setup | Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+      - name: Setup | Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Action | Build Wheels
+        uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b # v2.21.0
+      - name: Action | Upload Artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: dist-cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  build_win_exe:
+    name: Build standalone executable ⚙️ for Windows 🖥️
+    runs-on: [windows-latest]
+    continue-on-error: true
+    steps:
+      - name: Setup | Install python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.12'
+
+      - name: Setup | Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup | Install Dependencies
+        run: pip install -r requirements.txt -r requirements-exe.txt
+      - run: pip install .
+      - run: python setup.py build_ext -i
+
+      - name: Setup | Get the sansmic version number
+        id: vars
+        run: |
+          python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> $Env:GITHUB_ENV
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $Env:GITHUB_ENV
+
+      - name: Action | Run PyInstaller
+        run: |
+          pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic src/python/sansmic/app.py
+
+      - name: Action | Create examples
+        run: mkdir dist/sansmic/examples
+      - run: copy README.md dist/sansmic/README.md
+      - run: copy LICENSE dist/sansmic/LICENSE.md
+      - run: copy CHANGELOG.md dist/sansmic/CHANGELOG.md
+      - run: copy AUTHORS.md dist/sansmic/AUTHORS.md
+      - run: copy SECURITY.md dist/sansmic/SECURITY.md
+      - run: sansmic-convert tests/baseline.dat dist/sansmic/examples/baseline.toml
+      - run: Compress-Archive -Path dist/sansmic -DestinationPath dist/sansmic-${{github.ref_name}}-standalone-win_amd64.zip
+
+      - name: Action | Upload Artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: dist-exec-windows-latest
+          path: ./dist/sansmic-*-standalone-win_amd64.zip
+
+  cut-release:
+    name: Upload artifacts
+    runs-on: ubuntu-latest
+    needs:
+      - build_win_exe
+      - make_sdist
+      - build_wheels
+    environment:
+      name: release
+      url: https://github.com/sandialabs/sansmic/releases/tag/${{github.ref_name}}
+    concurrency: release
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      with:
+        egress-policy: audit
+
+    - name: Setup | Checkout Repository at workflow sha
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        ref: ${{ github.sha }}
+
+    - name: Setup | Download all the dists
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      with:
+        pattern: dist-*
+        path: dist
+        merge-multiple: true
+
+    - name: Action | Sign the dists with Sigstore
+      uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0
+      with:
+        inputs: >-
+          ./dist/*.zip
+          ./dist/*.tar.gz
+          ./dist/*.whl
+
+    - name: Publish | Upload to GitHub Release Assets
+      uses: python-semantic-release/publish-action@v9.8.9
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
     runs-on: ubuntu-latest
+    needs: [cut-release]
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'sandialabs/sansmic' }}  # only publish to PyPI on tag pushes
 
     environment:
@@ -55,7 +191,7 @@ jobs:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'sandialabs/sansmic' }}  # only publish to PyPI on tag pushes
-    needs: [publish-to-testpypi]
+    needs: [cut-release, publish-to-testpypi]
     environment:
       name: release
       url: https://pypi.org/p/sansmic
