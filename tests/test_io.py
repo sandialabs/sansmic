@@ -259,7 +259,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         self.assertEqual(scenario.stages[2].outer_csg_inside_diam / 2, 8.925)
         self.assertEqual(scenario.stages[2].outer_csg_outside_diam / 2, 9.375)
         self.assertEqual(scenario.stages[2].brine_injection_sg, 1.03)
-        self.assertEqual(scenario.stages[2].set_cavern_sg, 1.2019)
+        self.assertIsNone(scenario.stages[2].set_cavern_sg)  # Changed in version 1.1
         self.assertEqual(scenario.stages[2].solver_timestep, 0.1)
         self.assertEqual(scenario.stages[2].injection_duration, 72)
         self.assertEqual(scenario.stages[2].product_injection_rate, 0.0)
@@ -267,15 +267,18 @@ class TestReadAndWriteScenarios(unittest.TestCase):
     def test_roundtrip_toml(self):
         scenario = sansmic.io.read_scenario(self.withdrawal_dat)
         scenario.title = ""
+        scenario.comments = ""
         sansmic.io.write_scenario(scenario, self.withdrawal_toml)
         scenario2 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario2.title = ""
+        scenario2.comments = ""
         self.assertEqual(scenario, scenario2)
 
     def test_roundtrip_yaml(self):
         self.maxDiff = None
         scenario = sansmic.io.read_scenario(self.ordinary_rev_dat)
         scenario.title = ""
+        scenario.comments = ""
         scenario.stages[1].brine_interface_depth = 0
         scenario.stages[2].brine_interface_depth = 0
         scenario.stages[1].set_initial_conditions = None
@@ -284,6 +287,7 @@ class TestReadAndWriteScenarios(unittest.TestCase):
         sansmic.io.write_scenario(scenario, self.ordinary_rev_yaml, redundant=True)
         scenario2 = sansmic.io.read_scenario(self.ordinary_rev_yaml)
         scenario2.title = ""
+        scenario2.comments = ""
         self.assertDictEqual(
             scenario.to_dict(keep_empty=True), scenario2.to_dict(keep_empty=True)
         )
@@ -291,28 +295,34 @@ class TestReadAndWriteScenarios(unittest.TestCase):
     def test_roundtrip_json(self):
         scenario = sansmic.io.read_scenario(self.ordinary_dir_dat)
         scenario.title = ""
+        scenario.comments = ""
         sansmic.io.write_scenario(scenario, self.ordinary_dir_json)
         scenario2 = sansmic.io.read_scenario(self.ordinary_dir_json)
         scenario2.title = ""
+        scenario2.comments = ""
         self.assertEqual(scenario, scenario2)
 
     def test_roundtrip_spec_format(self):
         scenario = sansmic.io.read_scenario(self.leach_fill_dat)
         scenario.title = ""
+        scenario.comments = ""
 
         sansmic.io.write_scenario(scenario, self.leach_fill_format, format="toml")
         scenario2 = sansmic.io.read_scenario(self.leach_fill_format, format="toml")
         scenario2.title = ""
+        scenario2.comments = ""
         self.assertEqual(scenario, scenario2)
 
         sansmic.io.write_scenario(scenario, self.leach_fill_format, format="json")
         scenario3 = sansmic.io.read_scenario(self.leach_fill_format, format="json")
         scenario3.title = ""
+        scenario3.comments = ""
         self.assertEqual(scenario, scenario3)
 
         sansmic.io.write_scenario(scenario, self.leach_fill_format, format="yaml")
         scenario4 = sansmic.io.read_scenario(self.leach_fill_format, format="yaml")
         scenario4.title = ""
+        scenario4.comments = ""
         self.assertEqual(scenario, scenario4)
 
     @classmethod
