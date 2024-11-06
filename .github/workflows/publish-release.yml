@@ -43,7 +43,7 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Action | Publish distribution 📦 to TestPyPI
-      uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
+      uses: pypa/gh-action-pypi-publish@1f5d4ec244f65dce93685ee3e98e77123f090866 # release/v1
       with:
         skip-existing: true
         print-hash: true
@@ -83,7 +83,7 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
     - name: Setup | Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
+      uses: pypa/gh-action-pypi-publish@1f5d4ec244f65dce93685ee3e98e77123f090866 # release/v1
       with:
         attestations: true
         print-hash: true
