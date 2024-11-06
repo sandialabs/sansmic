@@ -3,7 +3,7 @@ name = "sansmic"
 description = "Sandia solution mining modeling software"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "1.0.6-rc.2"
+version = "1.0.7"
 authors = [
     { name = "National Technology & Engineering Solutions of Sandia, LLC (NTESS)" },
     { name = "SANSMIC Authors (see AUTHORS.md)" },
@@ -94,14 +94,14 @@ version_variables = [
 ]
 
 [tool.semantic_release.branches.release]
-match = "main"
+match = "(main|staging)"
 prerelease_token = "rc"
 prerelease = false
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
 default_templates.changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "release", "style", "^Merge branch"]
+exclude_commit_patterns = ["build", "ci", "chore", "^Bump", "style", "^Merge branch"]
 
 [tool.semantic_release.changelog.environment]
 block_start_string = "{%"

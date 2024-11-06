@@ -21,7 +21,7 @@ jobs:
       name: sem-ver
     concurrency: release
     # Only run if this is the primary origin main branch
-    if: ${{ github.ref == 'refs/heads/main' && github.repository == 'sandialabs/sansmic' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     outputs:
       is_prerelease: ${{ steps.semantic_release.outputs.is_prerelease }}
       released: ${{ steps.semantic_release.outputs.released }}
@@ -42,6 +42,7 @@ jobs:
     - name: Setup | Checkout Repository at workflow sha
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
+        token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
         fetch-depth: 0
         ref: ${{ github.sha }}
     - name: Setup | Force correct release branch on workflow sha
@@ -245,10 +246,10 @@ jobs:
 
     - name: Publish | Upload to GitHub Release Assets
       uses: python-semantic-release/publish-action@v9.8.9
-      if: steps.semVer.outputs.released == 'true'
+      if: steps.semantic_release.outputs.released == 'true'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ steps.semVer.outputs.tag }}
+        tag: ${{ steps.semantic_release.outputs.tag }}
 
     - name: Action | Output version info
       run: |
