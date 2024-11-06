@@ -1,6 +1,9 @@
 name: Publish
 
 on:
+  release:
+    types: [published]
+    
   workflow_dispatch:
 
 permissions:
@@ -36,6 +39,8 @@ jobs:
         mkdir dist
         gh release download -D dist --pattern="*.whl"
         gh release download -D dist --pattern="*.tar.gz"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Action | Publish distribution 📦 to TestPyPI
       uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
@@ -74,7 +79,9 @@ jobs:
         mkdir dist
         gh release download -D dist --pattern="*.whl"
         gh release download -D dist --pattern="*.tar.gz"
-
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
     - name: Setup | Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
       with:

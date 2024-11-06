@@ -14,8 +14,7 @@ permissions:
 
 jobs:
   check_release:
-    name: >-
-      🔖❓ - Check if release needed
+    name: Check if new release 🔖 needed ❔
     runs-on: ubuntu-latest
     environment:
       name: sem-ver
@@ -35,10 +34,8 @@ jobs:
       uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
       with:
         egress-policy: audit
-    - name: Debug
-      run: |
-        echo "## Inputs" >> $GITHUB_STEP_SUMMARY
-        echo "Is prerelease - " ${{ inputs.is_prerelease }} | tee $GITHUB_STEP_SUMMARY
+    - run: echo "## Inputs" >> $GITHUB_STEP_SUMMARY
+    - run: echo "Is prerelease - " ${{ inputs.is_prerelease }} | tee $GITHUB_STEP_SUMMARY
     - name: Setup | Checkout Repository at workflow sha
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -46,13 +43,10 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.sha }}
     - name: Setup | Force correct release branch on workflow sha
-      run: |
-        git checkout -B ${{ github.ref_name }} ${{ github.sha }}
+      run: git checkout -B ${{ github.ref_name }} ${{ github.sha }}
     - name: Setup | Get short commit SHA
       id: vars
-      run: |
-        echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
-
+      run: echo "short_sha=$(git rev-parse --short HEAD)\n" >> $GITHUB_OUTPUT
     - name: Action | Semantic Release - Update version
       id: semantic_release
       # Adjust tag with desired version if applicable.
@@ -70,18 +64,16 @@ jobs:
         vcs_release: false
 
     - name: Action | Output version info
-      run: |
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## Results of python-semantic-version" >> $GITHUB_STEP_SUMMARY
-        echo "Released " ${{ steps.semantic_release.outputs.released }} >> $GITHUB_STEP_SUMMARY
-        echo "Prerelease " ${{ steps.semantic_release.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
-        echo "Version " ${{ steps.semantic_release.outputs.version }} >> $GITHUB_STEP_SUMMARY
-        echo "Tag " ${{ steps.semantic_release.outputs.tag }} >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
+      run: echo "" >> $GITHUB_STEP_SUMMARY
+    - run: echo "## Results of python-semantic-version" >> $GITHUB_STEP_SUMMARY
+    - run: echo "Released " ${{ steps.semantic_release.outputs.released }} >> $GITHUB_STEP_SUMMARY
+    - run: echo "Prerelease " ${{ steps.semantic_release.outputs.is_prerelease }} >> $GITHUB_STEP_SUMMARY
+    - run: echo "Version " ${{ steps.semantic_release.outputs.version }} >> $GITHUB_STEP_SUMMARY
+    - run: echo "Tag " ${{ steps.semantic_release.outputs.tag }} >> $GITHUB_STEP_SUMMARY
+    - run: echo "" >> $GITHUB_STEP_SUMMARY
 
   make_sdist:
-    name: >-
-      🏗️📑📦 - Make source distribution package
+    name: Make source distribution 📑 package 📦
     needs:
       - check_release
     if: ${{ needs.check_release.outputs.released == 'true' }}
@@ -105,8 +97,7 @@ jobs:
         path: dist/*.tar.gz
 
   build_wheels:
-    name: >-
-      🏗️🎡📦 - Build Python wheel for ${{ matrix.os }}
+    name: Build Python 🐍 wheel 📦 for ${{ matrix.os }}
     needs:
       - check_release
     if: ${{ needs.check_release.outputs.released == 'true' }}
@@ -131,8 +122,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   build_win_exe:
-    name: >-
-      🏗️🖥️💽 - Build standalone executable for Windows
+    name: Build standalone executable ⚙️ for Windows 🖥️
     needs:
       - check_release
     if: ${{ needs.check_release.outputs.released == 'true' }}
@@ -143,26 +133,35 @@ jobs:
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.12'
+
       - name: Setup | Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
       - name: Setup | Install Dependencies
-        run: |
-          pip install -r requirements.txt -r requirements-exe.txt
-          pip install .
-          python setup.py build_ext -i
+        run: pip install -r requirements.txt -r requirements-exe.txt
+      - run: pip install .
+      - run: python setup.py build_ext -i
+
       - name: Setup | Get the sansmic version number
         id: vars
         run: |
           python -c "import sansmic; print('sansmic_version='+sansmic.__version__)" >> $Env:GITHUB_ENV
           echo "sha_short=$(git rev-parse --short HEAD)" >> $Env:GITHUB_ENV
+
       - name: Action | Run PyInstaller
         run: |
           pyinstaller --collect-all sansmic --collect-all click --hidden-import sansmic --hidden-import click --hidden-import pandas --hidden-import pybind11 --hidden-import numpy --hidden-import h5py --hidden-import pyyaml --hidden-import lasio -n sansmic --add-binary src/python/sansmic/libsansmic.cp312-win_amd64.pyd:sansmic src/python/sansmic/app.py
+
       - name: Action | Create examples
-        run: |
-          mkdir dist/sansmic/examples
-          sansmic-convert tests/baseline.dat dist/sansmic/examples/baseline.toml
-          Compress-Archive -Path dist/sansmic -DestinationPath dist/sansmic-${{ needs.check_release.outputs.version }}-standalone-win_amd64.zip
+        run: mkdir dist/sansmic/examples
+      - run: copy README.md dist/sansmic/README.md
+      - run: copy LICENSE dist/sansmic/LICENSE.md
+      - run: copy CHANGELOG.md dist/sansmic/CHANGELOG.md
+      - run: copy AUTHORS.md dist/sansmic/AUTHORS.md
+      - run: copy SECURITY.md dist/sansmic/SECURITY.md
+      - run: sansmic-convert tests/baseline.dat dist/sansmic/examples/baseline.toml
+      - run: Compress-Archive -Path dist/sansmic -DestinationPath dist/sansmic-${{ needs.check_release.outputs.version }}-standalone-win_amd64.zip
+
       - name: Action | Upload Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
@@ -170,8 +169,7 @@ jobs:
           path: ./dist/sansmic-*-standalone-win_amd64.zip
 
   cut_release:
-    name: >-
-      🔖✔️ - Create tag and vcs release
+    name: Create tag 🔖 and gh release 🆕
     runs-on: ubuntu-latest
     needs:
       - check_release
@@ -180,6 +178,7 @@ jobs:
       - build_wheels
     environment:
       name: release
+      url: https://github.com/sandialabs/sansmic/releases/tag/${{ steps.semantic_release.outputs.tag }}
     concurrency: release
 
     permissions:
@@ -238,18 +237,11 @@ jobs:
         git_committer_email: "actions@users.noreply.github.com"
         build: false
         changelog: false
-        commit: false
+        commit: true
         push: true
         tag: true
         prerelease: ${{ inputs.is_prerelease }}
         vcs_release: true
-
-    - name: Publish | Upload to GitHub Release Assets
-      uses: python-semantic-release/publish-action@v9.8.9
-      if: steps.semantic_release.outputs.released == 'true'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ steps.semantic_release.outputs.tag }}
 
     - name: Action | Output version info
       run: |
