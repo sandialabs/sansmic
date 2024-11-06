@@ -94,7 +94,7 @@ version_variables = [
 ]
 
 [tool.semantic_release.branches.release]
-match = "main"
+match = "(main|staging)"
 prerelease_token = "rc"
 prerelease = false
 
