@@ -142,7 +142,7 @@ jobs:
           ./dist/*.whl
 
     - name: Publish | Upload to GitHub Release Assets
-      uses: python-semantic-release/publish-action@v9.8.9
+      uses: python-semantic-release/publish-action@v9.12.1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -179,7 +179,7 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Action | Publish distribution 📦 to TestPyPI
-      uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
+      uses: pypa/gh-action-pypi-publish@15c56dba361d8335944d31a2ecd17d700fc7bcbc # release/v1
       with:
         skip-existing: true
         print-hash: true
@@ -219,7 +219,7 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
     - name: Setup | Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@fb13cb306901256ace3dab689990e13a5550ffaa # release/v1
+      uses: pypa/gh-action-pypi-publish@15c56dba361d8335944d31a2ecd17d700fc7bcbc # release/v1
       with:
         attestations: true
         print-hash: true
