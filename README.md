@@ -1,15 +1,14 @@
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9399/badge)](https://www.bestpractices.dev/projects/9399)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/sandialabs/sansmic/badge)](https://scorecard.dev/viewer/?uri=github.com/sandialabs/sansmic)
+
 ![Lines of code](https://sloc.xyz/github/sandialabs/sansmic/?category=code)
 [![Test Matrix](https://github.com/sandialabs/sansmic/actions/workflows/test-matrix.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/test-matrix.yml)
 [![codecov](https://codecov.io/github/sandialabs/sansmic/graph/badge.svg?token=oDeMIUHoqg)](https://codecov.io/github/sandialabs/sansmic)
-
 [![Deploy Sphinx documentation](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml)
 
 [![pypi](https://img.shields.io/pypi/v/sansmic.svg?maxAge=3600)](https://pypi.org/project/sansmic/)
 [![Downloads](https://static.pepy.tech/badge/sansmic)](https://pepy.tech/project/sansmic)
-
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9399/badge)](https://www.bestpractices.dev/projects/9399)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/sandialabs/sansmic/badge)](https://scorecard.dev/viewer/?uri=github.com/sandialabs/sansmic)
 
 ## SANSMIC
 
