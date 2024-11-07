@@ -49,7 +49,7 @@ To run an example, continue with:
 
 .. code:: bash
 
-   cd C:\\Users\\foo\\sansmic\\examples
+   cd C:\Users\foo\sansmic\examples
    sansmic -v baseline.toml
 
 
