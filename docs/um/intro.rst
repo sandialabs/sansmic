@@ -108,5 +108,5 @@ of the cavern mid-simulation.
 
 
 .. [1] The original SALT code by Saberian and Podio became the :term:`SMRI` software
-    SALGAS. Thomas Eyermann updated and supports the current version of SALGAS (v4.2),
-    which is available from SMRI. https://www.solutionmining.org/software
+    SALGAS. The current version of SALGAS (v4.2)
+    is available from SMRI. https://www.solutionmining.org/software

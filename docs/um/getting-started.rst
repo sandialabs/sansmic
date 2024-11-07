@@ -1,19 +1,71 @@
 Getting started
 ===============
-Please note, sansmic does not have a graphical user interface (:term:`GUI`). This means
+Please note that sansmic does not have a graphical user interface (:term:`GUI`). This means
 that to run sansmic, you will need a command prompt or terminal of some sort,
 or you can run sansmic from within python or a Jupyter notebook. (Setting up
 Jupyter is beyond the scope of this guide, please see https://jupyter.org/).
 
+.. note::
 
-Installing sansmic
-------------------
-To install sansmic, you will need to have Python installed. Installing and setting up
-Python is outside the scope of this User Guide, but https://www.python.org/ is the
-official site for the software and it can also be installed for free from the Windows
-Store. For Mac users, please find some good instructions online. If you use Linux or
-other Unix-like systems, the authors are going to assume you already have and use
-python on your system.
+   Based on feedback from potential users and collaborators, there is a now standalone
+   executable that is built that will run on modern Windows[#]_ operating systems without
+   needing to install Python at the user- or system-level. See `Standalone installation for Windows-users`_,
+   below.
+
+
+Standalone installation for Windows-users
+-----------------------------------------
+For Windows users (only), a standalone executable has been produced. This executable
+is available on GitHub releases (https://github.com/sandialabs/sansmic/releases/latest)
+and will be at the bottom of the page with a name like
+``sansmic-v1.0.7-standalone-win_amd64.zip``.
+There is also a ``[...].sigstore.json`` file that can be used to verify the zip-file.
+
+Once the zip-file is downloaded, unzip the file (right-click, select "Extract All ...")
+to a new folder. There will be a folder called "sansmic" that will contain the
+sansmic executable. You will need to put this "sansmic" folder somewhere and add it
+to your "PATH" environment variable. To do this:
+
+* Click on the magnifying glass "Search" icon (it is possible that clicking the Windows button
+  will also bring up the search function).
+* Type "edit environment variables for your account" and click on the result that comes up
+* Double-click on "Path" in the *top* section of the window that appears.
+* Click "New" and type the location of the "sansmic" folder (e.g., "C:\\Users\\foo\\sansmic"
+  if my username is "foo" and I dragged the "sansmic" folder to my "foo" icon in the Explorer
+  sidebar).
+* Click "Okay" to close each of the windows that are open. Sansmic should now be available
+  for you to run from the Terminal app!
+
+To run the examples, open the Terminal app (you can use the search function for this, too)
+and, assuming a user named "foo" once again, type:
+
+.. code:: bash
+
+   sansmic --version
+
+
+This should give you the version number (and it should match the version you downloaded!).
+To run an example, continue with:
+
+.. code:: bash
+
+   cd C:\\Users\\foo\\sansmic\\examples
+   sansmic -v baseline.toml
+
+
+This should show a progress bar and create files in the examples directory. You are
+ready to start using sansmic on your own problems!
+
+
+
+Python "pip install" (preferred)
+--------------------------------
+Sansmic is built and tested with CPython 3.9--3.12 on 64-bit
+Installing and setting up Python is outside the scope of this User Guide, but
+https://www.python.org/ is the official site for the software, and it can also
+be installed for free from the Windows Store. For Mac and Linux users, the authors
+recommend following the appropriate instructions on the Python main site if you
+do not already have Python installed.
 
 Once python is installed, open up a Command Prompt, Console, or xterm window, and install
 sansmic using the ``pip`` command. This will download and install the latest version of sansmic
@@ -73,40 +125,18 @@ also need a C++ compiler and python header libraries.
 
 
 For developers
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 Rather than repeat the gory details of setting up sansmic for development,
 please see the ``CONTRIBUTING.md`` file in the git repository
 (https://github.com/sandialabs/sansmic).
 
-
-Building documentation
-~~~~~~~~~~~~~~~~~~~~~~
-You have already found the documentation since you are reading this! But, if you want to
-make it available offline, or in another format, there are some additional packages you
-will need, and you will need the **Doxygen** program (https://www.doxygen.nl).
-After you get Doxygen, you can get the necessary python packages by using the "docs"
-pip extras marker.
-
-.. code:: bash
-
-   python3 -m pip install sansmic[docs]
-
-
-The libraries this will install (if you don't already have them) are:
-
-* ``Sphinx`` - the main documentation engine sansmic.
-* ``sphinx_design`` - layout options package, required by pydata-sphinx-theme.
-* ``pydata-sphinx-theme`` - the theme used for the sansmic documentation.
-* ``sphinxcontrib-bibtex`` - use better bibliographic citations.
-* ``sphinx-argparse`` - generate program help automatically.
-* ``breathe`` - process doxygen output files.
-* ``exhale`` - automate the doxygen+breathe process.
 
 
 .. only:: html
 
    .. rubric:: Notes
 
+.. [#] Windows is a registered trademark of Microsoft Corp.
 .. [#] There are two packages that are always required to run sansmic, numpy and pandas.
    If your Python version is less than 3.11, sansmic will also require - and pip will
    automatically install - the tomli package for toml support, which is already included
