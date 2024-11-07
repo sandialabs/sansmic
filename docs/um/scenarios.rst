@@ -145,6 +145,9 @@ Scenario options
         comments = """This is an example
         of a comment that spans multiple lines."""
 
+    If an old-style DAT file is used, this section will initially
+    be filled in with notes about the conversion process to TOML.
+
 
 .. confval:: num-cells
 
@@ -527,8 +530,15 @@ number of stages. A stage **requires** a title key.
     also limited by the :confval:`max-brine-sg`.
 
 
+.. confval:: brine-injection-rate
+
+    The rate of brine injection in *barrels per day*.
+    Variable injection rates are still in the process of being
+    implemented. The brine/raw water is injected at a constant
+    rate over the entire injection duration.
+
+
 .. confval:: brine-injection-depth
-.. confval:: brine-injection-height
 
     The *depth* (preferred) or *height* within the cavern
     where the EOT for the injection string is located. If above the
@@ -541,11 +551,15 @@ number of stages. A stage **requires** a title key.
     The :confval:`brine-injection-height` is specified in :term:`foot`
     above the original :confval:`floor-depth`
 
-    Do not use both -depth and -height options.
+    Do not use both -depth and -height options in the same stage.
+
+
+.. confval:: brine-injection-height
+
+    See :confval:`brine-injection-depth`
 
 
 .. confval:: brine-production-depth
-.. confval:: brine-production-height
 
     The *depth* (preferred) or *height* within the cavern
     where the EOT for the injection string is located. If above the
@@ -558,19 +572,15 @@ number of stages. A stage **requires** a title key.
     The :confval:`brine-production-height` is specified in :term:`foot`
     above the original :confval:`floor-depth`
 
-    Do not use both -depth and -height options.
+    Do not use both -depth and -height options in the same stage.
 
 
-.. confval:: brine-injection-rate
+.. confval:: brine-interface-height
 
-    The rate of brine injection in *barrels per day*.
-    Variable injection rates are still in the process of being
-    implemented. The brine/raw water is injected at a constant
-    rate over the entire injection duration.
+    See :confval:`brine-interface-depth`
 
 
 .. confval:: brine-interface-depth
-.. confval:: brine-interface-height
 
     The initial brine interface *depth* (preferred) or *height*
     within the cavern. This is only required for the first stage, and
@@ -586,7 +596,12 @@ number of stages. A stage **requires** a title key.
     The :confval:`brine-interface-height` is specified in :term:`foot`
     above the original :confval:`floor-depth`
 
-    Do not use both -depth and -height options.
+    Do not use both -depth and -height options in the same stage.
+
+
+.. confval:: brine-production-height
+
+    See :confval:`brine-production-depth`
 
 
 .. confval:: set-cavern-sg
@@ -636,11 +651,21 @@ number of stages. A stage **requires** a title key.
     By default, the only stop condition is reaching the end of the
     injection period.
 
-    This option was available in the old version of SANSMIC,
-    were implemented in sansmic 1.0, but are not validated.
+    Valid values are "duration" (or blank, the default), "depth" or
+    "volume".
 
 
 .. confval:: stop-value
 
-    The value for the stop condition, which is either a *height* above
-    the floor or a volume in *barrels.*
+    The value for the stop condition, which is either a *depth* below
+    surface, or a volume in *barrels*.
+
+    *Changed: v1.0.7*
+
+    If a depth is specified as the stop value and the :confval:`simulation-mode`
+    mode is "withdrawal", then the injection period will stop when
+    the duration is exceeded or the interface depth becomes smaller
+    (higher) than the value given. If the  :confval:`simulation-mode` is "leach-fill",
+    then the simulation will stop when the interface depth becomes
+    larger (deeper) than the value given. Note that this is *not* how
+    the old FORTRAN version of SANSMIC behaved.
