@@ -21,7 +21,7 @@ tags = git_tag.stdout.splitlines()
 versions = [
     {
         "name": "main",
-        "version": "",
+        "version": "main",
         "url": "https://sandialabs.github.io/sansmic/",
         "preferred": False,
     }

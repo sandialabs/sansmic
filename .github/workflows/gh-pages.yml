@@ -77,13 +77,16 @@ jobs:
             export VERSION_INFO=$TAG
             mkdir docs/_build/doxyxml
             git checkout -f $TAG
-            python -m pip install --no-deps -e .
+            if [ -f "docs/requirements.txt" ]; then
+              python -m pip install --force-reinstall -r docs/requirements.txt
+            fi
+            python -m pip install -e .[docs]
             sphinx-build -Q -b html docs/ out/$TAG
           done
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
-        if: always()
+        if: success() || failure()
         with:
           path: 'out/'
 
