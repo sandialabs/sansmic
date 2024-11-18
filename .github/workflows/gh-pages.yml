@@ -78,7 +78,7 @@ jobs:
             mkdir docs/_build/doxyxml
             git checkout -f $TAG
             python -m pip install --no-deps -e .
-            sphinx-build -b html docs/ out/releases/$TAG
+            sphinx-build -Q -b html docs/ out/releases/$TAG
           done
 
       - name: Upload artifact
