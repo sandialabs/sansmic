@@ -39,6 +39,14 @@ exchanges, sales, remediations, and the original construction.
 Citing sansmic
 --------------
 
+If you use sansmic for a publication, please use the following citation:
+
+* Hart, David, & Zeitler, Todd, & Maurer, Hannah. (2024). *SANSMIC v.1.0*. [Computer software].
+  https://github.com/sandialabs/sansmic.
+  https://doi.org/10.11578/dc.20240911.9
+
+The list of current contributors is located in the ``AUTHORS.md`` file.
+
 
 
 Indices and tables
