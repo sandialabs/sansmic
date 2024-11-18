@@ -213,6 +213,9 @@ if doxygen_installed:
 # -- Options for HTML output -------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
+html_js_files = [
+    "pypi-icon.js",
+]
 # html_sidebars = {"nomenclature": []}
 html_theme_options = {
     "logo": {
@@ -227,8 +230,14 @@ html_theme_options = {
             "icon": "fa-brands fa-github",  # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
         },
         {
+            "name": "PyPI",  # Label for this link
+            "url": "https://pypi.org/project/sansmic/",  # required URL where the link will redirect
+            "type": "fontawesome",  # The type of image to be used
+            "icon": "fa-custom fa-pypi",  # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+        },
+        {
             "name": "Sandia National Laboratories",
-            "url": "https://sandia.gov",  # required
+            "url": "https://www.sandia.gov",  # required
             "type": "local",
             "icon": "_static/snl_logo.png",
         },
