@@ -66,6 +66,8 @@ jobs:
           python -m pip install -e .[formats]
           git config set versionsort.suffix -rc
           python build_docs.py
+          mkdir docs/_build
+          mkdir docs/_build/doxyxml
           sphinx-build -b html docs/ out/
           for TAG in `git tag --list --sort=-version:refname`
           do
