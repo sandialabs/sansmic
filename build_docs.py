@@ -20,8 +20,8 @@ git_tag = subprocess.run(
 tags = git_tag.stdout.splitlines()
 versions = [
     {
-        "name": "stable",
-        "version": "main",
+        "name": "main",
+        "version": "",
         "url": "https://sandialabs.github.io/sansmic/",
         "preferred": False,
     }
@@ -39,7 +39,7 @@ for tag in tags:
         dict(
             name=tag,
             version=tag,
-            url="https://sandialabs.github.io/sansmic/releases/" + tag + "/",
+            url="https://sandialabs.github.io/sansmic/" + tag + "/",
             preferred=latest,
         )
     )
@@ -49,24 +49,3 @@ with open(
     "w",
 ) as fswitch:
     json.dump(versions, fswitch)
-
-# for tag in tags:
-#     os.environ["VERSION_INFO"] = repr(tag)
-#     my_env["SANSMIC_SPHINX_VERSION"] = tag
-#     files = glob.glob("./docs/apidocs/*.rst")
-#     for f in files:
-#         os.remove(f)
-#     subprocess.run("git checkout " + tag, shell=True)
-#     subprocess.run(
-#         " ".join(
-#             [
-#                 "sphinx-build",
-#                 "-b",
-#                 "html",
-#                 "docs/",
-#                 "out/v/" + tag,
-#             ]
-#         ),
-#         shell=True,
-#         env=my_env,
-#     )

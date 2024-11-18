@@ -76,9 +76,9 @@ jobs:
             export SANSMIC_SPHINX_VERSION=$TAG
             export VERSION_INFO=$TAG
             mkdir docs/_build/doxyxml
-            git checkout -f $TAG
+            git switch -f $TAG
             python -m pip install --no-deps -e .
-            sphinx-build -Q -b html docs/ out/releases/$TAG
+            sphinx-build -Q -b html docs/ out/$TAG
           done
 
       - name: Upload artifact
