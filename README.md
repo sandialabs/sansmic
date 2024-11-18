@@ -34,7 +34,8 @@ The sansmic package requires Python 3.9 or greater and at least the
 numpy and pandas packages.
 
 Installation can be accomplished most easily by using the PyPI.
-It can also be installed by downloading a wheel from the [releases]
+It can also be installed by downloading a wheel from the 
+[releases](https://github.com/sandialabs/sansmic/releases)
 in this repository, or by cloning this repository and building it
 yourself. Finally, a standalone executable has been created that
 will be added to each release for Windows users that are unable
