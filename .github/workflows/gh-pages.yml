@@ -72,12 +72,11 @@ jobs:
           for TAG in `git tag --list --sort=-version:refname`
           do
             python -m pip uninstall -y sansmic
-            rm -rf docs/_build/doxyxml docs/apidocs/* docs/_static/switcher.json
+            rm -rf docs/_build/doxyxml docs/apidocs/*
             export SANSMIC_SPHINX_VERSION=$TAG
             export VERSION_INFO=$TAG
             mkdir docs/_build/doxyxml
-            git checkout $TAG
-            python build_docs.py
+            git checkout -f $TAG
             python -m pip install --no-deps -e .
             sphinx-build -b html docs/ out/releases/$TAG
           done
