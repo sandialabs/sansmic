@@ -64,7 +64,7 @@ jobs:
           python -m pip install -r requirements.txt -r docs/requirements.txt
 
       - name: Checkout docs root
-        run:
+        run: |
           git clone https://github.com/sandialabs/sansmic-ci.git
           python -m pip install -r sansmic-ci/docs/requirements.txt
 
