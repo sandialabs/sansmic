@@ -70,10 +70,13 @@ jobs:
           mkdir docs/_build
           mkdir docs/_build/doxyxml
           sphinx-build -b html docs/ out/
+          git clone https://github.com/sandialabs/sansmic-docs.git release-docs
           for TAG in `git tag --list "v*.*.*" --sort=-version:refname`
           do
-            git clone --depth=1 --tag=$TAG https://github.com/sandialabs/sansmic-docs.git out/$TAG
-            rm -rf ./out/$TAG/.git
+            pushd release-docs
+            git checkout $TAG
+            cp -rf html ../out/$TAG
+            popd
           done
 
       - name: Upload artifact
