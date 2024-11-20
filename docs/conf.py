@@ -211,7 +211,7 @@ if doxygen_installed:
 # -- Options for HTML output -------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
-html_title = "Sansmic"
+html_title = "Sansmic" + " " + version
 html_js_files = [
     "pypi-icon.js",
 ]
