@@ -34,6 +34,8 @@ jobs:
   build:
     name: Build the documentation with Sphinx
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
@@ -61,29 +63,43 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r docs/requirements.txt
 
+      - name: Checkout docs root
+        run:
+          git clone https://github.com/sandialabs/sansmic-ci.git
+          python -m pip install -r sansmic-ci/docs/requirements.txt
+
       - name: Build documentation
         run: |
           python -m pip install -e .[formats]
           git config set versionsort.suffix -rc
-          export SANSMIC_SPHINX_VERSION=${{ github.ref_name }}@`git rev-parse --short HEAD`
-          python build_docs.py
+          export SANSMIC_SPHINX_VERSION=dev
+          python sansmic-ci/build_switcher.py
+          export SANSMIC_STABLE_VERSION=`cat stable.txt`
+          mkdir sansmic-ci/docs/$SANSMIC_STABLE_VERSION
+          touch sansmic-ci/docs/$SANSMIC_STABLE_VERSION/userman.rst
+          touch sansmic-ci/docs/$SANSMIC_STABLE_VERSION/refman.rst
+          cat sansmic-ci/docs/index.tpl | sed s/BUILD_SCRIPT_REPLACE/$SANSMIC_STABLE_VERSION/g > sansmic-ci/docs/index.rst
+
+          sphinx-build -b html -d doctrees/root/ sansmic-ci/docs/ html/
           mkdir docs/_build
           mkdir docs/_build/doxyxml
-          sphinx-build -b html docs/ out/
-          git clone https://github.com/sandialabs/sansmic-docs.git release-docs
+          mkdir html/
+          sphinx-build -b html -d doctrees/latest docs/ html/latest
           for TAG in `git tag --list "v*.*.*" --sort=-version:refname`
           do
-            pushd release-docs
-            git checkout $TAG
-            cp -rf html ../out/$TAG
-            popd
+            rm -rf docs
+            git checkout -f $TAG
+            export SANSMIC_SPHINX_VERSION=$TAG
+            cp -f sansmic-ci/docs/_static/* docs/_static/
+            cp -f sansmic-ci/docs/conf.py docs/conf.py
+            sphinx-build -q -b html -d doctrees/$TAG docs html/$TAG
           done
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         if: success() || failure()
         with:
-          path: 'out/'
+          path: 'html/'
 
   deploy:
     name: Deploy documentation to GitHub Pages

@@ -22,8 +22,7 @@ doxygen_installed = (
 project = "sansmic"
 copyright = "2024 National Technology and Engineering Solutions of Sandia, LLC. Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software."
 author = "See AUTHORS.md"
-version = os.environ.get("SANSMIC_SPHINX_VERSION", sansmic.__version__)
-release = version
+version = sansmic.__version__
 
 # -- Extensions to load -------------------------------------------------------
 extensions = [
@@ -212,6 +211,7 @@ if doxygen_installed:
 # -- Options for HTML output -------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
+html_title = "Sansmic"
 html_js_files = [
     "pypi-icon.js",
 ]
@@ -241,65 +241,12 @@ html_theme_options = {
     "use_edit_page_button": False,
     "primary_sidebar_end": ["indices.html"],
     "show_toc_level": 2,
-    "switcher": {
-        "json_url": "https://sandialabs.github.io/sansmic/_static/switcher.json",
-        "version_match": "v" + version
-        if len(version) > 0 and version[0].isdigit()
-        else version,
-    },
     # "secondary_sidebar_items": ["page-toc"], #["page-toc", "edit-this-page", "sourcelink"],
     "navbar_start": [
         "navbar-logo",
-        "version-switcher",
     ],
     "navbar_end": [
         "theme-switcher",
         "navbar-icon-links",
     ],
-    "analytics": {"google_analytics_id": "G-23TNKN36XM"},
-}
-
-
-# -- Options for LaTeX output -------------------------------------------------
-latex_engine = "xelatex"
-latex_use_xindy = False
-latex_documents = [
-    ("userman", "sansmic.tex", "User Guide for sansmic", "David Hart", "manual"),
-]
-latex_toplevel_sectioning = "chapter"
-latex_domain_indices = False
-latex_elements = {
-    "papersize": r"letterpaper",
-    "pointsize": r"10pt",
-    "passoptionstopackages": r"""
-\PassOptionsToPackage{svgnames}{xcolor}
-""",
-    "fontpkg": r"""
-\usepackage{nimbussans}
-\usepackage[nosf,nott]{kpfonts}
-\usepackage[scaled=0.85]{sourcecodepro}
-\usepackage[utf8x]{inputenc}
-\usepackage[T1]{fontenc}
-""",
-    "preamble": r"""
-\usepackage[titles]{tocloft}
-\usepackage[
-	range-units=single,
-	per-mode=symbol,
-	group-digits=decimal,
-	group-minimum-digits=3,
-	group-separator={,},
-	range-phrase={\,--\,},
-	quotient-mode=fraction,
-	]{siunitx}\cftsetpnumwidth {1.25cm}
-\cftsetrmarg{1.5cm}
-\setlength{\cftchapnumwidth}{0.75cm}
-\setlength{\cftsecindent}{\cftchapnumwidth}
-\setlength{\cftsecnumwidth}{1.25cm}
-\renewcommand\sphinxcrossref[1]{#1}
-\renewcommand\sphinxtermref[1]{#1}
-""",
-    "sphinxsetup": "TitleColor=DarkGoldenrod",
-    "fncychap": r"\usepackage[Bjornstrup]{fncychap}",
-    "printindex": r"\footnotesize\raggedright\printindex",
 }
