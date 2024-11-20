@@ -209,7 +209,6 @@ if doxygen_installed:
 ##############################################################################
 #    Builder options                                                         #
 ##############################################################################
-
 # -- Options for HTML output -------------------------------------------------
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
@@ -218,10 +217,6 @@ html_js_files = [
 ]
 # html_sidebars = {"nomenclature": []}
 html_theme_options = {
-    "logo": {
-        "image_light": "_static/logo-light.png",
-        "image_dark": "_static/logo-dark.png",
-    },
     "icon_links": [
         {
             "name": "GitHub",  # Label for this link
@@ -248,7 +243,9 @@ html_theme_options = {
     "show_toc_level": 2,
     "switcher": {
         "json_url": "https://sandialabs.github.io/sansmic/_static/switcher.json",
-        "version_match": version,
+        "version_match": "v" + version
+        if len(version) > 0 and version[0].isdigit()
+        else version,
     },
     # "secondary_sidebar_items": ["page-toc"], #["page-toc", "edit-this-page", "sourcelink"],
     "navbar_start": [

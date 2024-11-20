@@ -20,8 +20,8 @@ git_tag = subprocess.run(
 tags = git_tag.stdout.splitlines()
 versions = [
     {
-        "name": "main",
-        "version": "main",
+        "name": os.environ.get("SANSMIC_SPHINX_VERSION", "main"),
+        "version": os.environ.get("SANSMIC_SPHINX_VERSION", "main"),
         "url": "https://sandialabs.github.io/sansmic/",
         "preferred": False,
     }

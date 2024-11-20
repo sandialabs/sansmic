@@ -65,23 +65,15 @@ jobs:
         run: |
           python -m pip install -e .[formats]
           git config set versionsort.suffix -rc
+          export SANSMIC_SPHINX_VERSION=${{ github.ref_name }}@`git rev-parse --short HEAD`
           python build_docs.py
           mkdir docs/_build
           mkdir docs/_build/doxyxml
           sphinx-build -b html docs/ out/
-          for TAG in `git tag --list --sort=-version:refname`
+          for TAG in `git tag --list "v*.*.*" --sort=-version:refname`
           do
-            python -m pip uninstall -y sansmic
-            rm -rf docs/_build/doxyxml docs/apidocs/*
-            export SANSMIC_SPHINX_VERSION=$TAG
-            export VERSION_INFO=$TAG
-            mkdir docs/_build/doxyxml
-            git checkout -f $TAG
-            if [ -f "docs/requirements.txt" ]; then
-              python -m pip install --force-reinstall -r docs/requirements.txt
-            fi
-            python -m pip install -e .[docs]
-            sphinx-build -Q -b html docs/ out/$TAG
+            git clone --depth=1 --tag=$TAG https://github.com/sandialabs/sansmic-docs.git out/$TAG
+            rm -rf ./out/$TAG/.git
           done
 
       - name: Upload artifact
