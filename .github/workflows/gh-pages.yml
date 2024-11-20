@@ -33,85 +33,14 @@ concurrency:
 jobs:
   build:
     name: Build the documentation with Sphinx
-    runs-on: ubuntu-latest
+    uses: sandialabs/sansmic-ci/.github/workflows/build-sphinx-all.yml@main
     environment:
       name: github-pages
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
-        with:
-          egress-policy: audit
-
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-
-      - run: git fetch origin main
-
-      - name: troubleshooting
-        run: |
-          git branch
-          git remote -v
-
-      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y doxygen graphviz
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r docs/requirements.txt
-
-      - name: Checkout docs root
-        run: |
-          git clone https://github.com/sandialabs/sansmic-ci.git
-          python -m pip install -r sansmic-ci/docs/requirements.txt
-
-      - name: Build documentation
-        run: |
-          python -m pip install -e .[formats]
-          git config set versionsort.suffix -rc
-          python sansmic-ci/build_switcher.py
-          export SANSMIC_STABLE_VERSION=`cat stable.txt`
-          mkdir sansmic-ci/docs/$SANSMIC_STABLE_VERSION
-          touch sansmic-ci/docs/$SANSMIC_STABLE_VERSION/userman.rst
-          touch sansmic-ci/docs/$SANSMIC_STABLE_VERSION/refman.rst
-          cat sansmic-ci/docs/index.tpl | sed s/BUILD_SCRIPT_REPLACE/$SANSMIC_STABLE_VERSION/g > sansmic-ci/docs/index.rst
-
-          export SANSMIC_SPHINX_VERSION=root
-          sphinx-build -b html -d doctrees/root/ sansmic-ci/docs/ html/
-          mkdir docs/_build
-          mkdir docs/_build/doxyxml
-
-          export SANSMIC_SPHINX_VERSION=dev
-          cp -f sansmic-ci/docs/_static/* docs/_static/
-          cp html/_static/switcher.json docs/_static/
-          cp -f sansmic-ci/docs/conf.py docs/conf.py
-          sphinx-build -b html -d doctrees/latest docs/ html/latest
-          for TAG in `git tag --list "v*.*.*" --sort=-version:refname`
-          do
-            rm -rf docs
-            git checkout -f $TAG
-            mkdir docs/_build
-            mkdir docs/_build/doxyxml
-            export SANSMIC_SPHINX_VERSION=$TAG
-            cp -f sansmic-ci/docs/_static/* docs/_static/
-            cp html/_static/switcher.json docs/_static/
-            cp -f sansmic-ci/docs/conf.py docs/conf.py
-            sphinx-build -q -b html -d doctrees/$TAG docs html/$TAG
-          done
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
-        if: success() || failure()
-        with:
-          path: 'html/'
 
   deploy:
     name: Deploy documentation to GitHub Pages
     needs: [build]
-    if: ${{ always() }}
+    if: ${{ success() || failure() }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
