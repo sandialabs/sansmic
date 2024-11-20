@@ -83,7 +83,6 @@ jobs:
           sphinx-build -b html -d doctrees/root/ sansmic-ci/docs/ html/
           mkdir docs/_build
           mkdir docs/_build/doxyxml
-          mkdir html/
 
           export SANSMIC_SPHINX_VERSION=dev
           sphinx-build -b html -d doctrees/latest docs/ html/latest
@@ -91,8 +90,11 @@ jobs:
           do
             rm -rf docs
             git checkout -f $TAG
+            mkdir docs/_build
+            mkdir docs/_build/doxyxml
             export SANSMIC_SPHINX_VERSION=$TAG
             cp -f sansmic-ci/docs/_static/* docs/_static/
+            cp html/_static/switcher.json docs/_static/
             cp -f sansmic-ci/docs/conf.py docs/conf.py
             sphinx-build -q -b html -d doctrees/$TAG docs html/$TAG
           done
