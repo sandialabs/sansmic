@@ -34,8 +34,6 @@ jobs:
   build:
     name: Build the documentation with Sphinx
     uses: sandialabs/sansmic-ci/.github/workflows/build-sphinx-all.yml@main
-    environment:
-      name: github-pages
 
   deploy:
     name: Deploy documentation to GitHub Pages
