@@ -5,13 +5,27 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
+  - package-ecosystem: pip
+    directories:
+      - "/"
+      - "/docs"
+      - "/tests"
+    schedule: 
+      interval: daily
+    commit-message:
+      prefix: "build"
+    open-pull-requests-limit: 0
+    groups:
+      python-security:
+        applies-to: security-updates
+    
+  - package-ecosystem: pip # See documentation for possible values
     directories:
       - "/" # Location of package manifests
       - "/docs"
       - "/tests"
     schedule:
-      interval: "weekly"
+      interval: monthly
     commit-message:
       prefix: "build"
     groups:
@@ -24,6 +38,19 @@ updates:
     directory: /
     schedule:
       interval: daily
+    commit-message:
+      prefix: "ci"
+    open-pull-requests-limit: 0
+    groups:
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
     commit-message:
       prefix: "ci"
     groups:
