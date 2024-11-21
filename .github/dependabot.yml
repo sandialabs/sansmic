@@ -15,9 +15,6 @@ updates:
     commit-message:
       prefix: "build"
     open-pull-requests-limit: 0
-    groups:
-      python-security:
-        applies-to: security-updates
     
   - package-ecosystem: pip # See documentation for possible values
     directories:
@@ -41,11 +38,6 @@ updates:
     commit-message:
       prefix: "ci"
     open-pull-requests-limit: 0
-    groups:
-      actions-security:
-        applies-to: security-updates
-        patterns:
-          - "*"
 
   - package-ecosystem: github-actions
     directory: /
