@@ -21,6 +21,7 @@ updates:
       - "/" # Location of package manifests
       - "/docs"
       - "/tests"
+    target-branch: main
     schedule:
       interval: monthly
     commit-message:
@@ -41,6 +42,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: main
     schedule:
       interval: monthly
     commit-message:
