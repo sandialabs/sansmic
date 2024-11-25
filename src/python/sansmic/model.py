@@ -166,6 +166,8 @@ class AdvancedOptions:
     """Eddy coefficient; CScenario default is 1.142e5"""
     diffusion_beta: float = None  #  0.147
     """Diffusion beta coefficient; default is 0.147"""
+    casing_shoe_depth: float = None  #  0.0
+    """Depth of the casing shoe; default is 0.0 (off)"""
 
     def __setattr__(self, name, value):
         if isinstance(value, str) and value.strip() == "":
@@ -1002,6 +1004,9 @@ class Scenario:
                 self.advanced.temperature_model_version
             )
 
+        if self.advanced.casing_shoe_depth is not None:
+            cscenario.casing_shoe_depth = self.advanced.casing_shoe_depth
+
         # TODO: This needs to be far more robust
         if self.geometry_format is GeometryFormat.RADIUS_LIST and isinstance(
             self.geometry_data, str
@@ -1249,7 +1254,7 @@ class Simulator:
         self._is_finalized = False
         self._is_initialized = False
 
-    def run_sim(self):
+    def run_sim(self, debug=False):
         """Run the complete simulation; requires the Simulator to have been opened first."""
 
         if self._cmodel is None:
@@ -1258,6 +1263,8 @@ class Simulator:
             raise RuntimeError("The simulation is already running in stepwise mode")
         self._is_finalized = False
         self._is_initialized = True
+        if debug:
+            self._cmodel.debug = True
         self._cmodel.run_sim()
         self._has_run = True
         self._is_initialized = True

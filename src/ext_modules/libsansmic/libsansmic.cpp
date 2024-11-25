@@ -98,7 +98,9 @@ PYBIND11_MODULE(libsansmic, m) {
       .def_readwrite(
           "well_separation", &sansmic::Scenario::well_separation,
           "float : Separation between coallescing wells, default is 0.0 feet")
-
+      .def_readwrite("casing_shoe_depth", &sansmic::Scenario::casing_shoe_depth,
+                     "float: Depth of casing shoe, above which no leaching "
+                     "will occur, default is 0.0 feet ( = off)")
       .def_readwrite("radius_vector", &sansmic::Scenario::geom_radii,
                      "list[float] : radius at each node, len="
                      "(num_cells+1)")
@@ -220,58 +222,109 @@ PYBIND11_MODULE(libsansmic, m) {
       .def("_get_current_state", &sansmic::Model::get_current_state,
            "CResults : get the model status results right now")
       .def("_get_stages", &sansmic::Model::get_stages,
-           "list[CStage] : get a list of all the stages");
+           "list[CStage] : get a list of all the stages")
+      .def_readwrite("debug", &sansmic::Model::debug)
+     ;
 
   py::class_<sansmic::Results>(m, "CResults",
                                "See :class:`sansmic.model.Results`.")
       .def(py::init<>())
-      .def_readwrite("r_0", &sansmic::Results::r_0, "list[float] : initial radius (ft)")
-      .def_readwrite("z_0", &sansmic::Results::z_0, "list[float] : depth (ft MD)")
-      .def_readwrite("h_0", &sansmic::Results::h_0, "list[float] : height (ft above original TD)")
+      .def_readwrite("r_0", &sansmic::Results::r_0,
+                     "list[float] : initial radius (ft)")
+      .def_readwrite("z_0", &sansmic::Results::z_0,
+                     "list[float] : depth (ft MD)")
+      .def_readwrite("h_0", &sansmic::Results::h_0,
+                     "list[float] : height (ft above original TD)")
       .def_readwrite("step", &sansmic::Results::step, "list[int] : step number")
-      .def_readwrite("stage", &sansmic::Results::stage,"list[int] : stage number")
-      .def_readwrite("phase", &sansmic::Results::phase, "list[int] : active/passive phase")
-      .def_readwrite("injCell", &sansmic::Results::injCell,"list[int] : injection cell index")
-      .def_readwrite("prodCell", &sansmic::Results::prodCell, "list[int] : production cell index")
-      .def_readwrite("obiCell", &sansmic::Results::obiCell, "list[int] : obi cell index")
-      .def_readwrite("plumCell", &sansmic::Results::plmCell, "list[int] : plume cell index")
+      .def_readwrite("stage", &sansmic::Results::stage,
+                     "list[int] : stage number")
+      .def_readwrite("phase", &sansmic::Results::phase,
+                     "list[int] : active/passive phase")
+      .def_readwrite("injCell", &sansmic::Results::injCell,
+                     "list[int] : injection cell index")
+      .def_readwrite("prodCell", &sansmic::Results::prodCell,
+                     "list[int] : production cell index")
+      .def_readwrite("obiCell", &sansmic::Results::obiCell,
+                     "list[int] : obi cell index")
+      .def_readwrite("plumCell", &sansmic::Results::plmCell,
+                     "list[int] : plume cell index")
       .def_readwrite("t", &sansmic::Results::t, "list[float] : time (h)")
-      .def_readwrite("err", &sansmic::Results::err, "list[float] : convergence factor")
-      .def_readwrite("z_obi", &sansmic::Results::z_obi, "list[float] : obi depth (ft MD)")
-      .def_readwrite("z_inj", &sansmic::Results::z_inj, "list[float] : injection depth (ft MD)")
-      .def_readwrite("z_prod", &sansmic::Results::z_prod, "list[float] : production depth (ft MD)")
-      .def_readwrite("z_plm", &sansmic::Results::z_plm, "list[float] : plume stagnation depth (ft MD)")
-      .def_readwrite("z_insol", &sansmic::Results::z_insol, "list[float] : insoluble-based current TD (ft MD)")
-      .def_readwrite("h_insol", &sansmic::Results::h_insol, "list[float] : insoluble material height (ft)")
-      .def_readwrite("l_jet", &sansmic::Results::l_jet, "list[float] : jet length (ft)")
-      .def_readwrite("r_jet", &sansmic::Results::r_jet, "list[float] : jet radius (ft)")
-      .def_readwrite("u_jet", &sansmic::Results::u_jet, "list[float] : jet velocity (ft/s)")
-      .def_readwrite("V_injTot", &sansmic::Results::V_injTot, "list[float] :total injection volume (bbl)")
-      .def_readwrite("V_fillTot", &sansmic::Results::V_fillTot, "list[float] : total fill volume (bbl)")
-      .def_readwrite("V_cavTot", &sansmic::Results::V_cavTot, "list[float] : total cavern volume (bbl)")
-      .def_readwrite("V_insolTot", &sansmic::Results::V_insolTot, "list[float] : total insolubles deposited volume (bbl)")
-      .def_readwrite("V_insolVent", &sansmic::Results::V_insolVent, "list[float] : total insolubles vented volume (bbl)")
-      .def_readwrite("Q_out", &sansmic::Results::Q_out, "list[float] : instantaneous outflow rate (bbl/h)")
-      .def_readwrite("sg_out", &sansmic::Results::sg_out, "list[float] : instantaneous outflow concentration (sg)")
-      .def_readwrite("sg_cavAve", &sansmic::Results::sg_cavAve, "list[float] : instantaneous average cavern brine concentration (sg)")
-      .def_readwrite("dt", &sansmic::Results::dt, "list[float] : solver timestep (h)")
-      .def_readwrite("r", &sansmic::Results::r_cav, "list[list[float]] : cavern radius (ft)")
-      .def_readwrite("dr_0", &sansmic::Results::dr_cav, "list[list[float]] : change in cavern radius (ft)")
-      .def_readwrite("sg", &sansmic::Results::sg, "list[list[float]] : brine concentration (sg)")
-      .def_readwrite("theta", &sansmic::Results::theta, "list[list[float]] : wall angle (deg)")
-      .def_readwrite("Q_inj", &sansmic::Results::Q_inj, "list[list[float]] : injection rate (bbl/h)")
-      .def_readwrite("V", &sansmic::Results::V, "list[list[float]] : cell volume (bbl)")
-      .def_readwrite("f_dis", &sansmic::Results::f_dis, "list[list[float]] : dissolution factor (:1)")
-      .def_readwrite("f_flag", &sansmic::Results::f_flag, "list[list[float]] : dissolution flag (status)")
-      .def_readwrite("xincl", &sansmic::Results::xincl, "list[list[float]] : debug")
+      .def_readwrite("err", &sansmic::Results::err,
+                     "list[float] : convergence factor")
+      .def_readwrite("z_obi", &sansmic::Results::z_obi,
+                     "list[float] : obi depth (ft MD)")
+      .def_readwrite("z_inj", &sansmic::Results::z_inj,
+                     "list[float] : injection depth (ft MD)")
+      .def_readwrite("z_prod", &sansmic::Results::z_prod,
+                     "list[float] : production depth (ft MD)")
+      .def_readwrite("z_plm", &sansmic::Results::z_plm,
+                     "list[float] : plume stagnation depth (ft MD)")
+      .def_readwrite("z_insol", &sansmic::Results::z_insol,
+                     "list[float] : insoluble-based current TD (ft MD)")
+      .def_readwrite("h_insol", &sansmic::Results::h_insol,
+                     "list[float] : insoluble material height (ft)")
+      .def_readwrite("l_jet", &sansmic::Results::l_jet,
+                     "list[float] : jet length (ft)")
+      .def_readwrite("r_jet", &sansmic::Results::r_jet,
+                     "list[float] : jet radius (ft)")
+      .def_readwrite("u_jet", &sansmic::Results::u_jet,
+                     "list[float] : jet velocity (ft/s)")
+      .def_readwrite("V_injTot", &sansmic::Results::V_injTot,
+                     "list[float] :total injection volume (bbl)")
+      .def_readwrite("V_fillTot", &sansmic::Results::V_fillTot,
+                     "list[float] : total fill volume (bbl)")
+      .def_readwrite("V_cavTot", &sansmic::Results::V_cavTot,
+                     "list[float] : total cavern volume (bbl)")
+      .def_readwrite("V_insolTot", &sansmic::Results::V_insolTot,
+                     "list[float] : total insolubles deposited volume (bbl)")
+      .def_readwrite("V_insolVent", &sansmic::Results::V_insolVent,
+                     "list[float] : total insolubles vented volume (bbl)")
+      .def_readwrite("Q_out", &sansmic::Results::Q_out,
+                     "list[float] : instantaneous outflow rate (bbl/h)")
+      .def_readwrite("sg_out", &sansmic::Results::sg_out,
+                     "list[float] : instantaneous outflow concentration (sg)")
+      .def_readwrite(
+          "sg_cavAve", &sansmic::Results::sg_cavAve,
+          "list[float] : instantaneous average cavern brine concentration (sg)")
+      .def_readwrite("dt", &sansmic::Results::dt,
+                     "list[float] : solver timestep (h)")
+      .def_readwrite("r", &sansmic::Results::r_cav,
+                     "list[list[float]] : cavern radius (ft)")
+      .def_readwrite("dr_0", &sansmic::Results::dr_cav,
+                     "list[list[float]] : change in cavern radius (ft)")
+      .def_readwrite("sg", &sansmic::Results::sg,
+                     "list[list[float]] : brine concentration (sg)")
+      .def_readwrite("theta", &sansmic::Results::theta,
+                     "list[list[float]] : wall angle (deg)")
+      .def_readwrite("Q_inj", &sansmic::Results::Q_inj,
+                     "list[list[float]] : injection rate (bbl/h)")
+      .def_readwrite("V", &sansmic::Results::V,
+                     "list[list[float]] : cell volume (bbl)")
+      .def_readwrite("f_dis", &sansmic::Results::f_dis,
+                     "list[list[float]] : dissolution factor (:1)")
+      .def_readwrite("f_flag", &sansmic::Results::f_flag,
+                     "list[list[float]] : dissolution flag (status)")
+      .def_readwrite("xincl", &sansmic::Results::xincl,
+                     "list[list[float]] : debug")
       .def_readwrite("amd", &sansmic::Results::amd, "list[list[float]] : debug")
-      .def_readwrite("D_coeff", &sansmic::Results::D_coeff, "list[list[float]] : diffusion coefficient")
-      .def_readwrite("dC_dz", &sansmic::Results::dC_dz, "list[list[float]] : vertical diffusion rate (sg/ )")
-      .def_readwrite("C_old", &sansmic::Results::C_old, "list[list[float]] : previous timestep concentration (sg)")
-      .def_readwrite("C_new", &sansmic::Results::C_new, "list[list[float]] : current timestep concentration (sg)")
-      .def_readwrite("dC", &sansmic::Results::dC_dt, "list[list[float]] : rate of change in concentration (sg/h)")
-      .def_readwrite("dr", &sansmic::Results::dr_dt, "list[list[float]] : rate of change in cavern radius (ft/h)")
-      .def_readwrite("C_plm", &sansmic::Results::C_plm, "list[list[float]] : plume concentration (sg)")
-      .def_readwrite("u_plm", &sansmic::Results::u_plm, "list[list[float]] : plume velocity (ft/s)")
-      .def_readwrite("r_plm", &sansmic::Results::r_plm, "list[list[float]] : plume radius (ft)");
+      .def_readwrite("D_coeff", &sansmic::Results::D_coeff,
+                     "list[list[float]] : diffusion coefficient")
+      .def_readwrite("dC_dz", &sansmic::Results::dC_dz,
+                     "list[list[float]] : vertical diffusion rate (sg/ )")
+      .def_readwrite("C_old", &sansmic::Results::C_old,
+                     "list[list[float]] : previous timestep concentration (sg)")
+      .def_readwrite("C_new", &sansmic::Results::C_new,
+                     "list[list[float]] : current timestep concentration (sg)")
+      .def_readwrite(
+          "dC", &sansmic::Results::dC_dt,
+          "list[list[float]] : rate of change in concentration (sg/h)")
+      .def_readwrite(
+          "dr", &sansmic::Results::dr_dt,
+          "list[list[float]] : rate of change in cavern radius (ft/h)")
+      .def_readwrite("C_plm", &sansmic::Results::C_plm,
+                     "list[list[float]] : plume concentration (sg)")
+      .def_readwrite("u_plm", &sansmic::Results::u_plm,
+                     "list[list[float]] : plume velocity (ft/s)")
+      .def_readwrite("r_plm", &sansmic::Results::r_plm,
+                     "list[list[float]] : plume radius (ft)");
 }

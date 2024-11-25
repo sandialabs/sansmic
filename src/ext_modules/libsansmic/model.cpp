@@ -96,6 +96,7 @@ void sansmic::Model::init_vars() {
   n_wells = 1;
 
   z_TD0 = 0;
+  z_lccs = 0;
   h_max = -1;
   h_insol = 0.0;
   h_obi = 0.0;
@@ -184,9 +185,11 @@ void sansmic::Model::configure(Scenario scenario) {
   h_uso = scenario.ullage_standoff;
   dataFmt = scenario.geometry_format;
   stages = scenario.stages;
+  z_lccs = scenario.casing_shoe_depth;
   open_outfiles(false);
 
   if (verbosity > 3) scenario.debug_log(fileLog);
+  scenario.debug_log(fileLog);
 
   dz = h_max / double(n_cells);
   diffCoeff = D_mol;
@@ -270,6 +273,7 @@ void sansmic::Model::configure(Scenario scenario) {
     theta = atan(tanTheta[i]);
     cosTheta[i] = cos(theta);
     h_cav[i + 1] = h_cav[i] + dz;
+    z_cav[i + 1] = z_cav[1] - h_cav[i + 1];
     results.h_0[i] = h_cav[i - 1] + dz;
     depdkr[i] = z_cav[1] - h_cav[i];
     results.z_0[i - 1] = z_cav[1] - h_cav[i];
@@ -725,10 +729,10 @@ int sansmic::Model::leach() {
   // calculate wall angle correction factor
   slope(jetPlumeCell);
   f_dis_prt[jetPlumeCell] = f_dis[jetPlumeCell];
-
   // evaluate eqn 4.1 and multiple by dis factor at jet cell
   dr_dt = salt->recession_rate(C_cav[jetPlumeCell]) * 60.0 *
           x_incl[jetPlumeCell] * f_dis[jetPlumeCell];
+  if (z_cav[jetPlumeCell] <= z_lccs) dr_dt = 0.0;
   dr_prt[jetPlumeCell] = dr_dt * dt;
   V_saltRemove[jetPlumeCell] =
       2.0 * dr_dt * r_cav[jetPlumeCell] * dz * dt * C_wall;
@@ -739,6 +743,7 @@ int sansmic::Model::leach() {
       slope(i);
       f_dis_prt[i] = f_dis[i];
       dr_dt = salt->recession_rate(C_cav[i]) * 60.0 * x_incl[i] * f_dis[i];
+      if (z_cav[i] <= z_lccs) dr_dt = 0.0;
       dr_prt[i] = dr_dt * dt;
       V_saltRemove[i] = 2.0 * dr_dt * r_cav[i] * dz * dt * C_wall;
       m_saltRemove = m_saltRemove + V_saltRemove[i];
@@ -770,8 +775,8 @@ int sansmic::Model::leach() {
     im = max(i - 1, 1);
     slope(i);
     f_dis_prt[i] = f_dis[i];
-
     dr_dt = salt->recession_rate(C_cav[i]) * 60.0 * f_dis[i];
+    if (z_cav[i] <= z_lccs) dr_dt = 0.0;
     dr_prt[i] = dr_dt * dt * x_incl[i];
 
     volRemoved =

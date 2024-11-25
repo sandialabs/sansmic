@@ -45,6 +45,7 @@ sansmic::Scenario::Scenario() {
   dissolution_factor = 1.0;
   max_brine_sg = 1.2019;
   solid_density = 2.16;
+  casing_shoe_depth = 0.0;
 }
 
 /**
@@ -102,6 +103,7 @@ void sansmic::Scenario::debug_log(ofstream &fout) {
   fout << "      dissolution-factor = " << dissolution_factor << std::endl;
   fout << "      salt-max-brine-sg = " << max_brine_sg << std::endl;
   fout << "      salt-solid-density = " << solid_density << std::endl;
+  fout << "      casing-shoe-depth = " << casing_shoe_depth << std::endl;
   fout << "    stages:" << std::endl;
   for (int i = 0; i < stages.size(); i++) stages[i].debug_log(fout);
 }

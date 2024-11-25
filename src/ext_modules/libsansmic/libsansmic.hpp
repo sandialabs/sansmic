@@ -166,6 +166,8 @@ struct Scenario {
   double relative_error;       //!< the relative tolerance for the ODE solver
   double absolute_error;       //!< the absolute tolerance for the ODE solver
 
+  double casing_shoe_depth;    //!< the depth of the casing shoe, above which no leaching occurs
+
   // deprecated options
   int coallescing_wells;      //!< the number of identical wells coallescing
   double well_separation;     //!< the separation between coallescing wells
@@ -391,6 +393,7 @@ class BaseModel {
   void set_use_outfile(bool use_file);
   Results get_results(void);
   Results get_current_state(void);
+  bool debug = false;
 
  protected:
   string prefix;         //!< output file prefix
@@ -615,6 +618,7 @@ class Model : public BaseModel {
   double z_obi_stop;     // OBI-final (for stage termination criteria)
   double z_TD0;          //!< bottom of the cavern
   double z_ullage;       //
+  double z_lccs;         //!< lowest casing shoe
 
   int i_obi;              // temp blanket cell index
   int i_obiOld;           // temp blanket cell index
