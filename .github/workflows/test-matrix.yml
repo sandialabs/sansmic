@@ -45,6 +45,8 @@ jobs:
 
       - name: Setup | Check out the commit
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
 
       - name: Setup | Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
@@ -60,7 +62,7 @@ jobs:
 
       - name: Action | Test package and examples
         run: |
-          python3 -m pytest --nbmake --disable-warnings --no-header --color=auto examples/ tests/ >> $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --no-header --color=auto docs/examples/ tests/ >> $GITHUB_STEP_SUMMARY
 
       - name: Action | Test uninstall process
         # Allow upload to codecov to fail but not fail all tests
@@ -87,6 +89,8 @@ jobs:
 
       - name: Setup | Check out the commit
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
 
       - name: Setup | Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
@@ -108,7 +112,7 @@ jobs:
           python3 setup.py build_ext --inplace --force
           echo '### Run tests' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
+          python3 -m pytest --nbmake --disable-warnings --cov=sansmic --cov=tests --no-header --color=auto docs/examples/ tests/ | tee -a $GITHUB_STEP_SUMMARY
           find src -type f -name '*.cpp' | xargs -I{} gcov -o build/temp*/src/ext_modules/libsansmic {}
           echo ' ' >> $GITHUB_STEP_SUMMARY
           gcovr --txt -s -k | tee -a $GITHUB_STEP_SUMMARY
