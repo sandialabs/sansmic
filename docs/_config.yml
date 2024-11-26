@@ -1,0 +1,204 @@
+# Book settings
+# Learn more at https://jupyterbook.org/customize/config.html
+
+title: sansmic
+author: David Hart
+logo: _static/logo-light.png
+
+# Force re-execution of notebooks on each build.
+# See https://jupyterbook.org/content/execute.html
+execute:
+  execute_notebooks: force
+
+# Configure sphinx
+sphinx:
+  extra_extensions:
+    - breathe
+    - exhale
+    - sphinx.ext.autodoc
+    - sphinx.ext.doctest
+    - sphinx.ext.coverage
+    - sphinx.ext.mathjax
+    - sphinx.ext.viewcode
+    - sphinx.ext.autosummary
+    - sphinx.ext.napoleon
+    - sphinx.ext.intersphinx
+    - sphinx.ext.githubpages
+    - sphinx_design
+    - sphinx_click
+  recursive_update: false
+  config:
+    html_theme: pydata_sphinx_theme
+    copyright: "2024 National Technology and Engineering Solutions of Sandia, LLC. Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software."
+    author: "David B. Hart; see also: AUTHORS.md"
+    version: 1.0.7
+    numfig: true
+    numfig_format:
+      figure: "Figure %s"
+      table: "Table %s"
+      code-block: "Listing %s"
+    language: en
+    add_function_parentheses: true
+    toc_object_entries: true
+    toc_object_entries_show_parents: hide
+    exclude_patterns:
+      - _build
+      - Thumbs.db
+      - DS_Store
+      - doxygen
+    templates_path:
+      - _templates
+    add_module_names: false
+    python_display_short_literal_types: true
+    python_use_unqualified_type_names: true
+    bibtex_default_style: plain
+    bibtex_reference_style: label
+    intersphinx_mapping:
+      "python":
+        - "https://docs.python.org/3"
+        - Null
+      "matplotlib":
+        - "https://matplotlib.org/stable/"
+        - Null
+      "numpy":
+        - "https://numpy.org/doc/stable/"
+        - Null
+      "pandas":
+        - "https://pandas.pydata.org/docs/"
+        - Null
+    napoleon_google_docstring: True
+    napoleon_numpy_docstring: True
+    napoleon_include_init_with_doc: True
+    napoleon_include_private_with_doc: False
+    napoleon_include_special_with_doc: False
+    napoleon_use_admonition_for_examples: False
+    napoleon_use_admonition_for_notes: False
+    napoleon_use_admonition_for_references: True
+    napoleon_preprocess_types: False
+    napoleon_use_ivar: True
+    napoleon_use_param: True
+    napoleon_use_rtype: True
+    napoleon_use_keyword: False
+    autodoc_default_options:
+      "members": True
+      "undoc-members": True
+      "private-members": False
+      "special-members": "__call__"
+      "inherited-members": False
+      "show-inheritance": False
+      "member-order": "groupwise"
+    autodoc_typehints: "description"
+    autodoc_typehints_format: "short"
+    autodoc_typehints_description_target: "documented"
+    autodoc_type_aliases:
+      "DataFrame": "pandas.DataFrame"
+    autoclass_content: "both"
+    autosummary_generate:
+      - refman.rst
+    autosummary_generate_overwrite: True
+    breathe_default_project: "libsansmic"
+    breathe_separate_member_pages: False
+    breathe_show_enumvalue_initializer: True
+    breathe_domain_by_extension:
+      "hpp": "cpp"
+    breathe_projects_source:
+      "libsansmic":
+        - ""
+        - - ../src/ext_modules/libsansmic/basemodel.cpp
+          - ../src/ext_modules/libsansmic/jetmodel.cpp
+          - ../src/ext_modules/libsansmic/libsansmic.cpp
+          - ../src/ext_modules/libsansmic/libsansmic.hpp
+          - ../src/ext_modules/libsansmic/model.cpp
+          - ../src/ext_modules/libsansmic/odesolver.cpp
+          - ../src/ext_modules/libsansmic/plumerise.cpp
+          - ../src/ext_modules/libsansmic/salt.cpp
+          - ../src/ext_modules/libsansmic/scenario.cpp
+          - ../src/ext_modules/libsansmic/stage.cpp
+          - ../src/ext_modules/libsansmic/util.cpp
+    breathe_default_members:
+      - "members"
+    breathe_projects:
+      "libsansmic": "_build/doxyxml/xml"
+    breathe_show_include: False
+    breathe_doxygen_aliases:
+      "rstref{1}": r"\verbatim embed:rst:inline :ref:`\1` \endverbatim"
+    breathe_order_parameters_first: True
+
+    # -- Exhale options ------------------------------------------------------
+    exhale_args:
+      "containmentFolder": "./apidocs"
+      "rootFileName": "index.rst"
+      "doxygenStripFromPath": "../src/ext_modules/libsansmic"
+      "rootFileTitle": "libsansmic"
+      "createTreeView": False
+      "exhaleExecutesDoxygen": True
+      "exhaleDoxygenStdin": |
+        INPUT = ../src/ext_modules/libsansmic
+        EXCLUDE_SYMBOLS = "std"
+        EXCLUDE_SYMBOLS += "PYBIND11_MODULE"
+        SHOW_INCLUDE_FILES = "NO"
+        SHOW_HEADER_FILES = "NO"
+        HIDE_SCOPE_NAMES = "YES"
+        EXTRACT_PRIVATE = "NO"
+        EXTRACT_ALL = "NO"
+        SHOW_USED_FILES = "NO"
+        SHOW_FILES = "NO"
+        SHOW_NAMESPACES = "NO"
+        XML_PROGRAMLISTING = "NO"
+
+      "contentsDirectives": False
+      "minifyTreeView": True
+      "fullToctreeMaxDepth": 2
+      "listingExclude":
+        - "std"
+        - "PYBIND11_MODULE"
+      "unabridgedOrphanKinds": []
+    html_static_path:
+      - "_static"
+    html_js_files:
+      - "pypi-icon.js"
+    html_theme_options:
+      "icon_links":
+        - "name": "GitHub"
+          "url": "https://github.com/sandialabs/sansmic"
+          "type": "fontawesome"
+          "icon": "fa-brands fa-github"
+        - "name": "PyPI"
+          "url": "https://pypi.org/project/sansmic/"
+          "type": "fontawesome"
+          "icon": "fa-custom fa-pypi"
+        - "name": "Sandia National Laboratories"
+          "url": "https://www.sandia.gov"
+          "type": "local"
+          "icon": "_static/snl_logo.png"
+      "navigation_with_keys": False
+      "use_edit_page_button": False
+      "primary_sidebar_end":
+        - "indices.html"
+      "show_toc_level": 2
+      "navbar_start":
+        - "navbar-logo"
+      "navbar_end":
+        - "theme-switcher"
+        - "navbar-icon-links"
+
+# Define the name of the latex output file for PDF builds
+latex:
+  latex_documents:
+    targetname: book.tex
+
+# Add a bibtex file so that we can create citations
+bibtex_bibfiles:
+  - references.bib
+
+# Information about where the book exists on the web
+repository:
+  url: https://github.com/sandialabs/sansmic # Online location of your book
+  path_to_book: docs # Optional path to your book, relative to the repository root
+  branch: main # Which branch of the repository should be used when creating links (optional)
+
+# # Add GitHub buttons to your book
+# # See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
+# html:
+#   use_issues_button: true
+#   use_repository_button: true
