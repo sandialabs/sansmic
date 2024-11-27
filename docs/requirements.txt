@@ -7,3 +7,6 @@ exhale
 sphinx-click
 nbsphinx
 ipykernel
+matplotlib
+plotly
+seaborn
