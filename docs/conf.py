@@ -219,6 +219,12 @@ html_js_files = [
 html_theme_options = {
     "icon_links": [
         {
+            "name": "Issues",
+            "url": "https://github.com/sandialabs/sansmic/issues",
+            "type": "fontawesome",
+            "icon": "fa-regular fa-circle-dot",
+        },
+        {
             "name": "GitHub",  # Label for this link
             "url": "https://github.com/sandialabs/sansmic",  # required URL where the link will redirect
             "type": "fontawesome",  # The type of image to be used
@@ -249,4 +255,8 @@ html_theme_options = {
         "theme-switcher",
         "navbar-icon-links",
     ],
+}
+
+nbsphinx_thumbnails = {
+    "basic-example/basic": "_static/basic-thumbnail.png",
 }
