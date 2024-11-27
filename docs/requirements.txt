@@ -10,3 +10,5 @@ ipykernel
 matplotlib
 plotly
 seaborn
+pandoc
+IPython
