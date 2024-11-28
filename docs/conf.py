@@ -241,7 +241,10 @@ html_theme_options = {
     "use_edit_page_button": False,
     "primary_sidebar_end": ["indices.html"],
     "show_toc_level": 2,
-    # "secondary_sidebar_items": ["page-toc"], #["page-toc", "edit-this-page", "sourcelink"],
+    "secondary_sidebar_items": {
+        "**": ["page-toc", "sourcelink"],
+        "examples/**": [],
+    },
     "navbar_start": [
         "navbar-logo",
     ],
@@ -249,4 +252,7 @@ html_theme_options = {
         "theme-switcher",
         "navbar-icon-links",
     ],
+}
+nbsphinx_thumbnails = {
+    "basic-example/basic": "/_static/basic-thumbnail.png",
 }
