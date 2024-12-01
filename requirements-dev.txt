@@ -5,7 +5,7 @@ pytest==8.3.3
 pytest-cov==6.0.0
 black==24.10.0
 nbmake==1.5.4
-matplotlib==3.9.2
+matplotlib==3.9.3
 python-semantic-release==9.14.0
 h5py==3.12.1
 openpyxl==3.1.5
