@@ -8,15 +8,23 @@
 
 """The core python classes for SANSMIC."""
 
+import dataclasses
 import logging
 import warnings
 from dataclasses import InitVar, asdict, dataclass, field
-from enum import IntEnum
-from fractions import Fraction
+from enum import Enum, EnumType, IntEnum
 from typing import Any, Dict, List, Literal, Union
 
 import numpy as np
 import pandas as pd
+
+from sansmic.enums import (
+    GeometryFormat,
+    SaveFrequency,
+    SimulationMode,
+    StopCondition,
+    Units,
+)
 
 try:
     import h5py
@@ -40,97 +48,6 @@ def _rename_with_dash(orig: dict, new: dict):
     for k, v in orig.items():
         k = k.lower().replace("_", "-")
         new[k] = v
-
-
-class Units(IntEnum):
-    """The units that are used to define the scenario.
-
-    Depths, heights, and cavern radii are in the first (larger) length unit.
-    Tubing radii are in the second (smaller) length unit.
-    Volumes and volumetric flow rates are in the third unit.
-
-    Durations are in hours. Constant injection rates are in <volume-unit> per day.
-    File-based injection rates are in <volume-unit> per hour.
-    """
-
-    FT_IN_BBL = 1
-    """foot/inch/barrel"""
-    FT_IN_FT3 = 2
-    """foot/inch/cubic foot"""
-    M_CM_M3 = 3
-    """meter/centimeter/cubic meter"""
-
-    @classmethod
-    def inch(self):
-        """1 in ≔ 0.0254 m"""
-        return Fraction(254, 10000)
-
-    @classmethod
-    def foot(self):
-        """1 ft ≔ 0.3048 m"""
-        return Fraction(3048, 10000)
-
-    @classmethod
-    def cubic_foot(self):
-        """1 ft³ == 0.028316846592 m³"""
-        return Fraction(3048, 10000) ** 3
-
-    @classmethod
-    def barrel(self):
-        """1 bbl == 0.158987294928 m³"""
-        return 42 * 231 * Fraction(254, 10000) ** 3
-
-    @classmethod
-    def centimeter(self):
-        """1 cm ≔ 0.01 m"""
-        return Fraction(1, 100)
-
-
-class StopCondition(IntEnum):
-    """Which stop condition should be used to end the simulation."""
-
-    DEPTH = -1
-    """Stop when the interface reaches a specified height above the cavern floor"""
-    DURATION = 0
-    """Stop only based on duration"""
-    VOLUME = 1
-    """Stop when the total cavern volume reaches a specified value."""
-
-
-class GeometryFormat(IntEnum):
-    """The format for the initial cavern geometry."""
-
-    RADIUS_LIST = 0
-    """The radius is provided from the bottom of the cavern to the top;
-    :attr:`~Scenario.num_cells` + 1 values, equally spaced"""
-    VOLUME_LIST = 1
-    VOLUME_TABLE = -1
-    RADIUS_TABLE = 2
-    LAYER_CAKE = 5
-    """The geometry is provided in a 'layer-cake' style LAS file"""
-
-
-class SimulationMode(IntEnum):
-    """The simulation mode determines which options are active for injection."""
-
-    ORDINARY = 0
-    """Ordinary leaching, with raw water or undersaturated brine injected through
-    the inner tubing or outer casing and brine produced from the other."""
-    WITHDRAWAL = 1
-    """Withdrawal leach, with brine injected through the suspended tubing (hanging
-    string) and product produced from top of cavern."""
-    LEACH_FILL = 2
-    """Simultaneous leaching (water/brine injection and brine production) and
-    product injection from the top."""
-
-
-class RateScheduleType(IntEnum):
-    """The way that the rate of injection is specified."""
-
-    CONSTANT_RATE = 1
-    """Injection occurs at a constant rate of volume :class:`Units` per day."""
-    DATAFILE = 2
-    """Injection rate is specified in :class:`Units` per hour in a file."""
 
 
 @dataclass
@@ -168,6 +85,15 @@ class AdvancedOptions:
     """Diffusion beta coefficient; default is 0.147"""
     casing_shoe_depth: float = None  #  0.0
     """Depth of the casing shoe; default is 0.0 (off)"""
+
+    def __iter__(self):
+        for k, f in self.__dataclass_fields__.items():
+            if hasattr(self, k) and f._field_type != dataclasses._FIELD:
+                continue
+            v = getattr(self, k)
+            if v is None:
+                continue
+            yield k, v
 
     def __setattr__(self, name, value):
         if isinstance(value, str) and value.strip() == "":
@@ -243,8 +169,8 @@ class StageDefinition:
     """The simulation mode used in this stage."""
     solver_timestep: float = None
     """The solver timestep in hours."""
-    save_frequency: Union[int, Literal["hourly", "daily", "bystage"]] = None
-    """The save frequency in number of timesteps, or one of "hourly", "daily", or "bystage", by default "bystage"."""
+    save_frequency: Union[int, SaveFrequency] = None
+    """The save frequency in number of timesteps, or one of "hourly", "daily", or "stage", by default "stage"."""
     injection_duration: float = None
     """The duration of the injection phase of the stage."""
     rest_duration: float = None
@@ -268,7 +194,7 @@ class StageDefinition:
     brine_injection_rate: Union[float, str] = 0
     """The meaning of this field is based on the type of data that is provided (a value of 0 means off)."""
 
-    set_initial_conditions: bool = None
+    set_initial_conditions: bool = False
     """Unlink initial cavern brine gravity and interface level from previous stage.
     Automatically set to True for the first stage added to a model."""
     set_cavern_sg: float = None
@@ -307,6 +233,19 @@ class StageDefinition:
         "outer_csg_outside_diam",
     ]
 
+    def __iter__(self):
+        for k, f in self.__dataclass_fields__.items():
+            if f._field_type is dataclasses._FIELD_INITVAR:
+                continue
+            try:
+                v = getattr(self, k)
+            except ValueError:
+                if "depth" in k:
+                    v = getattr(self, k.replace("depth", "height"))
+                else:
+                    raise
+            yield k, v
+
     def __post_init__(
         self,
         defaults=None,
@@ -317,19 +256,23 @@ class StageDefinition:
     ):
 
         if defaults is None:
-            defaults = dict()
-        if not isinstance(defaults, dict):
+            defaults = None
+            self.__defaults = None
+        elif not isinstance(defaults, dict):
             raise TypeError("defaults must be a dictionary")
-        for k, v in defaults.items():
-            k2 = k.strip().replace("-", "_").replace(" ", "_").replace(".", "_")
-            if k2 not in self.valid_default_keys:
-                logger.warning(  # pragma: no cover
-                    "Ignoring non-defaultable or unknown setting {} = {}".format(
-                        k, repr(v)
+        else:
+            self.__defaults = defaults
+            for k, v in defaults.items():
+                k2 = k.strip().replace("-", "_").replace(" ", "_").replace(".", "_")
+                if k2 not in self.valid_default_keys:
+                    logger.warning(  # pragma: no cover
+                        "Ignoring non-defaultable or unknown setting {} = {}".format(
+                            k, repr(v)
+                        )
                     )
-                )
-            elif getattr(self, k2) is None:
-                setattr(self, k2, v)
+                # don't do this anymore since we are keeping the default dictionary linked
+                # elif getattr(self, k2) is None:
+                # setattr(self, k2, v)
         if isinstance(blanket_depth, (float, int, str)):
             self.brine_interface_depth = blanket_depth
         if isinstance(brine_injection_height, (float, int, str)):
@@ -348,9 +291,7 @@ class StageDefinition:
             if isinstance(value, int):
                 value = SimulationMode(value)
             elif isinstance(value, str):
-                value = SimulationMode[
-                    value.upper().replace(" ", "_").replace("-", "_")
-                ]
+                value = SimulationMode[value]
             elif isinstance(value, _ext.CRunMode):
                 value = SimulationMode(int(value))
             else:
@@ -363,17 +304,32 @@ class StageDefinition:
             if isinstance(value, int):
                 value = StopCondition(value)
             elif isinstance(value, str):
-                value = StopCondition[value.upper().replace(" ", "_").replace("-", "_")]
+                value = StopCondition[value]
             else:
                 raise TypeError(
                     "stop_condition cannot be of type {}".format(type(value))
                 )
+        elif name == "save_frequency" and isinstance(value, str):
+            value = SaveFrequency[value]
         elif name == "set_cavern_sg" and value is not None and value < 1.0:
+            value = None
+        elif name == "brine_interface_depth" and value == 0:
             value = None
         # elif name == "set_initial_conditions" and value is False:
         #     self.set_cavern_sg = None
         #     self.brine_interface_depth = None
         super().__setattr__(name, value)
+
+    def _relink_defaults(self, scenario: "Scenario"):
+        if not isinstance(scenario, Scenario):
+            raise TypeError(f"Expected Scenario but got {type(scenario)}")
+        self.__defaults = scenario.defaults
+
+    def squash_defaults(self):
+        if isinstance(self.__defaults, dict):
+            for k, v in self.__defaults.items():
+                if k in self.__dataclass_fields__.keys() and getattr(self, k) == v:
+                    setattr(self, k, None)
 
     @property
     def blanket_depth(self) -> float:
@@ -433,7 +389,7 @@ class StageDefinition:
 
     @brine_interface_height.setter
     def brine_interface_height(self, value):
-        if value is None:
+        if value is None or value == 0:
             self.brine_interface_depth = None
         else:
             self.brine_interface_depth = -abs(value)
@@ -485,15 +441,35 @@ class StageDefinition:
             the options dictionary
         """
 
-        ret = dict()
-        _rename_with_dash(asdict(self), ret)
-        keys = list(ret.keys())
+        ret1 = dict(self)
+        for k, v in ret1.items():
+            if isinstance(v, Enum):
+                v = str(v)
+            ret1[k] = v
+
+        keys = list(ret1.keys())
         for k in keys:
-            if ret[k] is None:
+            if isinstance(self.__defaults, dict) and k in self.__defaults.keys():
+                if self.__defaults[k] == ret1[k] or ret1[k] is None:
+                    ret1[k] = None
+            if (
+                not keep_empty
+                and k in self.__dataclass_fields__.keys()
+                and getattr(self, k) == self.__dataclass_fields__[k].default
+            ):
+                ret1[k] = None
+            if ret1[k] is None:
                 if keep_empty:
-                    ret[k] = ""
+                    if self.__dataclass_fields__[k].default is None:
+                        ret1[k] = ""
+                    elif isinstance(self.__dataclass_fields__[k].default, Enum):
+                        ret1[k] = str(self.__dataclass_fields__[k].default)
+                    else:
+                        ret1[k] = self.__dataclass_fields__[k].default
                 else:
-                    del ret[k]
+                    del ret1[k]
+        ret = dict()
+        _rename_with_dash(ret1, ret)
         return ret
 
     def validate(self):
@@ -602,6 +578,10 @@ class StageDefinition:
                 SimulationMode.WITHDRAWAL,
             ]
             and self.inner_tbg_inside_diam is None
+            and (
+                self.__defaults is None
+                or not "inner_tbg_inside_diam" in self.__defaults
+            )
         ):
             raise TypeError(
                 "Missing required 'inner_tbg_inside_diam' for {} simulation mode.".format(
@@ -616,6 +596,10 @@ class StageDefinition:
                 SimulationMode.WITHDRAWAL,
             ]
             and self.inner_tbg_outside_diam is None
+            and (
+                self.__defaults is None
+                or not "inner_tbg_outside_diam" in self.__defaults
+            )
         ):
             raise TypeError(
                 "Missing required 'inner_tbg_outside_diam' for {} simulation mode.".format(
@@ -625,6 +609,10 @@ class StageDefinition:
         if (
             self.simulation_mode in [SimulationMode.ORDINARY, SimulationMode.LEACH_FILL]
             and self.outer_csg_inside_diam is None
+            and (
+                self.__defaults is None
+                or not "outer_csg_inside_diam" in self.__defaults
+            )
         ):
             raise TypeError(
                 "Missing required 'outer_csg_inside_diam' for {} simulation mode.".format(
@@ -634,6 +622,10 @@ class StageDefinition:
         if (
             self.simulation_mode in [SimulationMode.ORDINARY, SimulationMode.LEACH_FILL]
             and self.outer_csg_outside_diam is None
+            and (
+                self.__defaults is None
+                or not "outer_csg_outside_diam" in self.__defaults
+            )
         ):
             raise TypeError(
                 "Missing required 'outer_csg_outside_diam' for {} simulation mode.".format(
@@ -667,8 +659,11 @@ class StageDefinition:
 
         self.validate()
         stage = _ext.CStage()
-        if defaults is None:
-            defaults = dict()
+        if defaults is not None:
+            raise DeprecationWarning(
+                "Passing the defaults by parameter will no longer be permitted in SANSMIC 1.1"
+            )
+        defaults = self.__defaults
         stage.timestep = (
             self.solver_timestep
             if self.solver_timestep
@@ -681,12 +676,12 @@ class StageDefinition:
         else:
             stage.title = self.title
         stage.mode = _ext.CRunMode(int(self.simulation_mode))
-        if isinstance(self.save_frequency, str):
-            if self.save_frequency == "hourly":
+        if isinstance(self.save_frequency, SaveFrequency):
+            if self.save_frequency == SaveFrequency.HOURLY:
                 stage.print_interval = int(np.round(1 / stage.timestep))
-            elif self.save_frequency == "daily":
+            elif self.save_frequency == SaveFrequency.DAILY:
                 stage.print_interval = int(np.round(24.0 / stage.timestep))
-            elif self.save_frequency == "bystage":
+            elif self.save_frequency == SaveFrequency.STAGE:
                 stage.print_interval = 0
             else:
                 stage.print_interval = int(self.save_frequency)
@@ -713,21 +708,57 @@ class StageDefinition:
             -self.brine_interface_depth if self.brine_interface_depth is not None else 0
         )
         stage.injection_rate = self.brine_injection_rate
-        stage.inn_tbg_inside_radius = self.inner_tbg_inside_diam / 2.0
-        stage.inn_tbg_outside_radius = self.inner_tbg_outside_diam / 2.0
-        stage.out_csg_inside_radius = (
-            self.outer_csg_inside_diam / 2.0
-            if self.outer_csg_inside_diam
-            else self.inner_tbg_inside_diam / 2.0
-        )
-        stage.out_csg_outside_radius = (
-            self.outer_csg_outside_diam / 2.0
-            if self.outer_csg_outside_diam
-            else self.inner_tbg_outside_diam / 2.0
-        )
+        defs = dict()
+        if self.__defaults is not None:
+            _rename_with_underscore(self.__defaults, defs)
+        try:
+            tbgID = (
+                self.inner_tbg_inside_diam
+                if self.inner_tbg_inside_diam is not None
+                else defs["inner_tbg_inside_diam"]
+            )
+        except KeyError:
+            raise ValueError(
+                "No value provided for inner_tbg_inside_diam, and no default value specified either"
+            )
+
+        try:
+            tbgOD = (
+                self.inner_tbg_inside_diam
+                if self.inner_tbg_outside_diam is not None
+                else defs["inner_tbg_outside_diam"]
+            )
+        except KeyError:
+            raise ValueError(
+                "No value provided for inner_tbg_outside_diam, and no default value specified either"
+            )
+
+        stage.inn_tbg_inside_radius = tbgID / 2.0
+        stage.inn_tbg_outside_radius = tbgOD / 2.0
+
+        try:
+            csgID = (
+                self.outer_csg_inside_diam
+                if self.outer_csg_inside_diam is not None
+                else defs["outer_csg_inside_diam"]
+            )
+        except KeyError:
+            csgID = tbgID
+
+        try:
+            csgOD = (
+                self.outer_csg_outside_diam
+                if self.outer_csg_outside_diam is not None
+                else defs["outer_csg_outside_diam"]
+            )
+        except KeyError:
+            csgOD = tbgOD
+
+        stage.out_csg_inside_radius = csgID / 2.0
+        stage.out_csg_outside_radius = csgOD / 2.0
+
         stage.injection_fluid_sg = self.brine_injection_sg
         stage.cavern_sg = self.set_cavern_sg if self.set_cavern_sg is not None else 0.0
-        stage.timestep = self.solver_timestep
         stage.injection_duration = self.injection_duration
         stage.fill_rate = (
             self.product_injection_rate
@@ -768,6 +799,17 @@ class Scenario:
     stages: List[StageDefinition] = field(default=None)
     """The activity stages to simulate."""
 
+    def __iter__(self):
+        for k in self.__dataclass_fields__.keys():
+            v = getattr(self, k)
+            if isinstance(v, AdvancedOptions):
+                v = dict(v)
+            elif k == "stages":
+                for s in self.stages:
+                    s._relink_defaults(self)
+                v = [dict(s) for s in v]
+            yield k, v
+
     def __setattr__(self, name, value):
         """The setattr method is overloaded. IntEnum parameters are
         automatically converted from strings or integers and stages and
@@ -780,9 +822,7 @@ class Scenario:
             if isinstance(value, int):
                 value = GeometryFormat(value)
             elif isinstance(value, str):
-                value = GeometryFormat[
-                    value.upper().replace(" ", "_").replace("-", "_")
-                ]
+                value = GeometryFormat[value]
             elif isinstance(value, _ext.CGeometryFormat):
                 value = GeometryFormat(int(value))
             else:
@@ -791,7 +831,7 @@ class Scenario:
             if isinstance(value, int):
                 value = Units(value)
             elif isinstance(value, str):
-                value = Units[value.upper().replace(" ", "_").replace("-", "_")]
+                value = Units[value]
             else:
                 TypeError("Units cannot be of type {}".format(type(value)))
         elif (
@@ -823,6 +863,14 @@ class Scenario:
             else:
                 TypeError("stages cannot set directly - please use add_stages")
         super().__setattr__(name, value)
+        if (
+            name == "defaults"
+            and value is not None
+            and hasattr(self, "stages")
+            and self.stages is not None
+        ):
+            for s in self.stages:
+                s._relink_defaults(self)
 
     @classmethod
     def from_dict(cls, opts: dict) -> "Scenario":
@@ -871,8 +919,10 @@ class Scenario:
             the options dictionary
         """
 
-        ret = dict()
-        _rename_with_dash(asdict(self), ret)
+        ret = dict(self)
+        for k, v in ret.items():
+            if isinstance(v, IntEnum):
+                ret[k] = str(v)
         ret["advanced"] = self.advanced.to_dict(keep_empty)
         if len(ret["advanced"]) == 0:
             del ret["advanced"]
@@ -892,15 +942,20 @@ class Scenario:
         for k in keys:
             if ret[k] is None:
                 if keep_empty:
-                    ret[k] = ""
+                    ret[k] = (
+                        ""
+                        if self.__dataclass_fields__[k].default is None
+                        else self.__dataclass_fields__[k].default
+                    )
                 else:
                     del ret[k]
-        return ret
+        ret2 = dict()
+        _rename_with_dash(ret, ret2)
+        return ret2
 
     def new_stage(self, pos: int = None, **kwargs) -> StageDefinition:
         """Add a new stage in the optionally-specified `pos` position, and create it
-        based on keyword arguments. Passes existing :attr:`~Scenario.defaults`
-        unless a separate `defaults` dictionary is passed as one of the keyword arguments.
+        based on keyword arguments. Passes existing :attr:`~Scenario.defaults`.
 
         Parameters
         ----------
@@ -916,7 +971,11 @@ class Scenario:
             new stage created from the keyword arguments. It will have been
             added into the stage list in the proper position.
         """
-
+        if "defaults" in kwargs:
+            raise DeprecationWarning(
+                "Please do not pass defaults as a keyword, set the default values on the scenario instead. This will be an error in SANSMIC 1.1"
+            )
+        # TODO: disable passing manual defaults in v1.1
         defaults = kwargs.pop("defaults", self.defaults)
         stage = StageDefinition(defaults=defaults, **kwargs)
         if pos is None:
@@ -947,6 +1006,31 @@ class Scenario:
         """
 
         return Simulator(self, prefix, verbosity, generate_tst_file, generate_out_file)
+
+    def squash_defaults(self, infer_values=False):
+        """Remove values which are the same as the scenario default values.
+
+        If the `infer_values` parameter is active, then the first non-null value
+        found in the stages will be added to any existing default values first.
+
+        Parameters
+        ----------
+        infer_values : bool, optional
+            Populate missing :attr:`Scenario.defaults` values with the first
+            non-null value found in the stages, by default False
+        """
+        if len(self.stages) == 0:
+            return
+        if infer_values:
+            for k in StageDefinition.valid_default_keys:
+                if self.defaults.get(k, None) is None:
+                    for stage in self.stages:
+                        self.defaults[k] = getattr(stage, k)
+                        if self.defaults[k] is not None:
+                            break
+        for stage in self.stages:
+            stage._relink_defaults(self)
+            stage.squash_defaults()
 
     def _to_cscenario(self):
         """Create a C++ model object; in general, this should only be called internally."""
@@ -1033,7 +1117,7 @@ class Scenario:
         for stage_num, stage in enumerate(self.stages):
             if stage_num == 0:
                 stage.set_initial_conditions = True
-            cstage = stage._to_cstage(defaults=self.defaults, position=stage_num + 1)
+            cstage = stage._to_cstage(position=stage_num + 1)
             cscenario.add_stage(cstage)
         return cscenario
 

@@ -457,7 +457,7 @@ number of stages. A stage **requires** a title key.
         way as an hour is for 'hourly'. *This is the recommended option
         for most simulations.*
 
-    "bystage"
+    "stage"
         Only save results at the end of each injection and each rest
         period. This is the most efficient method in terms of storage
         and processing time, but provides little data for debugging or

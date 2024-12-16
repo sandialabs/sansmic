@@ -18,6 +18,8 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Union
 
+from .enums import GeometryFormat, SimulationMode, StopCondition
+
 if sys.version_info[1] < 11:
     import tomli as tomllib
 else:
@@ -42,12 +44,9 @@ except ImportError as e:
     h5py = e
 
 from .model import (
-    GeometryFormat,
     Results,
     Scenario,
-    SimulationMode,
     StageDefinition,
-    StopCondition,
     _OutDataBlock,
     _OutputData,
 )
@@ -410,12 +409,6 @@ def write_scenario(scenario: Scenario, filename: str, *, redundant=False, format
         elif isinstance(sdict[k], IntEnum):
             sdict[k] = sdict[k].name.lower().replace("_", "-")
     for ct, s in enumerate(sdict["stages"]):
-        if (
-            not redundant
-            and scenario.stages[ct].stop_condition == StopCondition.DURATION
-        ):
-            del s["stop-condition"]
-            del s["stop-value"]
         keys = [k for k in s.keys()]
         for k in keys:
             if (

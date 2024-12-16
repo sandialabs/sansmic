@@ -74,7 +74,7 @@ class TestStageDefinition(unittest.TestCase):
                 "save-frequency": "daily",
             }
         )
-        self.assertEqual(stage.save_frequency, "daily")
+        self.assertIsNone(stage.save_frequency)
 
     def test_custom_setattr(self):
         stage = sansmic.model.StageDefinition()

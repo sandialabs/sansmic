@@ -9,4 +9,4 @@
 """SANSMIC package"""
 
 from ._version import __version__, copyright, license
-from . import app, empirical, io, model
+from . import app, empirical, enums, io, model

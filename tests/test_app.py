@@ -192,6 +192,8 @@ class TestApplication(unittest.TestCase):
         scenario1 = sansmic.io.read_scenario(self.withdrawal_toml)
         scenario1.title = ""
         scenario1.comments = ""
+        scenario0.squash_defaults(False)
+        scenario1.squash_defaults(False)
         self.assertEqual(scenario0, scenario1)
         sansmic.app.convert(
             [self.withdrawal_dat, self.withdrawal_toml, "--full"], standalone_mode=False
@@ -200,7 +202,7 @@ class TestApplication(unittest.TestCase):
         scenario2.title = ""
         scenario2.comments = ""
         self.maxDiff = None
-        self.assertDictEqual(scenario0.to_dict(), scenario2.to_dict())
+        self.assertDictEqual(scenario0.to_dict(True), scenario2.to_dict(True))
 
         with self.assertRaises(
             (click.FileError, click.ClickException, FileNotFoundError)

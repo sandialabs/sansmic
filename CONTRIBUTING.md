@@ -106,7 +106,7 @@ The checks we perform are the following:
 
 ### VS Code
 
-Our IDE of choice is [VS Code][vscode].  Download and install it, and then
+Our IDE of choice is [Visual Studio Code][vscode] (VS Code).  Download and install it, and then
 follow the instructions below to get it set up.
 
 [vscode]: https://code.visualstudio.com/

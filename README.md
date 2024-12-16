@@ -2,13 +2,11 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9399/badge)](https://www.bestpractices.dev/projects/9399)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/sandialabs/sansmic/badge)](https://scorecard.dev/viewer/?uri=github.com/sandialabs/sansmic)
 
-![Lines of code](https://sloc.xyz/github/sandialabs/sansmic/?category=code)
 [![Test Matrix](https://github.com/sandialabs/sansmic/actions/workflows/test-matrix.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/test-matrix.yml)
 [![codecov](https://codecov.io/github/sandialabs/sansmic/graph/badge.svg?token=oDeMIUHoqg)](https://codecov.io/github/sandialabs/sansmic)
 [![Deploy Sphinx documentation](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml/badge.svg?branch=main)](https://github.com/sandialabs/sansmic/actions/workflows/gh-pages.yml)
 
 [![pypi](https://img.shields.io/pypi/v/sansmic.svg?maxAge=3600)](https://pypi.org/project/sansmic/)
-[![Downloads](https://static.pepy.tech/badge/sansmic)](https://pepy.tech/project/sansmic)
 
 ## SANSMIC
 
@@ -34,7 +32,7 @@ The sansmic package requires Python 3.9 or greater and at least the
 numpy and pandas packages.
 
 Installation can be accomplished most easily by using the PyPI.
-It can also be installed by downloading a wheel from the 
+It can also be installed by downloading a wheel from the
 [releases](https://github.com/sandialabs/sansmic/releases)
 in this repository, or by cloning this repository and building it
 yourself. Finally, a standalone executable has been created that
@@ -44,12 +42,18 @@ on the right side of the page).
 
 
 #### PyPI wheels
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/sansmic?logo=pypi&logoColor=white)
+
 To install a pre-compiled version of sansmic, use the pip command
 
     python -m pip install sansmic
 
 
 #### Build from source
+![Git](https://img.shields.io/badge/Git-F05032?logo=git&logoColor=fff)
+![C++](https://img.shields.io/badge/C++-%2300599C.svg?logo=c%2B%2B&logoColor=fff)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sansmic?logo=python&logoColor=fff&label=cpython)
+
 To download and build from source, you should clone the repository
 (or, fork sansmic and clone your repository) and then install using
 the editable (``-e``) flag.
@@ -85,7 +89,9 @@ If you would like to contribute, please read the
 [guide to contributing](CONTRIBUTING.md).
 
 ### License & Copyright
-See [LICENSE](LICENSE) and [COPYRIGHT](COPYRIGHT.md).
+![License - BSD-3-Clause](https://img.shields.io/pypi/l/sansmic?label=LICENSE)
+
+See the [LICENSE](LICENSE) and [COPYRIGHT](COPYRIGHT.md) files with the code.
 
 [Sandia National Laboratories](https://www.sandia.gov)
 is a multimission laboratory managed
