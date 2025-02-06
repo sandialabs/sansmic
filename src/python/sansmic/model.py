@@ -63,22 +63,22 @@ class Units(IntEnum):
     @classmethod
     def inch(self):
         """1 in ≔ 0.0254 m"""
-        return Fraction(254, 10000)
+        return Fraction(254, 10_000)
 
     @classmethod
     def foot(self):
         """1 ft ≔ 0.3048 m"""
-        return Fraction(3048, 10000)
+        return Fraction(3048, 10_000)
 
     @classmethod
     def cubic_foot(self):
-        """1 ft³ == 0.028316846592 m³"""
-        return Fraction(3048, 10000) ** 3
+        """1 ft³ == 0.028 316 846 592 m³"""
+        return Fraction(3048, 10_000) ** 3
 
     @classmethod
     def barrel(self):
-        """1 bbl == 0.158987294928 m³"""
-        return 42 * 231 * Fraction(254, 10000) ** 3
+        """1 bbl == 0.158 987 294 928 m³"""
+        return 42 * 231 * Fraction(254, 10_000) ** 3
 
     @classmethod
     def centimeter(self):
