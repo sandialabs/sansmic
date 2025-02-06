@@ -26,7 +26,7 @@ classifiers = [
 
 [project.optional-dependencies]
 formats = ['h5py', 'openpyxl', 'tabulate', 'pyyaml', 'lasio']
-examples = ['nbmake', 'matplotlib']
+examples = ['nbmake', 'matplotlib', 'plotly', 'ipython>=8.10']
 tests = ['pytest', 'pytest-cov']
 devel = [
     'pyyaml',
@@ -37,6 +37,8 @@ devel = [
     'black',
     'pybind11',
     'nbmake',
+    'plotly',
+    'ipython>=8.10',
     'matplotlib',
     'python-semantic-release',
 ]
