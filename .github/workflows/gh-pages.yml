@@ -33,7 +33,7 @@ concurrency:
 jobs:
   build:
     name: Build the documentation with Sphinx
-    uses: sandialabs/sansmic-ci/.github/workflows/build-sphinx-all.yml@main
+    uses: sandialabs/sansmic-docs/.github/workflows/build-sphinx-all.yml@main
 
   deploy:
     name: Deploy documentation to GitHub Pages
