@@ -33,7 +33,7 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
       with:
         egress-policy: audit
 
@@ -58,7 +58,7 @@ jobs:
     - name: Action | Semantic Release - Update version
       id: semantic_release
       # Adjust tag with desired version if applicable.
-      uses: python-semantic-release/python-semantic-release@cdfda70b6df73f3e4917cfd498f4bf9fed29ea08 # v9.17.0
+      uses: python-semantic-release/python-semantic-release@26bb37cfab71a5a372e3db0f48a6eac57519a4a6 # v9.21.0
       with:
         github_token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
         git_committer_name: "github-actions"
