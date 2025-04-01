@@ -1,7 +1,7 @@
 pyyaml==6.0.2
-pre-commit==4.1.0
+pre-commit==4.2.0
 pyproject_hooks==1.2.0
-pytest==8.3.4
+pytest==8.3.5
 pytest-cov==6.0.0
 black==25.1.0
 nbmake==1.5.5
