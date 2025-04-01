@@ -28,7 +28,7 @@ jobs:
     - name: Action | Build SDist
       run: pipx run build --sdist
     - name: Action | Upload Artifacts
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: dist-cibw-sdist
         path: dist/*.tar.gz
@@ -48,9 +48,9 @@ jobs:
       - name: Setup | Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Action | Build Wheels
-        uses: pypa/cibuildwheel@ee63bf16da6cddfb925f542f2c7b59ad50e93969 # v2.21.0
+        uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.21.0
       - name: Action | Upload Artifacts
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
@@ -94,7 +94,7 @@ jobs:
   #     - run: Compress-Archive -Path dist/sansmic -DestinationPath dist/sansmic-${{github.ref_name}}-standalone-win_amd64.zip
 
   #     - name: Action | Upload Artifacts
-  #       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+  #       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
   #       with:
   #         name: dist-exec-windows-latest
   #         path: ./dist/sansmic-*-standalone-win_amd64.zip
@@ -127,7 +127,7 @@ jobs:
         ref: ${{ github.sha }}
 
     - name: Setup | Download all the dists
-      uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+      uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
       with:
         pattern: dist-*
         path: dist
@@ -172,7 +172,7 @@ jobs:
         ref: ${{ github.sha }}
 
     - name: Setup | Download all the dists
-      uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+      uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
       with:
         pattern: dist-cibw-*
         path: dist
@@ -211,7 +211,7 @@ jobs:
         ref: ${{ github.sha }}
 
     - name: Setup | Download all the dists
-      uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+      uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
       with:
         pattern: dist-cibw-*
         path: dist
