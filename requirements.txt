@@ -1,5 +1,5 @@
 numpy==2.2.3
 pandas==2.2.3
 pybind11==2.13.6
-setuptools==75.8.2
+setuptools==80.1.0
 click==8.1.8
