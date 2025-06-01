@@ -58,7 +58,7 @@ jobs:
     - name: Action | Semantic Release - Update version
       id: semantic_release
       # Adjust tag with desired version if applicable.
-      uses: python-semantic-release/python-semantic-release@26bb37cfab71a5a372e3db0f48a6eac57519a4a6 # v9.21.0
+      uses: python-semantic-release/python-semantic-release@1a324000f2251a9e722e77b128bf72712653813f # v10.0.2
       with:
         github_token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
         git_committer_name: "github-actions"
