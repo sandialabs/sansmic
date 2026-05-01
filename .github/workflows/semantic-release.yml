@@ -33,7 +33,7 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+      uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
       with:
         egress-policy: audit
 
@@ -43,7 +43,7 @@ jobs:
         echo "Is prerelease - " ${{ inputs.is_prerelease }} | tee $GITHUB_STEP_SUMMARY
 
     - name: Setup | Checkout Repository at workflow sha
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
         fetch-depth: 0
@@ -58,7 +58,7 @@ jobs:
     - name: Action | Semantic Release - Update version
       id: semantic_release
       # Adjust tag with desired version if applicable.
-      uses: python-semantic-release/python-semantic-release@4d4cb0ab842247caea1963132c242c62aab1e4d5 # v10.4.1
+      uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
       with:
         github_token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
         git_committer_name: "github-actions"
