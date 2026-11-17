@@ -1250,6 +1250,7 @@ int sansmic::Model::leach() {
       stopCriteria = 0;
       Q_in = 0.0;
       Q_fill = 0.0;
+      Q_out = 0.0;
       t_wait = 0;
       b_is_injecting = false;
     }
